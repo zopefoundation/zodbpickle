@@ -1,0 +1,10 @@
+include *.txt
+include tox.ini
+include buildout.cfg
+
+recursive-include src *
+
+global-exclude *.dll
+global-exclude *.pyc
+global-exclude *.pyo
+global-exclude *.so
