@@ -1,6 +1,6 @@
-import pickle
 import io
 import collections
+import unittest
 
 from test import support
 
@@ -11,18 +11,20 @@ from .pickletester import AbstractPicklerUnpicklerObjectTests
 from .pickletester import AbstractDispatchTableTests
 from .pickletester import BigmemPickleTests
 
+from zodbpickle import pickle
+
 try:
-    import _pickle
+    from zodbpickle import _pickle
     has_c_implementation = True
 except ImportError:
     has_c_implementation = False
 
 
-class PickleTests(AbstractPickleModuleTests):
+class PickleTests(AbstractPickleModuleTests, unittest.TestCase):
     pass
 
 
-class PyPicklerTests(AbstractPickleTests):
+class PyPicklerTests(AbstractPickleTests, unittest.TestCase):
 
     pickler = pickle._Pickler
     unpickler = pickle._Unpickler
@@ -40,7 +42,8 @@ class PyPicklerTests(AbstractPickleTests):
         return u.load()
 
 
-class InMemoryPickleTests(AbstractPickleTests, BigmemPickleTests):
+class InMemoryPickleTests(AbstractPickleTests, BigmemPickleTests,
+                          unittest.TestCase):
 
     pickler = pickle._Pickler
     unpickler = pickle._Unpickler
@@ -52,7 +55,7 @@ class InMemoryPickleTests(AbstractPickleTests, BigmemPickleTests):
         return pickle.loads(buf, **kwds)
 
 
-class PyPersPicklerTests(AbstractPersistentPicklerTests):
+class PyPersPicklerTests(AbstractPersistentPicklerTests, unittest.TestCase):
 
     pickler = pickle._Pickler
     unpickler = pickle._Unpickler

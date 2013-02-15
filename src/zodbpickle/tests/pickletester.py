@@ -427,7 +427,7 @@ def create_data():
     x.append(5)
     return x
 
-class AbstractPickleTests(unittest.TestCase):
+class AbstractPickleTests:
     # Subclass must define self.dumps, self.loads.
 
     _testdata = create_data()
@@ -1206,7 +1206,7 @@ class AbstractPickleTests(unittest.TestCase):
         self.assertRaises(ValueError, self.loads, dumped)
 
 
-class BigmemPickleTests(unittest.TestCase):
+class BigmemPickleTests:
 
     # Binary protocols can serialize longs of up to 2GB-1
 
@@ -1370,7 +1370,7 @@ class BadGetattr:
         self.foo
 
 
-class AbstractPickleModuleTests(unittest.TestCase):
+class AbstractPickleModuleTests:
 
     def test_dump_closed_file(self):
         import os
@@ -1430,7 +1430,7 @@ class AbstractPickleModuleTests(unittest.TestCase):
         self.assertRaises(EOFError, pickle.loads, s)
 
 
-class AbstractPersistentPicklerTests(unittest.TestCase):
+class AbstractPersistentPicklerTests:
 
     # This class defines persistent_id() and persistent_load()
     # functions that should be used by the pickler.  All even integers
@@ -1466,7 +1466,7 @@ class AbstractPersistentPicklerTests(unittest.TestCase):
         self.assertEqual(self.load_count, 5)
 
 
-class AbstractPicklerUnpicklerObjectTests(unittest.TestCase):
+class AbstractPicklerUnpicklerObjectTests:
 
     pickler_class = None
     unpickler_class = None
@@ -1629,7 +1629,7 @@ class AAA(object):
 class BBB(object):
     pass
 
-class AbstractDispatchTableTests(unittest.TestCase):
+class AbstractDispatchTableTests:
 
     def test_default_dispatch_table(self):
         # No dispatch_table attribute by default
