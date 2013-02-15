@@ -10,6 +10,7 @@ from .pickletester import AbstractPersistentPicklerTests
 from .pickletester import AbstractPicklerUnpicklerObjectTests
 from .pickletester import AbstractDispatchTableTests
 from .pickletester import BigmemPickleTests
+from .pickletester import AbstractBytestrTests
 
 from zodbpickle import pickle
 
@@ -24,14 +25,14 @@ class PickleTests(AbstractPickleModuleTests, unittest.TestCase):
     pass
 
 
-class PyPicklerTests(AbstractPickleTests, unittest.TestCase):
+class PyPicklerBase(AbstractPickleTests):
 
     pickler = pickle._Pickler
     unpickler = pickle._Unpickler
 
-    def dumps(self, arg, proto=None):
+    def dumps(self, arg, proto=None, **kwds):
         f = io.BytesIO()
-        p = self.pickler(f, proto)
+        p = self.pickler(f, proto, **kwds)
         p.dump(arg)
         f.seek(0)
         return bytes(f.read())
@@ -41,6 +42,12 @@ class PyPicklerTests(AbstractPickleTests, unittest.TestCase):
         u = self.unpickler(f, **kwds)
         return u.load()
 
+class PyPicklerTests(PyPicklerBase, AbstractPickleTests, unittest.TestCase):
+    pass
+
+class PyPicklerBytestrTests(PyPicklerBase, AbstractBytestrTests,
+                            unittest.TestCase):
+    pass
 
 class InMemoryPickleTests(AbstractPickleTests, BigmemPickleTests,
                           unittest.TestCase):
@@ -102,6 +109,10 @@ if has_c_implementation:
         pickler = _pickle.Pickler
         unpickler = _pickle.Unpickler
 
+    class CPicklerBytestrTests(PyPicklerBytestrTests):
+        pickler = _pickle.Pickler
+        unpickler = _pickle.Unpickler
+
     class CPersPicklerTests(PyPersPicklerTests):
         pickler = _pickle.Pickler
         unpickler = _pickle.Unpickler
@@ -131,9 +142,10 @@ if has_c_implementation:
 
 def test_main():
     tests = [PickleTests, PyPicklerTests, PyPersPicklerTests,
-             PyDispatchTableTests, PyChainDispatchTableTests]
+             PyDispatchTableTests, PyChainDispatchTableTests,
+             PyPicklerBytestrTests]
     if has_c_implementation:
-        tests.extend([CPicklerTests, CPersPicklerTests,
+        tests.extend([CPicklerTests, CPicklerBytestrTests, CPersPicklerTests,
                       CDumpPickle_LoadPickle, DumpPickle_CLoadPickle,
                       PyPicklerUnpicklerObjectTests,
                       CPicklerUnpicklerObjectTests,

@@ -4161,6 +4161,18 @@ load_binfloat(UnpicklerObject *self)
     return 0;
 }
 
+/* Returns a new reference */
+static PyObject *
+decode_string(UnpicklerObject *self, PyObject *value)
+{
+    if (strcmp(self->encoding, "bytes") == 0) {
+        Py_INCREF(value);
+        return value;
+    } else {
+        return PyUnicode_FromEncodedObject(value, self->encoding, self->errors);
+    }
+}
+    
 static int
 load_string(UnpicklerObject *self)
 {
@@ -4203,7 +4215,8 @@ load_string(UnpicklerObject *self)
     free(s);
     if (bytes == NULL)
         return -1;
-    str = PyUnicode_FromEncodedObject(bytes, self->encoding, self->errors);
+
+    str = decode_string(self, bytes);
     Py_DECREF(bytes);
     if (str == NULL)
         return -1;
@@ -4267,7 +4280,7 @@ load_short_binbytes(UnpicklerObject *self)
 static int
 load_binstring(UnpicklerObject *self)
 {
-    PyObject *str;
+    PyObject *bytes, *str;
     Py_ssize_t x;
     char *s;
 
@@ -4284,8 +4297,12 @@ load_binstring(UnpicklerObject *self)
     if (_Unpickler_Read(self, &s, x) < 0)
         return -1;
 
-    /* Convert Python 2.x strings to unicode. */
-    str = PyUnicode_Decode(s, x, self->encoding, self->errors);
+    bytes = PyBytes_FromStringAndSize(s, x);
+    if (bytes == NULL)
+        return -1;
+
+    str = decode_string(self, bytes);
+    Py_DECREF(bytes);
     if (str == NULL)
         return -1;
 
@@ -4296,7 +4313,7 @@ load_binstring(UnpicklerObject *self)
 static int
 load_short_binstring(UnpicklerObject *self)
 {
-    PyObject *str;
+    PyObject *bytes, *str;
     Py_ssize_t x;
     char *s;
 
@@ -4308,8 +4325,12 @@ load_short_binstring(UnpicklerObject *self)
     if (_Unpickler_Read(self, &s, x) < 0)
         return -1;
 
-    /* Convert Python 2.x strings to unicode. */
-    str = PyUnicode_Decode(s, x, self->encoding, self->errors);
+    bytes = PyBytes_FromStringAndSize(s, x);
+    if (bytes == NULL)
+        return -1;
+
+    str = decode_string(self, bytes);
+    Py_DECREF(bytes);
     if (str == NULL)
         return -1;
 
@@ -5633,7 +5654,8 @@ PyDoc_STRVAR(Unpickler_doc,
 "map the old Python 2.x names to the new names used in Python 3.x.  The\n"
 "*encoding* and *errors* tell pickle how to decode 8-bit string\n"
 "instances pickled by Python 2.x; these default to 'ASCII' and\n"
-"'strict', respectively.\n");
+"'strict', respectively. *encoding* can be 'bytes' to read 8-bit string\n"
+"instances as byte objects.\n");
 
 static int
 Unpickler_init(UnpicklerObject *self, PyObject *args, PyObject *kwds)

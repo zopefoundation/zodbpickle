@@ -806,7 +806,8 @@ class _Unpickler:
         map the old Python 2.x names to the new names used in Python 3.x.  The
         *encoding* and *errors* tell pickle how to decode 8-bit string
         instances pickled by Python 2.x; these default to 'ASCII' and
-        'strict', respectively.
+        'strict', respectively. *encoding* can be 'bytes' to read 8-bit string
+        instances as bytes objects.
         """
         self.readline = file.readline
         self.read = file.read
@@ -943,6 +944,12 @@ class _Unpickler:
         self.append(unpack('>d', self.read(8))[0])
     dispatch[BINFLOAT[0]] = load_binfloat
 
+    def decode_string(self, value):
+        if self.encoding == "bytes":
+            return value
+        else:
+            return value.decode(self.encoding, self.errors)
+
     def load_string(self):
         orig = self.readline()
         rep = orig[:-1]
@@ -954,15 +961,13 @@ class _Unpickler:
                 break
         else:
             raise ValueError("insecure string pickle: %r" % orig)
-        self.append(codecs.escape_decode(rep)[0]
-                    .decode(self.encoding, self.errors))
+        self.append(self.decode_string(codecs.escape_decode(rep)[0]))
     dispatch[STRING[0]] = load_string
 
     def load_binstring(self):
         len = mloads(b'i' + self.read(4))
         data = self.read(len)
-        value = str(data, self.encoding, self.errors)
-        self.append(value)
+        self.append(self.decode_string(data))
     dispatch[BINSTRING[0]] = load_binstring
 
     def load_binbytes(self):
@@ -981,9 +986,8 @@ class _Unpickler:
 
     def load_short_binstring(self):
         len = ord(self.read(1))
-        data = bytes(self.read(len))
-        value = str(data, self.encoding, self.errors)
-        self.append(value)
+        data = self.read(len)
+        self.append(self.decode_string(data))
     dispatch[SHORT_BINSTRING[0]] = load_short_binstring
 
     def load_short_binbytes(self):
