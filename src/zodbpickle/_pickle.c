@@ -4168,11 +4168,21 @@ decode_string(UnpicklerObject *self, PyObject *value)
     if (strcmp(self->encoding, "bytes") == 0) {
         Py_INCREF(value);
         return value;
+    } else if (strcmp(self->errors, "bytes") == 0) {
+        PyObject *decoded = PyUnicode_FromEncodedObject(value, self->encoding,
+                                                        "strict");
+        if (decoded == NULL) {
+            PyErr_Clear();
+            Py_INCREF(value);
+            return value;
+        } else {
+            return decoded;
+        }
     } else {
         return PyUnicode_FromEncodedObject(value, self->encoding, self->errors);
     }
 }
-    
+
 static int
 load_string(UnpicklerObject *self)
 {

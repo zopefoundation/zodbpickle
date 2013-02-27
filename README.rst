@@ -81,12 +81,22 @@ Example 3: everything breaks down ::
       File "<stdin>", line 1, in <module>
     AttributeError: 'Foo' object has no attribute 'x'
 
-wait what?
+wait what? ::
 
     >>> foo.__dict__
     {b'x': b'hello'}
 
-oooh.
+oooh.  So we use ``encoding='ASCII'`` (the default) and ``errors='bytes'`` and
+hope it works::
+
+    >>> foo = pickle.loads("ccopy_reg\n_reconstructor\np0\n(c__main__\nFoo\np1\nc__builtin__\nobject\np2\nNtp3\nRp4\n(dp5\nS'x'\np6\nS'hello'\np7\nsb.", errors='bytes')
+    >>> foo.x
+    'hello'
+
+falling back to bytes if necessary ::
+
+    >>> pickle.loads(b'\x80\x02U\x01\xffq\x00.', errors='bytes')
+    b'\xff'
 
 
 Support for ``noload()``

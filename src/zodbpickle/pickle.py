@@ -807,7 +807,9 @@ class _Unpickler:
         *encoding* and *errors* tell pickle how to decode 8-bit string
         instances pickled by Python 2.x; these default to 'ASCII' and
         'strict', respectively. *encoding* can be 'bytes' to read 8-bit string
-        instances as bytes objects.
+        instances as bytes objects, but this breaks instance pickles so should
+        only be used for special purposes. *errors* can also be 'bytes', which
+        means any string that can't be decoded will be left as a bytes object.
         """
         self.readline = file.readline
         self.read = file.read
@@ -947,6 +949,11 @@ class _Unpickler:
     def decode_string(self, value):
         if self.encoding == "bytes":
             return value
+        elif self.errors == "bytes":
+            try:
+                return value.decode(self.encoding)
+            except UnicodeDecodeError:
+                return value
         else:
             return value.decode(self.encoding, self.errors)
 
