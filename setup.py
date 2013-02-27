@@ -13,15 +13,13 @@
 ##############################################################################
 """Setup"""
 import os
-import platform
-import sys
 
 from setuptools import Extension, find_packages, setup
 
 here = os.path.abspath(os.path.dirname(__file__))
-README = (open(os.path.join(here, 'README.txt')).read()
+README = (open(os.path.join(here, 'README.rst')).read()
           + '\n\n' +
-          open(os.path.join(here, 'CHANGES.txt')).read())
+          open(os.path.join(here, 'CHANGES.rst')).read())
 
 setup(
     name='zodbpickle',
