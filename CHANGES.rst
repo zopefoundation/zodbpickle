@@ -1,7 +1,7 @@
 CHANGES
 =======
 
-0.1.0 (unreleased)
+0.1.0 (2013-02-27)
 ------------------
 
 - Initial release of Python 3.3's pickle with the patches of Python
