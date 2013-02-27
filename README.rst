@@ -56,6 +56,38 @@ Example 2: Loading Python 3 pickles on Python 2 ::
     >>> pickle.loads('\x80\x02c_codecs\nencode\nq\x00X\x02\x00\x00\x00\xc3\xbfq\x01X\x06\x00\x00\x00latin1q\x02\x86q\x03Rq\x04.')
     '\xff'
 
+Example 3: everything breaks down ::
+
+    $ python2
+    >>> class Foo(object):
+    ...     def __init__(self):
+    ...         self.x = 'hello'
+    ...
+    >>> import pickle
+    >>> pickle.dumps(Foo(), protocol=0)
+    "ccopy_reg\n_reconstructor\np0\n(c__main__\nFoo\np1\nc__builtin__\nobject\np2\nNtp3\nRp4\n(dp5\nS'x'\np6\nS'hello'\np7\nsb."
+    >>> pickle.dumps(Foo(), protocol=1)
+    'ccopy_reg\n_reconstructor\nq\x00(c__main__\nFoo\nq\x01c__builtin__\nobject\nq\x02Ntq\x03Rq\x04}q\x05U\x01xq\x06U\x05helloq\x07sb.'
+    >>> pickle.dumps(Foo(), protocol=2)
+    '\x80\x02c__main__\nFoo\nq\x00)\x81q\x01}q\x02U\x01xq\x03U\x05helloq\x04sb.'
+
+    $ python3
+    >>> from zodbpickle import pickle
+    >>> class Foo(object): pass
+    ... 
+    >>> foo = pickle.loads("ccopy_reg\n_reconstructor\np0\n(c__main__\nFoo\np1\nc__builtin__\nobject\np2\nNtp3\nRp4\n(dp5\nS'x'\np6\nS'hello'\np7\nsb.", encoding='bytes')
+    >>> foo.x
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+    AttributeError: 'Foo' object has no attribute 'x'
+
+wait what?
+
+    >>> foo.__dict__
+    {b'x': b'hello'}
+
+oooh.
+
 
 Support for ``noload()``
 ------------------------
