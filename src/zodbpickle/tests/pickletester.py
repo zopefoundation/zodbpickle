@@ -1280,6 +1280,19 @@ class AbstractBytestrTests:
                 b'T,\x01\x00\x00xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxq\x00.',
                 b'x'*300)
 
+class AbstractBytesFallbackTests:
+    def unpickleEqual(self, data, unpickled):
+        loaded = self.loads(data, errors="bytes")
+        self.assertEqual(loaded, unpickled)
+
+    def test_load_instance(self):
+        r"""Test instance pickle.
+
+        Python 2: pickle.dumps({'x': 'ascii', 'y': '\xff'}) """
+        self.unpickleEqual(
+                b"(dp0\nS'y'\np1\nS'\\xff'\np2\nsS'x'\np3\nS'ascii'\np4\ns.",
+                {'x': 'ascii', 'y': b'\xff'})
+
 class BigmemPickleTests:
 
     # Binary protocols can serialize longs of up to 2GB-1

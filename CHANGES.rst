@@ -1,7 +1,7 @@
 CHANGES
 =======
 
-0.1.0 (unreleased)
+0.1.1 (unreleased)
 ------------------
 
 - Add support for Python 3.2:
@@ -15,7 +15,13 @@ CHANGES
 
   - Disable some tests of 3.3-only features.
 
-- Initial release of Python 3.3's pickle with the patches of Python Issue
-  6784[1] applied.
 
-..[1] http://bugs.python.org/issue6784#msg156166
+0.1.0 (2013-02-27)
+------------------
+
+- Initial release of Python 3.3's pickle with the patches of Python
+  `issue 6784`__ applied.
+
+.. __: http://bugs.python.org/issue6784#msg156166
+
+- Added support for ``errors="bytes"``.

@@ -13,15 +13,13 @@
 ##############################################################################
 """Setup"""
 import os
-import platform
-import sys
 
 from setuptools import Extension, find_packages, setup
 
 here = os.path.abspath(os.path.dirname(__file__))
-README = (open(os.path.join(here, 'README.txt')).read()
+README = (open(os.path.join(here, 'README.rst')).read()
           + '\n\n' +
-          open(os.path.join(here, 'CHANGES.txt')).read())
+          open(os.path.join(here, 'CHANGES.rst')).read())
 
 if sys.version_info[:2] == (3, 2):
     EXT = 'src/zodbpickle/_pickle_32.c'
@@ -30,7 +28,7 @@ else:
 
 setup(
     name='zodbpickle',
-    version='0.1.0',
+    version='0.1.1.dev0',
     description='Fork of Python 3 pickle module.',
     author='Python and Zope Foundation',
     author_email='zodb-dev@zope.org',
