@@ -7,9 +7,28 @@ from http.cookies import SimpleCookie
 from zodbpickle import pickle, pickletools
 
 from test.support import (
-    TestFailed, TESTFN, run_with_locale, no_tracing,
+    TestFailed, TESTFN, run_with_locale,
     _2G, _4G, bigmemtest,
     )
+
+try:
+    from test.support import no_tracing
+except ImportError:
+    from functools import wraps
+    def no_tracing(func):
+        if not hasattr(sys, 'gettrace'):
+            return func
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            original_trace = sys.gettrace()
+            try:
+                sys.settrace(None)
+                return func(*args, **kwargs)
+            finally:
+                sys.settrace(original_trace)
+        return wrapper
+
+_PY33 = sys.version_info[:2] >= (3, 3)
 
 from zodbpickle.pickle import bytes_types
 
@@ -746,12 +765,14 @@ class AbstractPickleTests:
                 u = self.loads(s)
                 self.assertEqual(t, u)
 
+    @unittest.skipUnless(_PY33, "only for Python >= 3.3")
     def test_ellipsis(self):
         for proto in protocols:
             s = self.dumps(..., proto)
             u = self.loads(s)
             self.assertEqual(..., u)
 
+    @unittest.skipUnless(_PY33, "only for Python >= 3.3")
     def test_notimplemented(self):
         for proto in protocols:
             s = self.dumps(NotImplemented, proto)
@@ -1166,6 +1187,7 @@ class AbstractPickleTests:
         empty = self.loads(b'\x80\x03U\x00q\x00.', encoding='koi8-r')
         self.assertEqual(empty, '')
 
+    @unittest.skipUnless(_PY33, "only for Python >= 3.3")
     def test_int_pickling_efficiency(self):
         # Test compacity of int representation (see issue #12744)
         for proto in protocols:

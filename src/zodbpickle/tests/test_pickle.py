@@ -16,9 +16,10 @@ from zodbpickle import pickle
 
 try:
     from zodbpickle import _pickle
-    has_c_implementation = True
 except ImportError:
     has_c_implementation = False
+else:
+    has_c_implementation = True
 
 
 class PickleTests(AbstractPickleModuleTests, unittest.TestCase):
