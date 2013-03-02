@@ -13,6 +13,7 @@
 ##############################################################################
 """Setup"""
 import os
+import sys
 
 from setuptools import Extension, find_packages, setup
 
