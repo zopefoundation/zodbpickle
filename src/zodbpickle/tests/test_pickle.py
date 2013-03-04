@@ -14,6 +14,7 @@ from .pickletester import AbstractDispatchTableTests
 from .pickletester import BigmemPickleTests
 from .pickletester import AbstractBytestrTests
 from .pickletester import AbstractBytesFallbackTests
+from .pickletester import AbstractBytesAsStringTests
 
 from zodbpickle import pickle
 
@@ -53,6 +54,9 @@ class PyPicklerBytestrTests(PyPicklerBase, AbstractBytestrTests):
     pass
 
 class PyPicklerBytesFallbackTests(PyPicklerBase, AbstractBytesFallbackTests):
+    pass
+
+class PyPicklerBytesAsStringTests(PyPicklerBase, AbstractBytesAsStringTests):
     pass
 
 class InMemoryPickleTests(AbstractPickleTests, BigmemPickleTests):
@@ -123,6 +127,10 @@ if has_c_implementation:
         pickler = _pickle.Pickler
         unpickler = _pickle.Unpickler
 
+    class CPicklerBytesAsStringTests(PyPicklerBytesAsStringTests):
+        pickler = _pickle.Pickler
+        unpickler = _pickle.Unpickler
+
     class CPersPicklerTests(PyPersPicklerTests):
         pickler = _pickle.Pickler
         unpickler = _pickle.Unpickler
@@ -153,12 +161,14 @@ if has_c_implementation:
 
 def choose_tests():
     tests = [PickleTests, PyPicklerTests, PyPersPicklerTests,
-             PyPicklerBytestrTests, PyPicklerBytesFallbackTests]
+             PyPicklerBytestrTests, PyPicklerBytesFallbackTests,
+             PyPicklerBytesAsStringTests]
     if sys.version_info >= (3, 3):
         tests.extend([PyDispatchTableTests, PyChainDispatchTableTests])
     if has_c_implementation:
         tests.extend([CPicklerTests, CPersPicklerTests,
                       CPicklerBytestrTests, CPicklerBytesFallbackTests,
+##                    CPicklerBytesAsStringTests,  # TBD
                       CDumpPickle_LoadPickle, DumpPickle_CLoadPickle,
                       PyPicklerUnpicklerObjectTests,
                       CPicklerUnpicklerObjectTests,
