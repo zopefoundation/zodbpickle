@@ -1,6 +1,7 @@
 import io
 import collections
 import unittest
+import doctest
 
 from test import support
 
@@ -23,11 +24,11 @@ else:
     has_c_implementation = True
 
 
-class PickleTests(AbstractPickleModuleTests, unittest.TestCase):
+class PickleTests(AbstractPickleModuleTests):
     pass
 
 
-class PyPicklerBase(AbstractPickleTests):
+class PyPicklerBase(object):
 
     pickler = pickle._Pickler
     unpickler = pickle._Unpickler
@@ -44,19 +45,16 @@ class PyPicklerBase(AbstractPickleTests):
         u = self.unpickler(f, **kwds)
         return u.load()
 
-class PyPicklerTests(PyPicklerBase, AbstractPickleTests, unittest.TestCase):
+class PyPicklerTests(PyPicklerBase, AbstractPickleTests):
     pass
 
-class PyPicklerBytestrTests(PyPicklerBase, AbstractBytestrTests,
-                            unittest.TestCase):
+class PyPicklerBytestrTests(PyPicklerBase, AbstractBytestrTests):
     pass
 
-class PyPicklerBytesFallbackTests(PyPicklerBase, AbstractBytesFallbackTests,
-                                  unittest.TestCase):
+class PyPicklerBytesFallbackTests(PyPicklerBase, AbstractBytesFallbackTests):
     pass
 
-class InMemoryPickleTests(AbstractPickleTests, BigmemPickleTests,
-                          unittest.TestCase):
+class InMemoryPickleTests(AbstractPickleTests, BigmemPickleTests):
 
     pickler = pickle._Pickler
     unpickler = pickle._Unpickler
@@ -68,7 +66,7 @@ class InMemoryPickleTests(AbstractPickleTests, BigmemPickleTests,
         return pickle.loads(buf, **kwds)
 
 
-class PyPersPicklerTests(AbstractPersistentPicklerTests, unittest.TestCase):
+class PyPersPicklerTests(AbstractPersistentPicklerTests):
 
     pickler = pickle._Pickler
     unpickler = pickle._Unpickler
@@ -150,18 +148,29 @@ if has_c_implementation:
             return collections.ChainMap({}, pickle.dispatch_table)
 
 
-def test_main():
+def choose_tests():
     tests = [PickleTests, PyPicklerTests, PyPersPicklerTests,
              PyDispatchTableTests, PyChainDispatchTableTests,
              PyPicklerBytestrTests, PyPicklerBytesFallbackTests]
     if has_c_implementation:
-        tests.extend([CPicklerTests, CPicklerBytestrTests,
-                      CPicklerBytesFallbackTests, CPersPicklerTests,
+        tests.extend([CPicklerTests, CPersPicklerTests,
+                      CPicklerBytestrTests, CPicklerBytesFallbackTests,
                       CDumpPickle_LoadPickle, DumpPickle_CLoadPickle,
                       PyPicklerUnpicklerObjectTests,
                       CPicklerUnpicklerObjectTests,
                       CDispatchTableTests, CChainDispatchTableTests,
                       InMemoryPickleTests])
+    return tests
+
+def test_suite():
+    return unittest.TestSuite([
+        unittest.makeSuite(t) for t in choose_tests()
+    ] + [
+        doctest.DocTestSuite(pickle),
+    ])
+
+def test_main():
+    tests = choose_tests()
     support.run_unittest(*tests)
     support.run_doctest(pickle)
 

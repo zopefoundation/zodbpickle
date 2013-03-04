@@ -62,7 +62,7 @@ setup(
         'test': (),
         'testing': ['nose', 'coverage'],
         },
-    test_suite='zodbpickle.tests',
+    test_suite='zodbpickle.tests.test_pickle.test_suite',
     install_requires=[
         'setuptools',
         ],

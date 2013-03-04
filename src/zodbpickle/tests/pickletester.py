@@ -55,6 +55,7 @@ def count_opcode(code, pickle):
             n += 1
     return n
 
+
 class UnseekableIO(io.BytesIO):
     def peek(self, *args):
         raise NotImplementedError
@@ -445,7 +446,7 @@ def create_data():
     x.append(5)
     return x
 
-class AbstractPickleTests:
+class AbstractPickleTests(unittest.TestCase):
     # Subclass must define self.dumps, self.loads.
 
     _testdata = create_data()
@@ -1226,7 +1227,7 @@ class AbstractPickleTests:
         dumped = b'\x80\x03X\x01\x00\x00\x00ar\xff\xff\xff\xff.'
         self.assertRaises(ValueError, self.loads, dumped)
 
-class AbstractBytestrTests:
+class AbstractBytestrTests(unittest.TestCase):
     def unpickleEqual(self, data, unpickled):
         loaded = self.loads(data, encoding="bytes")
         self.assertEqual(loaded, unpickled)
@@ -1280,7 +1281,7 @@ class AbstractBytestrTests:
                 b'T,\x01\x00\x00xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxq\x00.',
                 b'x'*300)
 
-class AbstractBytesFallbackTests:
+class AbstractBytesFallbackTests(unittest.TestCase):
     def unpickleEqual(self, data, unpickled):
         loaded = self.loads(data, errors="bytes")
         self.assertEqual(loaded, unpickled)
@@ -1293,7 +1294,7 @@ class AbstractBytesFallbackTests:
                 b"(dp0\nS'y'\np1\nS'\\xff'\np2\nsS'x'\np3\nS'ascii'\np4\ns.",
                 {'x': 'ascii', 'y': b'\xff'})
 
-class BigmemPickleTests:
+class BigmemPickleTests(unittest.TestCase):
 
     # Binary protocols can serialize longs of up to 2GB-1
 
@@ -1457,7 +1458,7 @@ class BadGetattr:
         self.foo
 
 
-class AbstractPickleModuleTests:
+class AbstractPickleModuleTests(unittest.TestCase):
 
     def test_dump_closed_file(self):
         import os
@@ -1517,7 +1518,7 @@ class AbstractPickleModuleTests:
         self.assertRaises(EOFError, pickle.loads, s)
 
 
-class AbstractPersistentPicklerTests:
+class AbstractPersistentPicklerTests(unittest.TestCase):
 
     # This class defines persistent_id() and persistent_load()
     # functions that should be used by the pickler.  All even integers
@@ -1553,7 +1554,7 @@ class AbstractPersistentPicklerTests:
         self.assertEqual(self.load_count, 5)
 
 
-class AbstractPicklerUnpicklerObjectTests:
+class AbstractPicklerUnpicklerObjectTests(unittest.TestCase):
 
     pickler_class = None
     unpickler_class = None
@@ -1716,7 +1717,7 @@ class AAA(object):
 class BBB(object):
     pass
 
-class AbstractDispatchTableTests:
+class AbstractDispatchTableTests(unittest.TestCase):
 
     def test_default_dispatch_table(self):
         # No dispatch_table attribute by default
