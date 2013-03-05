@@ -1,8 +1,8 @@
 CHANGES
 =======
 
-0.2 (unreleased)
-------------------
+0.2 (2013-03-05)
+----------------
 
 - Added ``bytes_as_strings`` option to ``Pickler``, ``dump``, and ``dumps``.
 
