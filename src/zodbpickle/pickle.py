@@ -172,7 +172,7 @@ __all__.extend([x for x in dir() if re.match("[A-Z][A-Z0-9_]+$",x)])
 
 # Pickling machinery
 
-class _Pickler:
+class _Pickler(object):
 
     def __init__(self, file, protocol=None, *, fix_imports=True,
                  bytes_as_strings=False):
@@ -802,7 +802,7 @@ def whichmodule(func, funcname):
 
 # Unpickling machinery
 
-class _Unpickler:
+class _Unpickler(object):
 
     def __init__(self, file, *, fix_imports=True,
                  encoding="ASCII", errors="strict"):
