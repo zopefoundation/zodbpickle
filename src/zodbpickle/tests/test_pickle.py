@@ -168,7 +168,7 @@ def choose_tests():
     if has_c_implementation:
         tests.extend([CPicklerTests, CPersPicklerTests,
                       CPicklerBytestrTests, CPicklerBytesFallbackTests,
-##                    CPicklerBytesAsStringTests,  # TBD
+                      CPicklerBytesAsStringTests,
                       CDumpPickle_LoadPickle, DumpPickle_CLoadPickle,
                       PyPicklerUnpicklerObjectTests,
                       CPicklerUnpicklerObjectTests,
