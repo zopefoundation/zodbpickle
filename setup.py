@@ -42,7 +42,7 @@ setup(
         'License :: OSI Approved :: Python Software Foundation License',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.2',
+##      'Programming Language :: Python :: 3.2', not ready yet
         'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: Implementation :: CPython',
         'Framework :: ZODB',
