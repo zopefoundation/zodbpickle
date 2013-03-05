@@ -4,6 +4,9 @@ CHANGES
 0.3 (unreleased)
 ----------------
 
+- Added ``noload`` code to Python 3.2 version of ``Unpickler``.  As with
+  the Python 3.3 version, this code remains untested.
+
 - Added ``bytes_as_strings`` option to the Python 3.2 version of
   ``Pickler``, ``dump``, and ``dumps``.
 
