@@ -4,8 +4,8 @@ CHANGES
 0.3 (unreleased)
 ----------------
 
-- Nothing changed yet.
-
+- Added ``bytes_as_strings`` option to the Python 3.2 version of
+  ``Pickler``, ``dump``, and ``dumps``.
 
 0.2 (2013-03-05)
 ----------------

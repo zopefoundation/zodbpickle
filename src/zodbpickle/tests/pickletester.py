@@ -1332,6 +1332,25 @@ class AbstractBytesAsStringTests(unittest.TestCase):
         p = pickle.dumps(b'\x00', protocol=0, bytes_as_strings=True)
         self.assertEqual(p, b"S'\\x00'\n.")
 
+    def test_save_bytes_roundtrip(self):
+        for proto in protocols:
+            for ch in range(256):
+                data = bytes([ch])
+                pickled = self.dumps(data, proto, bytes_as_strings=True)
+                unpickled = self.loads(pickled, encoding='bytes')
+                self.assertEqual(unpickled, data)
+
+    def test_dump_dumps(self):
+        # see that the bytes_as_string kwarg is accepted everywhere
+        # (the other tests go throught the Pickler API)
+        # XXX: this is not very abstract; the only way to test the Python
+        # implementation of dump and dumps is to remove the C module
+        f = io.BytesIO()
+        pickle.dump(b'\x00', f, protocol=0, bytes_as_strings=True)
+        self.assertEqual(f.getvalue(), b"S'\\x00'\n.")
+        p = pickle.dumps(b'\x00', protocol=0, bytes_as_strings=True)
+        self.assertEqual(p, b"S'\\x00'\n.")
+
 
 class BigmemPickleTests(unittest.TestCase):
 
