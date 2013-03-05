@@ -1,10 +1,12 @@
 CHANGES
 =======
 
-0.1.1 (unreleased)
+0.2 (unreleased)
 ------------------
 
-- Add support for Python 3.2:
+- Added ``bytes_as_strings`` option to ``Pickler``, ``dump``, and ``dumps``.
+
+- Incomplete support for Python 3.2:
 
   - Move ``_pickle.c`` -> ``_pickle_33.c``.
 
@@ -14,6 +16,10 @@ CHANGES
   - Choose between them at build time based on ``sys.version_info``.
 
   - Disable some tests of 3.3-only features.
+
+  - Missing: implementation of ``noload()`` in ``_pickle_32.c``.
+
+  - Missing: implementation of ``bytes_as_strings=True`` in ``_pickle_32.c``.
 
 
 0.1.0 (2013-02-27)
