@@ -862,6 +862,31 @@ class _Unpickler(object):
         except _Stop as stopinst:
             return stopinst.value
 
+    def noload(self):
+        """Read a pickled object representation from the open file.
+
+        Don't return anything useful, just go through the motions.
+        """
+        # Check whether Unpickler was initialized correctly. This is
+        # only needed to mimic the behavior of _pickle.Unpickler.dump().
+        if not hasattr(self, "read"):
+            raise UnpicklingError("Unpickler.__init__() was not called by "
+                                  "%s.__init__()" % (self.__class__.__name__,))
+        self.mark = object() # any new unique object
+        self.stack = []
+        self.append = self.stack.append
+        read = self.read
+        dispatch = self.nl_dispatch
+        try:
+            while 1:
+                key = read(1)
+                if not key:
+                    raise EOFError
+                assert isinstance(key, bytes_types)
+                dispatch[key[0]](self)
+        except _Stop as stopinst:
+            return stopinst.value
+
     # Return largest index k such that self.stack[k] is self.mark.
     # If the stack doesn't contain a mark, eventually raises IndexError.
     # This could be sped by maintaining another stack, of indices at which
@@ -1279,6 +1304,84 @@ class _Unpickler(object):
         value = self.stack.pop()
         raise _Stop(value)
     dispatch[STOP[0]] = load_stop
+
+    nl_dispatch = dispatch.copy()
+
+    def noload_obj(self):
+        # Stack is ... markobject classobject arg1 arg2 ...
+        k = self.marker()
+        klass = self.stack.pop(k+1)
+    nl_dispatch[OBJ[0]] = noload_obj
+
+    def noload_inst(self):
+        self.readline() # skip module
+        self.readline()[:-1] # skip name
+        k = self.marker()
+        klass = self.stack.pop(k+1)
+        self.append(None)
+    nl_dispatch[INST[0]] = noload_inst
+
+    def noload_newobj(self):
+        self.stack.pop() # skip args
+        self.stack.pop() # skip cls
+        self.stack.append(None)
+    nl_dispatch[NEWOBJ[0]] = noload_newobj
+
+    def noload_global(self):
+        self.readline() # skip module
+        self.readline()[:-1] # skip name
+        self.append(None)
+    nl_dispatch[GLOBAL[0]] = noload_global
+
+    def noload_append(self):
+        self.stack.pop() # skip value
+    nl_dispatch[APPEND[0]] = noload_append
+
+    def noload_appends(self):
+        mark = self.marker()
+        del stack[mark:]
+    nl_dispatch[APPENDS[0]] = noload_appends
+
+    def noload_setitem(self):
+        self.stack.pop() # skip value
+        self.stack.pop() # skip key
+    nl_dispatch[SETITEM[0]] = noload_setitem
+
+    def noload_setitems(self):
+        mark = self.marker()
+        del stack[mark:]
+    nl_dispatch[SETITEMS[0]] = noload_setitems
+
+    def noload_reduce(self):
+        self.stack.pop() # skip args
+        self.stack.pop() # skip func
+        self.stack.append(None)
+    nl_dispatch[REDUCE[0]] = noload_reduce
+
+    def noload_build(self):
+        state = self.stack.pop()
+    nl_dispatch[BUILD[0]] = noload_build
+
+    def noload_ext1(self):
+        code = ord(self.read(1))
+        self.get_extension(code)
+        self.stack.pop()
+        self.stack.append(None)
+    nl_dispatch[EXT1[0]] = noload_ext1
+
+    def noload_ext2(self):
+        code = mloads(b'i' + self.read(2) + b'\000\000')
+        self.get_extension(code)
+        self.stack.pop()
+        self.stack.append(None)
+    nl_dispatch[EXT2[0]] = noload_ext2
+
+    def noload_ext4(self):
+        code = mloads(b'i' + self.read(4))
+        self.get_extension(code)
+        self.stack.pop()
+        self.stack.append(None)
+    nl_dispatch[EXT4[0]] = noload_ext4
 
 # Encode/decode longs.
 

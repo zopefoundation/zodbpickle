@@ -1763,6 +1763,55 @@ class AbstractPicklerUnpicklerObjectTests(unittest.TestCase):
                 unpickler = self.unpickler_class(f)
                 self.assertEqual(unpickler.load(), data)
 
+    def test_noload_object(self):
+        global _NOLOAD_OBJECT
+        after = {}
+        _NOLOAD_OBJECT = object()
+        aaa = AAA()
+        bbb = BBB()
+        ccc = 1
+        ddd = 1.0
+        eee = ('eee', 1)
+        fff = ['fff']
+        ggg = {'ggg': 0}
+        unpickler = self.unpickler_class
+        f = io.BytesIO()
+        pickler = self.pickler_class(f, protocol=2)
+        pickler.dump(_NOLOAD_OBJECT)
+        after['_NOLOAD_OBJECT'] = f.tell()
+        pickler.dump(aaa)
+        after['aaa'] = f.tell()
+        pickler.dump(bbb)
+        after['bbb'] = f.tell()
+        pickler.dump(ccc)
+        after['ccc'] = f.tell()
+        pickler.dump(ddd)
+        after['ddd'] = f.tell()
+        pickler.dump(eee)
+        after['eee'] = f.tell()
+        pickler.dump(fff)
+        after['fff'] = f.tell()
+        pickler.dump(ggg)
+        after['ggg'] = f.tell()
+        f.seek(0)
+        unpickler = self.unpickler_class(f)
+        unpickler.noload() # read past _NOLOAD_OBJECT
+        self.assertEqual(f.tell(), after['_NOLOAD_OBJECT'])
+        unpickler.noload() # read past aaa
+        self.assertEqual(f.tell(), after['aaa'])
+        unpickler.noload() # read past bbb
+        self.assertEqual(f.tell(), after['bbb'])
+        unpickler.noload() # read past ccc
+        self.assertEqual(f.tell(), after['ccc'])
+        unpickler.noload() # read past ddd
+        self.assertEqual(f.tell(), after['ddd'])
+        unpickler.noload() # read past eee
+        self.assertEqual(f.tell(), after['eee'])
+        unpickler.noload() # read past fff
+        self.assertEqual(f.tell(), after['fff'])
+        unpickler.noload() # read past ggg
+        self.assertEqual(f.tell(), after['ggg'])
+
 
 # Tests for dispatch_table attribute
 
