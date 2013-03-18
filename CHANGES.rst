@@ -1,7 +1,7 @@
 CHANGES
 =======
 
-0.3 (unreleased)
+0.3 (2013-03-18)
 ----------------
 
 - Added ``noload`` code to Python 3.2 version of ``Unpickler``.  As with
