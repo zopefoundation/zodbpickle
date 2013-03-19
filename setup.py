@@ -22,10 +22,10 @@ README = (open(os.path.join(here, 'README.rst')).read()
           + '\n\n' +
           open(os.path.join(here, 'CHANGES.rst')).read())
 
-if sys.version_info[:2] == (3, 2):
-    EXT = 'src/zodbpickle/_pickle_32.c'
+if sys.version_info[0] == 2:
+    sources = ['src/zodbpickle/_pickle_27.c']
 else:
-    EXT = 'src/zodbpickle/_pickle_33.c'
+    sources = []
 
 setup(
     name='zodbpickle',
@@ -41,8 +41,11 @@ setup(
         'License :: OSI Approved :: Zope Public License',
         'License :: OSI Approved :: Python Software Foundation License',
         'Programming Language :: Python',
+        'Programming Language :: Python :: 2',
+##      'Programming Language :: Python :: 2.6', not ready yet
+        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-##      'Programming Language :: Python :: 3.2', not ready yet
+        'Programming Language :: Python :: 3.2',
         'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: Implementation :: CPython',
         'Framework :: ZODB',
@@ -56,7 +59,7 @@ setup(
     package_dir = {'':'src'},
     ext_modules = [
         Extension(name='zodbpickle._pickle',
-                  sources=[EXT])
+                  sources=sources)
         ],
     extras_require = {
         'test': (),
