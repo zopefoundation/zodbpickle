@@ -23,9 +23,13 @@ README = (open(os.path.join(here, 'README.rst')).read()
           open(os.path.join(here, 'CHANGES.rst')).read())
 
 if sys.version_info[0] == 2:
-    sources = ['src/zodbpickle/_pickle_27.c']
+    ext_modules = [
+        Extension(name='zodbpickle._pickle',
+                  sources = ['src/zodbpickle/_pickle_27.c'],
+                 )
+        ]
 else:
-    sources = []
+    ext_modules = []
 
 setup(
     name='zodbpickle',
@@ -57,10 +61,7 @@ setup(
     platforms=['any'],
     packages=find_packages('src'),
     package_dir = {'':'src'},
-    ext_modules = [
-        Extension(name='zodbpickle._pickle',
-                  sources=sources)
-        ],
+    ext_modules = ext_modules,
     extras_require = {
         'test': (),
         'testing': ['nose', 'coverage'],

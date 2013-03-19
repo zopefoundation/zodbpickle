@@ -1,17 +1,18 @@
 import unittest
-import pickle
-import cPickle
 import StringIO
 import cStringIO
-import pickletools
 import copy_reg
 
 from test.test_support import TestFailed, have_unicode, TESTFN
 
+from zodbpickle import pickle
+from zodbpickle import _pickle as cPickle
+from zodbpickle import pickletools
+
 # Tests that try a number of pickle protocols should have a
 #     for proto in protocols:
 # kind of outer loop.
-assert pickle.HIGHEST_PROTOCOL == cPickle.HIGHEST_PROTOCOL == 2
+assert pickle.HIGHEST_PROTOCOL == cPickle.HIGHEST_PROTOCOL == 3
 protocols = range(pickle.HIGHEST_PROTOCOL + 1)
 
 # Copy of test.test_support.run_with_locale. This is needed to support Python
@@ -413,7 +414,7 @@ def create_data():
     x.append(5)
     return x
 
-class AbstractPickleTests(unittest.TestCase):
+class _AbstractPickleTests(unittest.TestCase):
     # Subclass must define self.dumps, self.loads, self.error.
 
     _testdata = create_data()
@@ -460,15 +461,15 @@ class AbstractPickleTests(unittest.TestCase):
     # there's a comment with an exclamation point there whose meaning
     # is a mystery.  cPickle also suppresses PUT for objects with a refcount
     # of 1.
-    def dont_test_disassembly(self):
-        from pickletools import dis
-
-        for proto, expected in (0, DATA0_DIS), (1, DATA1_DIS):
-            s = self.dumps(self._testdata, proto)
-            filelike = cStringIO.StringIO()
-            dis(s, out=filelike)
-            got = filelike.getvalue()
-            self.assertEqual(expected, got)
+    #def dont_test_disassembly(self):
+    #    from pickletools import dis
+    #
+    #   for proto, expected in (0, DATA0_DIS), (1, DATA1_DIS):
+    #       s = self.dumps(self._testdata, proto)
+    #       filelike = cStringIO.StringIO()
+    #       dis(s, out=filelike)
+    #       got = filelike.getvalue()
+    #       self.assertEqual(expected, got)
 
     def test_recursive_list(self):
         l = []
@@ -689,6 +690,26 @@ class AbstractPickleTests(unittest.TestCase):
             self.assertEqual(x, y)
             self.assertEqual(opcode_in_pickle(pickle.LONG4, s), proto >= 2)
 
+    def test_shortbinbytes(self):
+        from zodbpickle import binary
+        x = binary(b'\x00ABC\x80')
+        for proto in protocols:
+            s = self.dumps(x, proto)
+            y = self.loads(s)
+            self.assertEqual(x, y)
+            self.assertEqual(opcode_in_pickle(pickle.SHORT_BINBYTES, s),
+                             proto >= 3, str(self.__class__))
+
+    def test_binbytes(self):
+        from zodbpickle import binary
+        x = binary(b'\x00ABC\x80' * 100)
+        for proto in protocols:
+            s = self.dumps(x, proto)
+            y = self.loads(s)
+            self.assertEqual(x, y)
+            self.assertEqual(opcode_in_pickle(pickle.BINBYTES, s),
+                             proto >= 3, str(self.__class__))
+
     def test_short_tuples(self):
         # Map (proto, len(tuple)) to expected opcode.
         expected_opcode = {(0, 0): pickle.TUPLE,
@@ -708,6 +729,12 @@ class AbstractPickleTests(unittest.TestCase):
                            (2, 2): pickle.TUPLE2,
                            (2, 3): pickle.TUPLE3,
                            (2, 4): pickle.TUPLE,
+
+                           (3, 0): pickle.EMPTY_TUPLE,
+                           (3, 1): pickle.TUPLE1,
+                           (3, 2): pickle.TUPLE2,
+                           (3, 3): pickle.TUPLE3,
+                           (3, 4): pickle.TUPLE,
                           }
         a = ()
         b = (1,)
@@ -727,14 +754,17 @@ class AbstractPickleTests(unittest.TestCase):
         expected_opcode = {(0, None): pickle.NONE,
                            (1, None): pickle.NONE,
                            (2, None): pickle.NONE,
+                           (3, None): pickle.NONE,
 
                            (0, True): pickle.INT,
                            (1, True): pickle.INT,
                            (2, True): pickle.NEWTRUE,
+                           (3, True): pickle.NEWTRUE,
 
                            (0, False): pickle.INT,
                            (1, False): pickle.INT,
                            (2, False): pickle.NEWFALSE,
+                           (3, False): pickle.NEWFALSE,
                           }
         for proto in protocols:
             for x in None, False, True:
@@ -1068,7 +1098,7 @@ class SimpleNewObj(object):
         # raise an error, to make sure this isn't called
         raise TypeError("SimpleNewObj.__init__() didn't expect to get called")
 
-class AbstractPickleModuleTests(unittest.TestCase):
+class _AbstractPickleModuleTests(unittest.TestCase):
 
     def test_dump_closed_file(self):
         import os
@@ -1098,7 +1128,7 @@ class AbstractPickleModuleTests(unittest.TestCase):
 
     def test_highest_protocol(self):
         # Of course this needs to be changed when HIGHEST_PROTOCOL changes.
-        self.assertEqual(self.module.HIGHEST_PROTOCOL, 2)
+        self.assertEqual(self.module.HIGHEST_PROTOCOL, 3)
 
     def test_callapi(self):
         f = cStringIO.StringIO()
@@ -1116,10 +1146,10 @@ class AbstractPickleModuleTests(unittest.TestCase):
 
     def test_restricted(self):
         # issue7128: cPickle failed in restricted mode
-        builtins = {self.module.__name__: self.module,
+        builtins = {'pickleme': self.module,
                     '__import__': __import__}
         d = {}
-        teststr = "def f(): {0}.dumps(0)".format(self.module.__name__)
+        teststr = "def f(): pickleme.dumps(0)"
         exec teststr in {'__builtins__': builtins}, d
         d['f']()
 
@@ -1133,7 +1163,7 @@ class AbstractPickleModuleTests(unittest.TestCase):
         self.assertRaises((IndexError, cPickle.UnpicklingError),
                           self.module.loads, s)
 
-class AbstractPersistentPicklerTests(unittest.TestCase):
+class _AbstractPersistentPicklerTests(unittest.TestCase):
 
     # This class defines persistent_id() and persistent_load()
     # functions that should be used by the pickler.  All even integers
@@ -1168,7 +1198,7 @@ class AbstractPersistentPicklerTests(unittest.TestCase):
         self.assertEqual(self.id_count, 5)
         self.assertEqual(self.load_count, 5)
 
-class AbstractPicklerUnpicklerObjectTests(unittest.TestCase):
+class _AbstractPicklerUnpicklerObjectTests(unittest.TestCase):
 
     pickler_class = None
     unpickler_class = None

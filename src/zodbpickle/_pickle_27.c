@@ -15,7 +15,8 @@ PyDoc_STRVAR(cPickle_module_documentation,
 #define WRITE_BUF_SIZE 256
 
 /* Bump this when new opcodes are added to the pickle protocol. */
-#define HIGHEST_PROTOCOL 2
+#define HIGHEST_PROTOCOL 3
+#define DEFAULT_PROTOCOL 3
 
 /*
  * Note: The UNICODE macro controls the TCHAR meaning of the win32 API. Since
@@ -85,6 +86,10 @@ PyDoc_STRVAR(cPickle_module_documentation,
 #define LONG1    '\x8a' /* push long from < 256 bytes */
 #define LONG4    '\x8b' /* push really big long */
 
+/* Protocol 3. */
+#define BINBYTES        'B'
+#define SHORT_BINBYTES  'C'
+
 /* There aren't opcodes -- they're ways to pickle bools before protocol 2,
  * so that unpicklers written before bools were introduced unpickle them
  * as ints, but unpicklers after can recognize that bools were intended.
@@ -109,6 +114,7 @@ static PyObject *PicklingError;
 static PyObject *UnpickleableError;
 static PyObject *UnpicklingError;
 static PyObject *BadPickleGet;
+static PyObject *BinaryType;  /* from zodbpickle import binary */
 
 /* As the name says, an empty tuple. */
 static PyObject *empty_tuple;
@@ -159,7 +165,7 @@ Pdata_dealloc(Pdata *self)
 }
 
 static PyTypeObject PdataType = {
-    PyVarObject_HEAD_INIT(NULL, 0) "cPickle.Pdata", sizeof(Pdata), 0,
+    PyVarObject_HEAD_INIT(NULL, 0) "_pickle.Pdata", sizeof(Pdata), 0,
     (destructor)Pdata_dealloc,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0L,0L,0L,0L, ""
 };
@@ -1195,6 +1201,112 @@ done:
     }
 
     return 0;
+}
+
+static int
+save_reduce(Picklerobject *self, PyObject *args, PyObject *fn, PyObject *ob);
+
+static int
+save_bytes(Picklerobject *self, PyObject *obj)
+{
+    if (self->proto < 3) {
+        /* Older pickle protocols do not have an opcode for pickling bytes
+           objects. Therefore, we need to fake the copy protocol (i.e.,
+           the __reduce__ method) to permit bytes object unpickling.
+
+           Here we use a hack to be compatible with Python 2. Since in Python
+           2 'bytes' is just an alias for 'str' (which has different
+           parameters than the actual bytes object), we use codecs.encode
+           to create the appropriate 'str' object when unpickled using
+           Python 2 *and* the appropriate 'bytes' object when unpickled
+           using Python 3. Again this is a hack and we don't need to do this
+           with newer protocols. */
+        static PyObject *codecs_encode = NULL;
+        PyObject *reduce_value = NULL;
+        int status;
+
+        if (codecs_encode == NULL) {
+            PyObject *codecs_module = PyImport_ImportModule("codecs");
+            if (codecs_module == NULL) {
+                return -1;
+            }
+            codecs_encode = PyObject_GetAttrString(codecs_module, "encode");
+            Py_DECREF(codecs_module);
+            if (codecs_encode == NULL) {
+                return -1;
+            }
+        }
+
+        if (PyBytes_GET_SIZE(obj) == 0) {
+            reduce_value = Py_BuildValue("(O())", (PyObject*)&PyBytes_Type);
+        }
+        else {
+            static PyObject *latin1 = NULL;
+            PyObject *unicode_str =
+                PyUnicode_DecodeLatin1(PyBytes_AS_STRING(obj),
+                                       PyBytes_GET_SIZE(obj),
+                                       "strict");
+            if (unicode_str == NULL)
+                return -1;
+            if (latin1 == NULL) {
+                latin1 = PyString_InternFromString("latin1");
+                if (latin1 == NULL)
+                    return -1;
+            }
+            reduce_value = Py_BuildValue("(O(OO))",
+                                         codecs_encode, unicode_str, latin1);
+            Py_DECREF(unicode_str);
+        }
+
+        if (reduce_value == NULL)
+            return -1;
+
+        /* save_reduce() will memoize the object automatically. */
+        status = save_reduce(self, reduce_value, NULL, obj);
+        Py_DECREF(reduce_value);
+        return status;
+    }
+    else {
+        Py_ssize_t size;
+        char header[5];
+        Py_ssize_t len;
+
+        size = PyBytes_GET_SIZE(obj);
+        if (size < 0)
+            return -1;
+
+        if (size < 256) {
+            header[0] = SHORT_BINBYTES;
+            header[1] = (unsigned char)size;
+            len = 2;
+        }
+        else if (size <= 0xffffffffL) {
+            header[0] = BINBYTES;
+            header[1] = (unsigned char)(size & 0xff);
+            header[2] = (unsigned char)((size >> 8) & 0xff);
+            header[3] = (unsigned char)((size >> 16) & 0xff);
+            header[4] = (unsigned char)((size >> 24) & 0xff);
+            len = 5;
+        }
+        else {
+            PyErr_SetString(PyExc_OverflowError,
+                            "cannot serialize a bytes object larger than 4GB");
+            return -1;          /* bytes too large */
+        }
+
+        if (self->write_func(self, header, len) < 0)
+            return -1;
+
+        if (self->write_func(self, PyBytes_AS_STRING(obj), size) < 0)
+            return -1;
+
+        /*
+        if (memo_put(self, obj) < 0)
+            return -1;
+        */
+
+        return 0;
+    }
 }
 
 
@@ -2345,6 +2457,7 @@ save_pers(Picklerobject *self, PyObject *args, PyObject *f)
     return res;
 }
 
+
 /* We're saving ob, and args is the 2-thru-5 tuple returned by the
  * appropriate __reduce__ method for ob.
  */
@@ -2550,8 +2663,13 @@ save(Picklerobject *self, PyObject *args, int pers_save)
 
     type = Py_TYPE(args);
 
+
     switch (type->tp_name[0]) {
     case 'b':
+        if (strcmp(type->tp_name, "binary") == 0) {
+            res = save_bytes(self, args);
+            goto finally;
+        }
         if (args == Py_False || args == Py_True) {
             res = save_bool(self, args);
             goto finally;
@@ -3104,7 +3222,7 @@ get_Pickler(PyObject *self, PyObject *args, PyObject *kwds)
      */
     if (!PyArg_ParseTuple(args, "|i:Pickler", &proto)) {
         PyErr_Clear();
-        proto = 0;
+        proto = DEFAULT_PROTOCOL;
         if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|i:Pickler",
                     kwlist, &file, &proto))
             return NULL;
@@ -3251,7 +3369,7 @@ PyDoc_STRVAR(Picklertype__doc__,
 
 static PyTypeObject Picklertype = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "cPickle.Pickler",            /*tp_name*/
+    "_pickle.Pickler",            /*tp_name*/
     sizeof(Picklerobject),              /*tp_basicsize*/
     0,
     (destructor)Pickler_dealloc,        /* tp_dealloc */
@@ -3682,6 +3800,79 @@ load_short_binstring(Unpicklerobject *self)
     if (!( py_string = PyString_FromStringAndSize(s, l)))  return -1;
 
     PDATA_PUSH(self->stack, py_string, -1);
+    return 0;
+}
+
+
+static int
+load_binbytes(Unpicklerobject *self)
+{
+    PyObject *py_string = 0;
+    PyObject *py_binary = 0;
+    PyObject *args = 0;
+    long l;
+    char *s;
+
+    if (self->read_func(self, &s, 4) < 0) return -1;
+
+    l = calc_binint(s, 4);
+    if (l < 0) {
+        /* Corrupt or hostile pickle -- we never write one like
+         * this.
+         */
+        PyErr_SetString(UnpicklingError,
+                        "BINBYTES pickle has negative byte count");
+        return -1;
+    }
+
+    if (self->read_func(self, &s, l) < 0)
+        return -1;
+
+    if (!( py_string = PyString_FromStringAndSize(s, l)))
+        return -1;
+
+    if (!( args = PyTuple_New(1) ))
+        return -1;
+
+    if (!(PyTuple_SET_ITEM(args, 0, py_string)))
+        return -1;
+
+    if (!( py_binary = PyObject_CallObject(BinaryType, args)))
+        return -1;
+
+    PDATA_PUSH(self->stack, py_binary, -1);
+    return 0;
+}
+
+
+static int
+load_short_binbytes(Unpicklerobject *self)
+{
+    PyObject *py_string = 0;
+    PyObject *py_binary = 0;
+    PyObject *args = 0;
+    unsigned char l;
+    char *s;
+
+    if (self->read_func(self, &s, 1) < 0)
+        return -1;
+
+    l = (unsigned char)s[0];
+
+    if (self->read_func(self, &s, l) < 0) return -1;
+
+    if (!( py_string = PyString_FromStringAndSize(s, l)))  return -1;
+
+    if (!( args = PyTuple_New(1) ))
+        return -1;
+
+    if (!(PyTuple_SET_ITEM(args, 0, py_string)))
+        return -1;
+
+    if (!( py_binary = PyObject_CallObject(BinaryType, args)))
+        return -1;
+
+    PDATA_PUSH(self->stack, py_binary, -1);
     return 0;
 }
 
@@ -4744,6 +4935,16 @@ load(Unpicklerobject *self)
                 break;
             continue;
 
+        case BINBYTES:
+            if (load_binbytes(self) < 0)
+                break;
+            continue;
+
+        case SHORT_BINBYTES:
+            if (load_short_binbytes(self) < 0)
+                break;
+            continue;
+
         case STRING:
             if (load_string(self) < 0)
                 break;
@@ -5747,7 +5948,7 @@ PyDoc_STRVAR(Unpicklertype__doc__,
 
 static PyTypeObject Unpicklertype = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "cPickle.Unpickler",                 /*tp_name*/
+    "_pickle.Unpickler",                 /*tp_name*/
     sizeof(Unpicklerobject),             /*tp_basicsize*/
     0,
     (destructor)Unpickler_dealloc,      /* tp_dealloc */
@@ -5897,13 +6098,13 @@ init_stuff(PyObject *module_dict)
                    module_dict, t)  ))  return -1;
     Py_DECREF(r);
 
-    PickleError = PyErr_NewException("cPickle.PickleError", NULL, t);
+    PickleError = PyErr_NewException("_pickle.PickleError", NULL, t);
     if (!PickleError)
         return -1;
 
     Py_DECREF(t);
 
-    PicklingError = PyErr_NewException("cPickle.PicklingError",
+    PicklingError = PyErr_NewException("_pickle.PicklingError",
                                        PickleError, NULL);
     if (!PicklingError)
         return -1;
@@ -5919,16 +6120,16 @@ init_stuff(PyObject *module_dict)
     Py_DECREF(r);
 
     if (!( UnpickleableError = PyErr_NewException(
-                   "cPickle.UnpickleableError", PicklingError, t)))
+                   "_pickle.UnpickleableError", PicklingError, t)))
         return -1;
 
     Py_DECREF(t);
 
-    if (!( UnpicklingError = PyErr_NewException("cPickle.UnpicklingError",
+    if (!( UnpicklingError = PyErr_NewException("_pickle.UnpicklingError",
                                                 PickleError, NULL)))
         return -1;
 
-    if (!( BadPickleGet = PyErr_NewException("cPickle.BadPickleGet",
+    if (!( BadPickleGet = PyErr_NewException("_pickle.BadPickleGet",
                                              UnpicklingError, NULL)))
         return -1;
 
@@ -5961,7 +6162,7 @@ init_stuff(PyObject *module_dict)
 #define PyMODINIT_FUNC void
 #endif
 PyMODINIT_FUNC
-initcPickle(void)
+init_pickle(void)
 {
     PyObject *m, *d, *di, *v, *k;
     Py_ssize_t i;
@@ -5981,7 +6182,7 @@ initcPickle(void)
     if (init_stuff(di) < 0) return;
 
     /* Create the module and add the functions */
-    m = Py_InitModule4("cPickle", cPickle_methods,
+    m = Py_InitModule4("_pickle", cPickle_methods,
                        cPickle_module_documentation,
                        (PyObject*)NULL,PYTHON_API_VERSION);
     if (m == NULL)
@@ -6005,6 +6206,18 @@ initcPickle(void)
     i = PyModule_AddIntConstant(m, "HIGHEST_PROTOCOL", HIGHEST_PROTOCOL);
     if (i < 0)
         return;
+
+    if (BinaryType == NULL) {
+        PyObject *zodbpickle_module = PyImport_ImportModule("zodbpickle");
+        if (zodbpickle_module == NULL) {
+            return -1;
+        }
+        BinaryType = PyObject_GetAttrString(zodbpickle_module, "binary");
+        Py_DECREF(zodbpickle_module);
+        if (BinaryType == NULL) {
+            return -1;
+        }
+    }
 
     /* These are purely informational; no code uses them. */
     /* File format version we write. */

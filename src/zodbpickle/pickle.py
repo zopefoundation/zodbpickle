@@ -44,11 +44,13 @@ compatible_formats = ["1.0",            # Original protocol 0
                       "1.2",            # Original protocol 1
                       "1.3",            # Protocol 1 with BINFLOAT added
                       "2.0",            # Protocol 2
+                      "3.0",            # Protocol 3
                       ]                 # Old format versions we can read
 
 # Keep in synch with cPickle.  This is the highest protocol number we
 # know how to read.
-HIGHEST_PROTOCOL = 2
+HIGHEST_PROTOCOL = 3
+DEFAULT_PROTOCOL = 3
 
 # Why use struct.pack() for pickling but marshal.loads() for
 # unpickling?  struct.pack() is 40% faster than marshal.dumps(), but
@@ -159,6 +161,13 @@ NEWFALSE        = '\x89'  # push False
 LONG1           = '\x8a'  # push long from < 256 bytes
 LONG4           = '\x8b'  # push really big long
 
+# Protocol 3
+
+BINBYTES        = 'B'
+SHORT_BINBYTES  = 'C'
+
+from zodbpickle import binary as BinaryType
+
 _tuplesize2code = [EMPTY_TUPLE, TUPLE1, TUPLE2, TUPLE3]
 
 
@@ -195,7 +204,7 @@ class Pickler:
 
         """
         if protocol is None:
-            protocol = 0
+            protocol = DEFAULT_PROTOCOL
         if protocol < 0:
             protocol = HIGHEST_PROTOCOL
         elif not 0 <= protocol <= HIGHEST_PROTOCOL:
@@ -687,8 +696,22 @@ class Pickler:
                 write(SETITEM)
             # else tmp is empty, and we're done
 
+    def save_binary(self, obj, pack=struct.pack):
+        if self.proto >= 3:
+            n = len(obj)
+            if n < 256:
+                self.write(SHORT_BINBYTES + chr(n) + obj)
+            else:
+                self.write(BINBYTES + pack("<i", n) + obj)
+            self.memoize(obj)
+        else:
+            self.save_string(obj)
+    dispatch[BinaryType] = save_binary
+
     def save_inst(self, obj):
         cls = obj.__class__
+        if cls is BinaryType:
+            return self.save_binary(obj)
 
         memo  = self.memo
         write = self.write
@@ -882,7 +905,7 @@ class Unpickler:
 
     def load_proto(self):
         proto = ord(self.read(1))
-        if not 0 <= proto <= 2:
+        if not 0 <= proto <= HIGHEST_PROTOCOL:
             raise ValueError, "unsupported pickle protocol: %d" % proto
     dispatch[PROTO] = load_proto
 
@@ -976,6 +999,11 @@ class Unpickler:
         self.append(self.read(len))
     dispatch[BINSTRING] = load_binstring
 
+    def load_binbytes(self):
+        len = mloads('i' + self.read(4))
+        self.append(BinaryType(self.read(len)))
+    dispatch[BINBYTES] = load_binbytes
+
     def load_unicode(self):
         self.append(unicode(self.readline()[:-1],'raw-unicode-escape'))
     dispatch[UNICODE] = load_unicode
@@ -989,6 +1017,11 @@ class Unpickler:
         len = ord(self.read(1))
         self.append(self.read(len))
     dispatch[SHORT_BINSTRING] = load_short_binstring
+
+    def load_short_binbytes(self):
+        len = ord(self.read(1))
+        self.append(BinaryType(self.read(len)))
+    dispatch[SHORT_BINBYTES] = load_short_binbytes
 
     def load_tuple(self):
         k = self.marker()
