@@ -22,7 +22,9 @@ README = (open(os.path.join(here, 'README.rst')).read()
           + '\n\n' +
           open(os.path.join(here, 'CHANGES.rst')).read())
 
-if sys.version_info[:2] == (3, 2):
+if sys.version_info[:1] < (3,):
+    EXT = 'src/zodbpickle/_pickle_27.c'
+elif sys.version_info[:2] == (3, 2):
     EXT = 'src/zodbpickle/_pickle_32.c'
 else:
     EXT = 'src/zodbpickle/_pickle_33.c'
