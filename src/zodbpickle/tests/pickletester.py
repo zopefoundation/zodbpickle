@@ -29,7 +29,6 @@ except ImportError:
         return wrapper
 
 _PY33 = sys.version_info[:2] >= (3, 3)
-_PY2 = sys.version_info[0] < 3
 
 from zodbpickle.pickle import bytes_types
 
@@ -817,28 +816,6 @@ class AbstractPickleTests(unittest.TestCase):
             y = self.loads(s)
             self.assertEqual(x, y)
             self.assertEqual(opcode_in_pickle(pickle.LONG4, s), proto >= 2)
-
-    @unittest.skipUnless(_PY2, "only for Python 2")
-    def test_shortbinbytes_custom_binary(self):
-        from zodbpickle import binary
-        x = binary(b'\x00ABC\x80')
-        for proto in protocols:
-            s = self.dumps(x, proto)
-            y = self.loads(s)
-            self.assertEqual(x, y)
-            self.assertEqual(opcode_in_pickle(pickle.SHORT_BINBYTES, s),
-                             proto >= 3, str(self.__class__))
-
-    @unittest.skipUnless(_PY2, "only for Python 2")
-    def test_binbytes_custom_binary(self):
-        from zodbpickle import binary
-        x = binary(b'\x00ABC\x80' * 100)
-        for proto in protocols:
-            s = self.dumps(x, proto)
-            y = self.loads(s)
-            self.assertEqual(x, y)
-            self.assertEqual(opcode_in_pickle(pickle.BINBYTES, s),
-                             proto >= 3, str(self.__class__))
 
     def test_short_tuples(self):
         # Map (proto, len(tuple)) to expected opcode.
