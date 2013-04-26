@@ -4,7 +4,8 @@ import sys
 import copyreg
 import weakref
 from http.cookies import SimpleCookie
-from zodbpickle import pickle, pickletools
+from zodbpickle import pickle_3 as pickle
+from zodbpickle import pickletools_3 as pickletools
 
 from test.support import (
     TestFailed, TESTFN, run_with_locale,
