@@ -31,7 +31,7 @@ except ImportError:
 
 _PY33 = sys.version_info[:2] >= (3, 3)
 
-from zodbpickle.pickle import bytes_types
+from zodbpickle.pickle_3 import bytes_types
 
 # Tests that try a number of pickle protocols should have a
 #     for proto in protocols:

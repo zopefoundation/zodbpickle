@@ -2,6 +2,10 @@
 #include "cStringIO.h"
 #include "structmember.h"
 
+#if PY_MAJOR_VERSION >= 3
+#error Python2 only
+#endif
+
 PyDoc_STRVAR(cPickle_module_documentation,
 "C implementation and optimization of the Python pickle module.");
 
@@ -1174,6 +1178,20 @@ save_float(Picklerobject *self, PyObject *args)
         if (self->write_func(self, str, 9) < 0)
             return -1;
     }
+#if PY_MINOR_VERSION < 7
+    else {
+        char c_str[250];
+        c_str[0] = FLOAT;
+        PyOS_ascii_formatd(c_str + 1, sizeof(c_str) - 2, "%.17g", x);
+        /* Extend the formatted string with a newline character */
+        strcat(c_str, "\n");
+
+        if (self->write_func(self, c_str, strlen(c_str)) < 0)
+            return -1;
+    }
+
+    return 0;
+#else
     else {
         int result = -1;
         char *buf = NULL;
@@ -1201,6 +1219,7 @@ done:
     }
 
     return 0;
+#endif
 }
 
 static int
@@ -3666,7 +3685,19 @@ load_float(Unpicklerobject *self)
     if (len < 2) return bad_readline();
     if (!( s=pystrndup(s,len)))  return -1;
 
+#if PY_MINOR_VERSION < 7
+    errno = 0;
+    d = PyOS_ascii_strtod(s, &endptr);
+
+    if ((errno == ERANGE && !(fabs(d) <= 1.0)) ||
+        (endptr[0] != '\n') || (endptr[1] != '\0')) {
+        PyErr_SetString(PyExc_ValueError,
+                        "could not convert string to float");
+        goto finally;
+    }
+#else
     d = PyOS_string_to_double(s, &endptr, PyExc_OverflowError);
+#endif
 
     if (d == -1.0 && PyErr_Occurred()) {
         goto finally;

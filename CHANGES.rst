@@ -4,6 +4,11 @@ CHANGES
 0.4 (unreleased)
 ----------------
 
+- Support the common pickle module interface for Python 2.6, 2.7, 3.2, and 3.3.
+
+- Split the Python implementations / tests into Python2- and Py3k-specific
+  variants.
+
 - Added a fork of the Python 2.7 ``_pickle.c``, for use under Python2.
   The fork adds support for the Py3k ``protocol 3`` opcodes.
 
