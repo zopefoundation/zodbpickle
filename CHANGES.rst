@@ -4,6 +4,14 @@ CHANGES
 0.4 (unreleased)
 ----------------
 
+- Added a fork of the Python 2.7 ``_pickle.c``, for use under Python2.
+  The fork adds support for the Py3k ``protocol 3`` opcodes.
+
+- Added a custom ``binary`` type for use in Python2 apps.
+  Derived from ``bytes``, the ``binary`` type allows Python2 apps to pickle
+  binary data using opcodes which will cause it to be unpickled as ``bytes``
+  on Py3k.  Under Py3k, the ``binary`` type is just an alias for ``bytes``.
+
 0.3 (2013-03-18)
 ----------------
 
