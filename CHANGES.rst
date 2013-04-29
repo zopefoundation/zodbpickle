@@ -1,7 +1,7 @@
 ``zodbpickle`` Changelog
 ========================
 
-0.4 (unreleased)
+0.4 (2013-04-28)
 ----------------
 
 - Support the common pickle module interface for Python 2.6, 2.7, 3.2, and 3.3.
