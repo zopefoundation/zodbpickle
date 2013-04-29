@@ -17,8 +17,7 @@ if sys.version_info[0] >= 3:
         # needed by pickletester
         bytes_types
     )
-
-if sys.version_info[0] >= 3:
+else:
     from .pickle_2 import (
         PickleError,
         PicklingError,
@@ -29,6 +28,4 @@ if sys.version_info[0] >= 3:
         dumps,
         load,
         loads,
-        #
-        bytes_types
     )
