@@ -1,7 +1,7 @@
 ``zodbpickle`` Changelog
 ========================
 
-0.4.1 (unreleased)
+0.4.1 (2013-04-29)
 ------------------
 
 - Fix typo in Python2 version of ``zodbpickle.pickle`` module.
