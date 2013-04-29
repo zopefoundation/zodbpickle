@@ -1,9 +1,17 @@
-ZODB Pickle
-===========
+``zodbpickle`` README
+=====================
 
-This package is a fork of Python 3.3's pickle module, including its C
-optimizations. There are several changes so that ZODBs can be used using
-Python 2 and Python 3 code.
+This package presents a uniform pickling interface for ZODB:
+
+- Under Python2, this package forks both Python 2.7's ``pickle`` and
+  ``cPickle`` modules, adding support for the ``protocol 3`` opcodes.
+  It also provides a new subclass of ``bytes``, ``zodbpickle.binary``,
+  which Python2 applications can use to pickle binary values such that
+  they will be unpickled as ``bytes`` under Py3k.
+
+- Under Py3k, this package forks the ``pickle`` moudule (and the supporting
+  C extension) from both Python 3.2 and Python 3.3.  The fork add support
+  for the ``noload`` operations used by ZODB.
 
 
 Loading/Storing Python 2 Strings
