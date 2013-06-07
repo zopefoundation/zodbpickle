@@ -4,7 +4,10 @@
 0.5 (unreleased)
 ----------------
 
-- TBD
+- Removed support for the ``bytes_as_strings`` arguments to pickling APIs:
+  the pickles created when that argument was true might not be unpickled
+  without passing ``encoding='bytes'``, which ZODB couldn't reliably enforce.
+  On Py3k, ZODB will be using ``protocol=3`` pickles anyway.
 
 0.4.1 (2013-04-29)
 ------------------
