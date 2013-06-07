@@ -1339,7 +1339,7 @@ class _Unpickler(object):
 
     def noload_appends(self):
         mark = self.marker()
-        del stack[mark:]
+        del self.stack[mark:]
     nl_dispatch[APPENDS[0]] = noload_appends
 
     def noload_setitem(self):
@@ -1349,7 +1349,7 @@ class _Unpickler(object):
 
     def noload_setitems(self):
         mark = self.marker()
-        del stack[mark:]
+        del self.stack[mark:]
     nl_dispatch[SETITEMS[0]] = noload_setitems
 
     def noload_reduce(self):
