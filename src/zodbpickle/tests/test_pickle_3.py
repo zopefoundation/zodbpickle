@@ -6,15 +6,15 @@ import sys
 
 from test import support
 
-from .pickletester_3 import AbstractPickleTests
-from .pickletester_3 import AbstractPickleModuleTests
-from .pickletester_3 import AbstractPersistentPicklerTests
-from .pickletester_3 import AbstractPicklerUnpicklerObjectTests
-from .pickletester_3 import AbstractDispatchTableTests
-from .pickletester_3 import BigmemPickleTests
-from .pickletester_3 import AbstractBytestrTests
-from .pickletester_3 import AbstractBytesFallbackTests
-from .pickletester_3 import AbstractBytesAsStringTests
+from .pickletester_3 import _AbstractPickleTests
+from .pickletester_3 import _AbstractPickleModuleTests
+from .pickletester_3 import _AbstractPersistentPicklerTests
+from .pickletester_3 import _AbstractPicklerUnpicklerObjectTests
+from .pickletester_3 import _AbstractDispatchTableTests
+from .pickletester_3 import _BigmemPickleTests
+from .pickletester_3 import _AbstractBytestrTests
+from .pickletester_3 import _AbstractBytesFallbackTests
+from .pickletester_3 import _AbstractBytesAsStringTests
 
 from zodbpickle import pickle_3 as pickle
 
@@ -26,7 +26,7 @@ else:
     has_c_implementation = True
 
 
-class PickleTests(AbstractPickleModuleTests):
+class PickleTests(_AbstractPickleModuleTests):
     pass
 
 
@@ -47,19 +47,19 @@ class PyPicklerBase(object):
         u = self.unpickler(f, **kwds)
         return u.load()
 
-class PyPicklerTests(PyPicklerBase, AbstractPickleTests):
+class PyPicklerTests(PyPicklerBase, _AbstractPickleTests):
     pass
 
-class PyPicklerBytestrTests(PyPicklerBase, AbstractBytestrTests):
+class PyPicklerBytestrTests(PyPicklerBase, _AbstractBytestrTests):
     pass
 
-class PyPicklerBytesFallbackTests(PyPicklerBase, AbstractBytesFallbackTests):
+class PyPicklerBytesFallbackTests(PyPicklerBase, _AbstractBytesFallbackTests):
     pass
 
-class PyPicklerBytesAsStringTests(PyPicklerBase, AbstractBytesAsStringTests):
+class PyPicklerBytesAsStringTests(PyPicklerBase, _AbstractBytesAsStringTests):
     pass
 
-class InMemoryPickleTests(AbstractPickleTests, BigmemPickleTests):
+class InMemoryPickleTests(_AbstractPickleTests, _BigmemPickleTests):
 
     pickler = pickle._Pickler
     unpickler = pickle._Unpickler
@@ -71,7 +71,7 @@ class InMemoryPickleTests(AbstractPickleTests, BigmemPickleTests):
         return pickle.loads(buf, **kwds)
 
 
-class PyPersPicklerTests(AbstractPersistentPicklerTests):
+class PyPersPicklerTests(_AbstractPersistentPicklerTests):
 
     pickler = pickle._Pickler
     unpickler = pickle._Unpickler
@@ -95,20 +95,20 @@ class PyPersPicklerTests(AbstractPersistentPicklerTests):
         return u.load()
 
 
-class PyPicklerUnpicklerObjectTests(AbstractPicklerUnpicklerObjectTests):
+class PyPicklerUnpicklerObjectTests(_AbstractPicklerUnpicklerObjectTests):
 
     pickler_class = pickle._Pickler
     unpickler_class = pickle._Unpickler
 
 
 if sys.version_info >= (3, 3):
-    class PyDispatchTableTests(AbstractDispatchTableTests):
+    class PyDispatchTableTests(_AbstractDispatchTableTests):
         pickler_class = pickle._Pickler
         def get_dispatch_table(self):
             return pickle.dispatch_table.copy()
 
 
-    class PyChainDispatchTableTests(AbstractDispatchTableTests):
+    class PyChainDispatchTableTests(_AbstractDispatchTableTests):
         pickler_class = pickle._Pickler
         def get_dispatch_table(self):
             return collections.ChainMap({}, pickle.dispatch_table)
@@ -143,17 +143,17 @@ if has_c_implementation:
         pickler = pickle._Pickler
         unpickler = _pickle.Unpickler
 
-    class CPicklerUnpicklerObjectTests(AbstractPicklerUnpicklerObjectTests):
+    class CPicklerUnpicklerObjectTests(_AbstractPicklerUnpicklerObjectTests):
         pickler_class = _pickle.Pickler
         unpickler_class = _pickle.Unpickler
 
     if sys.version_info >= (3, 3):
-        class CDispatchTableTests(AbstractDispatchTableTests):
+        class CDispatchTableTests(_AbstractDispatchTableTests):
             pickler_class = pickle.Pickler
             def get_dispatch_table(self):
                 return pickle.dispatch_table.copy()
 
-        class CChainDispatchTableTests(AbstractDispatchTableTests):
+        class CChainDispatchTableTests(_AbstractDispatchTableTests):
             pickler_class = pickle.Pickler
             def get_dispatch_table(self):
                 return collections.ChainMap({}, pickle.dispatch_table)
@@ -183,11 +183,3 @@ def test_suite():
     ] + [
         doctest.DocTestSuite(pickle),
     ])
-
-def test_main():
-    tests = choose_tests()
-    support.run_unittest(*tests)
-    support.run_doctest(pickle)
-
-if __name__ == "__main__":
-    test_main()

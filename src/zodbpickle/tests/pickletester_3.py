@@ -447,7 +447,7 @@ def create_data():
     x.append(5)
     return x
 
-class AbstractPickleTests(unittest.TestCase):
+class _AbstractPickleTests(unittest.TestCase):
     # Subclass must define self.dumps, self.loads.
 
     _testdata = create_data()
@@ -554,7 +554,7 @@ class AbstractPickleTests(unittest.TestCase):
     # there's a comment with an exclamation point there whose meaning
     # is a mystery.  cPickle also suppresses PUT for objects with a refcount
     # of 1.
-    def dont_test_disassembly(self):
+    def _dont_test_disassembly(self):
         from io import StringIO
         from pickletools import dis
 
@@ -1228,7 +1228,7 @@ class AbstractPickleTests(unittest.TestCase):
         dumped = b'\x80\x03X\x01\x00\x00\x00ar\xff\xff\xff\xff.'
         self.assertRaises(ValueError, self.loads, dumped)
 
-class AbstractBytestrTests(unittest.TestCase):
+class _AbstractBytestrTests(unittest.TestCase):
     def unpickleEqual(self, data, unpickled):
         loaded = self.loads(data, encoding="bytes")
         self.assertEqual(loaded, unpickled)
@@ -1282,7 +1282,7 @@ class AbstractBytestrTests(unittest.TestCase):
                 b'T,\x01\x00\x00xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxq\x00.',
                 b'x'*300)
 
-class AbstractBytesFallbackTests(unittest.TestCase):
+class _AbstractBytesFallbackTests(unittest.TestCase):
     def unpickleEqual(self, data, unpickled):
         loaded = self.loads(data, errors="bytes")
         self.assertEqual(loaded, unpickled)
@@ -1295,7 +1295,7 @@ class AbstractBytesFallbackTests(unittest.TestCase):
                 b"(dp0\nS'y'\np1\nS'\\xff'\np2\nsS'x'\np3\nS'ascii'\np4\ns.",
                 {'x': 'ascii', 'y': b'\xff'})
 
-class AbstractBytesAsStringTests(unittest.TestCase):
+class _AbstractBytesAsStringTests(unittest.TestCase):
 
     def pickleEqual(self, proto, data, pickled):
         dumped = self.dumps(data, proto, bytes_as_strings=True)
@@ -1353,7 +1353,7 @@ class AbstractBytesAsStringTests(unittest.TestCase):
         self.assertEqual(p, b"S'\\x00'\n.")
 
 
-class BigmemPickleTests(unittest.TestCase):
+class _BigmemPickleTests(unittest.TestCase):
 
     # Binary protocols can serialize longs of up to 2GB-1
 
@@ -1517,7 +1517,7 @@ class BadGetattr:
         self.foo
 
 
-class AbstractPickleModuleTests(unittest.TestCase):
+class _AbstractPickleModuleTests(unittest.TestCase):
 
     def test_dump_closed_file(self):
         import os
@@ -1577,7 +1577,7 @@ class AbstractPickleModuleTests(unittest.TestCase):
         self.assertRaises(EOFError, pickle.loads, s)
 
 
-class AbstractPersistentPicklerTests(unittest.TestCase):
+class _AbstractPersistentPicklerTests(unittest.TestCase):
 
     # This class defines persistent_id() and persistent_load()
     # functions that should be used by the pickler.  All even integers
@@ -1613,7 +1613,7 @@ class AbstractPersistentPicklerTests(unittest.TestCase):
         self.assertEqual(self.load_count, 5)
 
 
-class AbstractPicklerUnpicklerObjectTests(unittest.TestCase):
+class _AbstractPicklerUnpicklerObjectTests(unittest.TestCase):
 
     pickler_class = None
     unpickler_class = None
@@ -1825,7 +1825,7 @@ class AAA(object):
 class BBB(object):
     pass
 
-class AbstractDispatchTableTests(unittest.TestCase):
+class _AbstractDispatchTableTests(unittest.TestCase):
 
     def test_default_dispatch_table(self):
         # No dispatch_table attribute by default
