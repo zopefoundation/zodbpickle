@@ -4,8 +4,6 @@ import unittest
 import doctest
 import sys
 
-from test import support
-
 from .pickletester_3 import _AbstractPickleTests
 from .pickletester_3 import _AbstractPickleModuleTests
 from .pickletester_3 import _AbstractPersistentPicklerTests
