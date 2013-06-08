@@ -1,6 +1,11 @@
 ``zodbpickle`` Changelog
 ========================
 
+0.4.3 (2013-06-07)
+------------------
+
+- Packaging error:  remove spurious ``-ASIDE`` file from sdist.
+
 0.4.2 (2013-06-07)
 ------------------
 
