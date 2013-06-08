@@ -1295,44 +1295,6 @@ class _AbstractBytesFallbackTests(unittest.TestCase):
                 b"(dp0\nS'y'\np1\nS'\\xff'\np2\nsS'x'\np3\nS'ascii'\np4\ns.",
                 {'x': 'ascii', 'y': b'\xff'})
 
-class _AbstractBytesAsStringTests(unittest.TestCase):
-
-    def pickleEqual(self, proto, data, pickled):
-        dumped = self.dumps(data, proto, bytes_as_strings=True)
-        self.assertEqual(dumped, pickled)
-        # to unpickle these you must use either encoding='bytes' or
-        # errors='bytes'
-        unpickled = self.loads(dumped, errors='bytes')
-        self.assertEqual(unpickled, data)
-
-    def test_save_bytes(self):
-        short_bytestr = b'short byte string \xff'
-        p0_encoded = b"S'" + short_bytestr[:-1] + b"\\xff'\n."
-        p1_encoded = b'U' + bytes([len(short_bytestr)]) + short_bytestr + b'.'
-        p2_encoded = b'\x80\x02' + p1_encoded
-        self.pickleEqual(0, short_bytestr, p0_encoded)
-        self.pickleEqual(1, short_bytestr, p1_encoded)
-        self.pickleEqual(2, short_bytestr, p2_encoded)
-
-    def test_save_bytes_roundtrip(self):
-        for proto in protocols:
-            for ch in range(256):
-                data = bytes([ch])
-                pickled = self.dumps(data, proto, bytes_as_strings=True)
-                unpickled = self.loads(pickled, encoding='bytes')
-                self.assertEqual(unpickled, data)
-
-    def test_dump_dumps(self):
-        # see that the bytes_as_string kwarg is accepted everywhere
-        # (the other tests go throught the Pickler API)
-        # XXX: this is not very abstract; the only way to test the Python
-        # implementation of dump and dumps is to remove the C module
-        f = io.BytesIO()
-        pickle.dump(b'\x00', f, protocol=0, bytes_as_strings=True)
-        self.assertEqual(f.getvalue(), b"S'\\x00'\n.")
-        p = pickle.dumps(b'\x00', protocol=0, bytes_as_strings=True)
-        self.assertEqual(p, b"S'\\x00'\n.")
-
 
 class _BigmemPickleTests(unittest.TestCase):
 

@@ -339,8 +339,6 @@ typedef struct PicklerObject {
     int fast_nesting;
     int fix_imports;            /* Indicate whether Pickler should fix
                                    the name of globals for Python 2.x. */
-    int bytes_as_strings;       /* Indicate whether Pickler should pickle
-                                   bytes objects using string opcodes. */
     PyObject *fast_memo;
 } PicklerObject;
 
@@ -775,7 +773,6 @@ _Pickler_New(void)
     self->fast = 0;
     self->fast_nesting = 0;
     self->fix_imports = 0;
-    self->bytes_as_strings = 0;
     self->fast_memo = NULL;
 
     self->memo = PyMemoTable_New();
@@ -796,11 +793,10 @@ _Pickler_New(void)
 
 static int
 _Pickler_SetProtocol(PicklerObject *self, PyObject *proto_obj,
-                     PyObject *fix_imports_obj, PyObject *bytes_as_strings_obj)
+                     PyObject *fix_imports_obj)
 {
     long proto = 0;
     int fix_imports;
-    int bytes_as_strings;
 
     if (proto_obj == NULL || proto_obj == Py_None)
         proto = DEFAULT_PROTOCOL;
@@ -819,14 +815,10 @@ _Pickler_SetProtocol(PicklerObject *self, PyObject *proto_obj,
     fix_imports = PyObject_IsTrue(fix_imports_obj);
     if (fix_imports == -1)
         return -1;
-    bytes_as_strings = PyObject_IsTrue(bytes_as_strings_obj);
-    if (bytes_as_strings == -1)
-        return -1;
 
     self->proto = proto;
     self->bin = proto > 0;
     self->fix_imports = fix_imports && proto < 3;
-    self->bytes_as_strings = bytes_as_strings && proto < 3;
 
     return 0;
 }
@@ -1758,7 +1750,7 @@ done:
 static int
 save_bytes(PicklerObject *self, PyObject *obj)
 {
-    if (self->proto < 3 && !self->bytes_as_strings) {
+    if (self->proto < 3) {
         /* Older pickle protocols do not have an opcode for pickling bytes
            objects. Therefore, we need to fake the copy protocol (i.e.,
            the __reduce__ method) to permit bytes object unpickling.
@@ -1815,7 +1807,7 @@ save_bytes(PicklerObject *self, PyObject *obj)
         Py_DECREF(reduce_value);
         return status;
     }
-    else if (self->bytes_as_strings && !self->bin) {
+    else if (!self->bin) {
         const char string_op = STRING;
         PyObject *encoded = NULL;
         Py_ssize_t size;
@@ -1854,13 +1846,12 @@ save_bytes(PicklerObject *self, PyObject *obj)
             return -1;
 
         if (size < 256) {
-            header[0] = (self->bytes_as_strings ? SHORT_BINSTRING
-                                                : SHORT_BINBYTES);
+            header[0] = (SHORT_BINBYTES);
             header[1] = (unsigned char)size;
             len = 2;
         }
         else if (size <= 0xffffffffL) {
-            header[0] = (self->bytes_as_strings ? BINSTRING : BINBYTES);
+            header[0] = (BINBYTES);
             header[1] = (unsigned char)(size & 0xff);
             header[2] = (unsigned char)((size >> 8) & 0xff);
             header[3] = (unsigned char)((size >> 16) & 0xff);
@@ -3540,35 +3531,28 @@ PyDoc_STRVAR(Pickler_doc,
 "If fix_imports is True and protocol is less than 3, pickle will try to\n"
 "map the new Python 3.x names to the old module names used in Python\n"
 "2.x, so that the pickle data stream is readable with Python 2.x.\n"
-"\n"
-"If bytes_as_strings is True and protocol is less than 3, pickle\n"
-"will store byte strings as native strings, i.e. the way Python 2.x\n"
-"would've stored them.  Be aware that such pickles cannot be\n"
-"reliably unpickled on Python 3 if you do not use errors='bytes',\n"
-"and even then they might be silently converted to Unicode objects.\n");
+);
 
 static int
 Pickler_init(PicklerObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {
-        "file", "protocol", "fix_imports", "bytes_as_strings", 0};
+        "file", "protocol", "fix_imports", 0};
     PyObject *file;
     PyObject *proto_obj = NULL;
     PyObject *fix_imports = Py_True;
-    PyObject *bytes_as_strings = Py_False;
     _Py_IDENTIFIER(persistent_id);
     _Py_IDENTIFIER(dispatch_table);
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|OOO:Pickler", kwlist,
-                                     &file, &proto_obj, &fix_imports,
-                                     &bytes_as_strings))
+                                     &file, &proto_obj, &fix_imports))
         return -1;
 
     /* In case of multiple __init__() calls, clear previous content. */
     if (self->write != NULL)
         (void)Pickler_clear(self);
 
-    if (_Pickler_SetProtocol(self, proto_obj, fix_imports, bytes_as_strings) < 0)
+    if (_Pickler_SetProtocol(self, proto_obj, fix_imports) < 0)
         return -1;
 
     if (_Pickler_SetOutputStream(self, file) < 0)
@@ -6598,7 +6582,7 @@ static PyTypeObject Unpickler_Type = {
 };
 
 PyDoc_STRVAR(pickle_dump_doc,
-"dump(obj, file, protocol=None, *, fix_imports=True, bytes_as_strings=False) -> None\n"
+"dump(obj, file, protocol=None, *, fix_imports=True) -> None\n"
 "\n"
 "Write a pickled representation of obj to the open file object file.  This\n"
 "is equivalent to ``Pickler(file, protocol).dump(obj)``, but may be more\n"
@@ -6619,23 +6603,17 @@ PyDoc_STRVAR(pickle_dump_doc,
 "If fix_imports is True and protocol is less than 3, pickle will try to\n"
 "map the new Python 3.x names to the old module names used in Python 2.x,\n"
 "so that the pickle data stream is readable with Python 2.x.\n"
-"\n"
-"If bytes_as_strings is True and protocol is less than 3, pickle\n"
-"will store byte strings as native strings, i.e. the way Python 2.x\n"
-"would've stored them.  Be aware that such pickles cannot be\n"
-"reliably unpickled on Python 3 if you do not use errors='bytes',\n"
-"and even then they might be silently converted to Unicode objects.\n");
+);
 
 static PyObject *
 pickle_dump(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {
-        "obj", "file", "protocol", "fix_imports", "bytes_as_strings", 0};
+        "obj", "file", "protocol", "fix_imports", 0};
     PyObject *obj;
     PyObject *file;
     PyObject *proto = NULL;
     PyObject *fix_imports = Py_True;
-    PyObject *bytes_as_strings = Py_False;
     PicklerObject *pickler;
 
     /* fix_imports is a keyword-only argument.  */
@@ -6647,15 +6625,14 @@ pickle_dump(PyObject *self, PyObject *args, PyObject *kwds)
     }
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "OO|OOO:dump", kwlist,
-                                     &obj, &file, &proto, &fix_imports,
-                                     &bytes_as_strings))
+                                     &obj, &file, &proto, &fix_imports))
         return NULL;
 
     pickler = _Pickler_New();
     if (pickler == NULL)
         return NULL;
 
-    if (_Pickler_SetProtocol(pickler, proto, fix_imports, bytes_as_strings) < 0)
+    if (_Pickler_SetProtocol(pickler, proto, fix_imports) < 0)
         goto error;
 
     if (_Pickler_SetOutputStream(pickler, file) < 0)
@@ -6676,7 +6653,7 @@ pickle_dump(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 PyDoc_STRVAR(pickle_dumps_doc,
-"dumps(obj, protocol=None, *, fix_imports=True, bytes_as_strings=False) -> bytes\n"
+"dumps(obj, protocol=None, *, fix_imports=True) -> bytes\n"
 "\n"
 "Return the pickled representation of the object as a bytes\n"
 "object, instead of writing it to a file.\n"
@@ -6692,23 +6669,17 @@ PyDoc_STRVAR(pickle_dumps_doc,
 "If fix_imports is True and *protocol* is less than 3, pickle will try to\n"
 "map the new Python 3.x names to the old module names used in Python 2.x,\n"
 "so that the pickle data stream is readable with Python 2.x.\n"
-"\n"
-"If bytes_as_strings is True and protocol is less than 3, pickle\n"
-"will store byte strings as native strings, i.e. the way Python 2.x\n"
-"would've stored them.  Be aware that such pickles cannot be\n"
-"reliably unpickled on Python 3 if you do not use errors='bytes',\n"
-"and even then they might be silently converted to Unicode objects.\n");
+);
 
 static PyObject *
 pickle_dumps(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {
-        "obj", "protocol", "fix_imports", "bytes_as_strings", 0};
+        "obj", "protocol", "fix_imports", 0};
     PyObject *obj;
     PyObject *proto = NULL;
     PyObject *result;
     PyObject *fix_imports = Py_True;
-    PyObject *bytes_as_strings = Py_False;
     PicklerObject *pickler;
 
     /* fix_imports is a keyword-only argument.  */
@@ -6720,15 +6691,14 @@ pickle_dumps(PyObject *self, PyObject *args, PyObject *kwds)
     }
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|OOO:dumps", kwlist,
-                                     &obj, &proto, &fix_imports,
-                                     &bytes_as_strings))
+                                     &obj, &proto, &fix_imports))
         return NULL;
 
     pickler = _Pickler_New();
     if (pickler == NULL)
         return NULL;
 
-    if (_Pickler_SetProtocol(pickler, proto, fix_imports, bytes_as_strings) < 0)
+    if (_Pickler_SetProtocol(pickler, proto, fix_imports) < 0)
         goto error;
 
     if (dump(pickler, obj) < 0)

@@ -174,8 +174,7 @@ __all__.extend([x for x in dir() if re.match("[A-Z][A-Z0-9_]+$",x)])
 
 class _Pickler(object):
 
-    def __init__(self, file, protocol=None, *, fix_imports=True,
-                 bytes_as_strings=False):
+    def __init__(self, file, protocol=None, *, fix_imports=True):
         """This takes a binary file for writing a pickle data stream.
 
         The optional protocol argument tells the pickler to use the
@@ -196,12 +195,6 @@ class _Pickler(object):
         If fix_imports is True and protocol is less than 3, pickle will try to
         map the new Python 3.x names to the old module names used in Python
         2.x, so that the pickle data stream is readable with Python 2.x.
-
-        If bytes_as_strings is True and protocol is less than 3, pickle
-        will store byte strings as native strings, i.e. the way Python 2.x
-        would've stored them.  Be aware that such pickles cannot be
-        reliably unpickled on Python 3 if you do not use errors='bytes',
-        and even then they might be silently converted to Unicode objects.
         """
         if protocol is None:
             protocol = DEFAULT_PROTOCOL
@@ -218,7 +211,6 @@ class _Pickler(object):
         self.bin = protocol >= 1
         self.fast = 0
         self.fix_imports = fix_imports and protocol < 3
-        self.bytes_as_strings = bytes_as_strings and protocol < 3
 
     def clear_memo(self):
         """Clears the pickler's "memo".
@@ -500,16 +492,6 @@ class _Pickler(object):
     dispatch[float] = save_float
 
     def save_bytes(self, obj, pack=struct.pack):
-        if self.bytes_as_strings:
-            if self.bin:
-                n = len(obj)
-                if n < 256:
-                    self.write(SHORT_BINSTRING + bytes([n]) + bytes(obj))
-                else:
-                    self.write(BINSTRING + pack("<i", n) + bytes(obj))
-            else:
-                self.write(STRING + repr(obj).lstrip('b').encode('ascii') + b'\n')
-            return
         if self.proto < 3:
             if len(obj) == 0:
                 self.save_reduce(bytes, (), obj=obj)
@@ -1437,14 +1419,12 @@ def decode_long(data):
 
 # Shorthands
 
-def dump(obj, file, protocol=None, *, fix_imports=True, bytes_as_strings=False):
-    Pickler(file, protocol, fix_imports=fix_imports,
-            bytes_as_strings=bytes_as_strings).dump(obj)
+def dump(obj, file, protocol=None, *, fix_imports=True):
+    Pickler(file, protocol, fix_imports=fix_imports).dump(obj)
 
-def dumps(obj, protocol=None, *, fix_imports=True, bytes_as_strings=False):
+def dumps(obj, protocol=None, *, fix_imports=True):
     f = io.BytesIO()
-    Pickler(f, protocol, fix_imports=fix_imports,
-            bytes_as_strings=bytes_as_strings).dump(obj)
+    Pickler(f, protocol, fix_imports=fix_imports).dump(obj)
     res = f.getvalue()
     assert isinstance(res, bytes_types)
     return res
