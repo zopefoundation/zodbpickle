@@ -1,6 +1,11 @@
 ``zodbpickle`` Changelog
 ========================
 
+Unreleased
+----------
+
+- Add protocol 3 opcodes to the C version of the ``noload()`` dispatcher.
+
 0.4.3 (2013-06-07)
 ------------------
 
