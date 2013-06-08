@@ -1,10 +1,12 @@
 ``zodbpickle`` Changelog
 ========================
 
-0.5 (unreleased)
+(unreleased)
 ----------------
 
-- TBD
+- Fix NameError in pure-Python version of ``Unpickler.noload_appends``.
+
+- Fix NameError in pure-Python version of ``Unpickler.noload_setitems``.
 
 0.4.1 (2013-04-29)
 ------------------
