@@ -1,8 +1,8 @@
 ``zodbpickle`` Changelog
 ========================
 
-(unreleased)
-----------------
+0.4.2 (2013-06-07)
+------------------
 
 - Fix NameError in pure-Python version of ``Unpickler.noload_appends``.
 
