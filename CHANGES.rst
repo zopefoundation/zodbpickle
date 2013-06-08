@@ -1,13 +1,30 @@
 ``zodbpickle`` Changelog
 ========================
 
-0.5 (unreleased)
-----------------
+Unreleased
+----------
 
 - Removed support for the ``bytes_as_strings`` arguments to pickling APIs:
   the pickles created when that argument was true might not be unpickled
   without passing ``encoding='bytes'``, which ZODB couldn't reliably enforce.
   On Py3k, ZODB will be using ``protocol=3`` pickles anyway.
+
+0.4.4 (2013-06-07)
+------------------
+
+- Add protocol 3 opcodes to the C version of the ``noload()`` dispatcher.
+
+0.4.3 (2013-06-07)
+------------------
+
+- Packaging error:  remove spurious ``-ASIDE`` file from sdist.
+
+0.4.2 (2013-06-07)
+------------------
+
+- Fix NameError in pure-Python version of ``Unpickler.noload_appends``.
+
+- Fix NameError in pure-Python version of ``Unpickler.noload_setitems``.
 
 0.4.1 (2013-04-29)
 ------------------

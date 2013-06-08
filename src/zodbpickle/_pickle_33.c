@@ -5932,6 +5932,17 @@ noload(UnpicklerObject *self)
             if (load_bool(self, Py_False) < 0)
                 break;
             continue;
+
+        case BINBYTES:
+            if (load_binbytes(self) < 0)
+                break;
+            continue;
+
+        case SHORT_BINBYTES:
+            if (load_short_binbytes(self) < 0)
+                break;
+            continue;
+
         default:
             PyErr_Format(UnpicklingError,
                          "invalid load key, '%c'.", s[0]);
