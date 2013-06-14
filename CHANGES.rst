@@ -1,8 +1,8 @@
 ``zodbpickle`` Changelog
 ========================
 
-Unreleased
-----------
+0.5.0 (2013-06-14)
+------------------
 
 - Removed support for the ``bytes_as_strings`` arguments to pickling APIs:
   the pickles created when that argument was true might not be unpickled
