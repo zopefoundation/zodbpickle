@@ -6251,12 +6251,12 @@ init_pickle(void)
     if (BinaryType == NULL) {
         PyObject *zodbpickle_module = PyImport_ImportModule("zodbpickle");
         if (zodbpickle_module == NULL) {
-            return -1;
+            return;
         }
         BinaryType = PyObject_GetAttrString(zodbpickle_module, "binary");
         Py_DECREF(zodbpickle_module);
         if (BinaryType == NULL) {
-            return -1;
+            return;
         }
     }
 
