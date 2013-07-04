@@ -1,13 +1,13 @@
 import unittest
 from cStringIO import StringIO
 
-from .pickletester_2 import _AbstractPickleTests
-from .pickletester_2 import _AbstractPickleModuleTests
-from .pickletester_2 import _AbstractPersistentPicklerTests
-from .pickletester_2 import _AbstractPicklerUnpicklerObjectTests
+from .pickletester_2 import AbstractPickleTests
+from .pickletester_2 import AbstractPickleModuleTests
+from .pickletester_2 import AbstractPersistentPicklerTests
+from .pickletester_2 import AbstractPicklerUnpicklerObjectTests
 
 
-class PickleTests(_AbstractPickleTests, _AbstractPickleModuleTests):
+class PickleTests(AbstractPickleTests, AbstractPickleModuleTests):
 
     def dumps(self, arg, proto=0, fast=0):
         from zodbpickle.pickle_2 import dumps
@@ -27,7 +27,7 @@ class PickleTests(_AbstractPickleTests, _AbstractPickleModuleTests):
     error = KeyError
 
 
-class PicklerTests(_AbstractPickleTests):
+class PicklerTests(AbstractPickleTests):
 
     error = KeyError
 
@@ -48,7 +48,7 @@ class PicklerTests(_AbstractPickleTests):
         return u.load()
 
 
-class PersPicklerTests(_AbstractPersistentPicklerTests):
+class PersPicklerTests(AbstractPersistentPicklerTests):
 
     def dumps(self, arg, proto=0, fast=0):
         from zodbpickle.pickle_2 import Pickler
@@ -73,7 +73,7 @@ class PersPicklerTests(_AbstractPersistentPicklerTests):
         return u.load()
 
 
-class PicklerUnpicklerObjectTests(_AbstractPicklerUnpicklerObjectTests):
+class PicklerUnpicklerObjectTests(AbstractPicklerUnpicklerObjectTests):
 
     @property
     def pickler_class(self):
@@ -94,8 +94,8 @@ class cPickleBase(object):
         return BadPickleGet
 
 
-class cPickleTests(_AbstractPickleTests,
-                   _AbstractPickleModuleTests,
+class cPickleTests(AbstractPickleTests,
+                   AbstractPickleModuleTests,
                    cPickleBase,
                   ):
     def setUp(self):
@@ -110,7 +110,7 @@ class cPickleTests(_AbstractPickleTests,
         return _pickle
 
 
-class cPicklePicklerTests(_AbstractPickleTests, cPickleBase):
+class cPicklePicklerTests(AbstractPickleTests, cPickleBase):
 
     def dumps(self, arg, proto=0):
         from zodbpickle._pickle import Pickler
@@ -127,7 +127,7 @@ class cPicklePicklerTests(_AbstractPickleTests, cPickleBase):
         return p.load()
 
 
-class cPickleListPicklerTests(_AbstractPickleTests, cPickleBase):
+class cPickleListPicklerTests(AbstractPickleTests, cPickleBase):
 
     def dumps(self, arg, proto=0):
         from zodbpickle._pickle import Pickler
@@ -142,7 +142,7 @@ class cPickleListPicklerTests(_AbstractPickleTests, cPickleBase):
         return p.load()
 
 
-class cPickleFastPicklerTests(_AbstractPickleTests, cPickleBase):
+class cPickleFastPicklerTests(AbstractPickleTests, cPickleBase):
 
     def dumps(self, arg, proto=0):
         from zodbpickle._pickle import Pickler
@@ -161,27 +161,27 @@ class cPickleFastPicklerTests(_AbstractPickleTests, cPickleBase):
 
     def test_recursive_list(self):
         self.assertRaises(ValueError,
-                          _AbstractPickleTests.test_recursive_list,
+                          AbstractPickleTests.test_recursive_list,
                           self)
 
     def test_recursive_tuple(self):
         self.assertRaises(ValueError,
-                          _AbstractPickleTests.test_recursive_tuple,
+                          AbstractPickleTests.test_recursive_tuple,
                           self)
 
     def test_recursive_inst(self):
         self.assertRaises(ValueError,
-                          _AbstractPickleTests.test_recursive_inst,
+                          AbstractPickleTests.test_recursive_inst,
                           self)
 
     def test_recursive_dict(self):
         self.assertRaises(ValueError,
-                          _AbstractPickleTests.test_recursive_dict,
+                          AbstractPickleTests.test_recursive_dict,
                           self)
 
     def test_recursive_multi(self):
         self.assertRaises(ValueError,
-                          _AbstractPickleTests.test_recursive_multi,
+                          AbstractPickleTests.test_recursive_multi,
                           self)
 
     def test_nonrecursive_deep(self):
@@ -195,7 +195,7 @@ class cPickleFastPicklerTests(_AbstractPickleTests, cPickleBase):
         b = self.loads(self.dumps(a))
         self.assertEqual(a, b)
 
-class cPicklePicklerUnpicklerObjectTests(_AbstractPicklerUnpicklerObjectTests):
+class cPicklePicklerUnpicklerObjectTests(AbstractPicklerUnpicklerObjectTests):
 
     @property
     def pickler_class(self):
