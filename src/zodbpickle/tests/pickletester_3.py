@@ -447,7 +447,7 @@ def create_data():
     x.append(5)
     return x
 
-class _AbstractPickleTests(unittest.TestCase):
+class AbstractPickleTests(unittest.TestCase):
     # Subclass must define self.dumps, self.loads.
 
     _testdata = create_data()
@@ -554,7 +554,7 @@ class _AbstractPickleTests(unittest.TestCase):
     # there's a comment with an exclamation point there whose meaning
     # is a mystery.  cPickle also suppresses PUT for objects with a refcount
     # of 1.
-    def _dont_test_disassembly(self):
+    def dont_test_disassembly(self):
         from io import StringIO
         from pickletools import dis
 
@@ -597,10 +597,10 @@ class _AbstractPickleTests(unittest.TestCase):
         i = C()
         i.attr = i
         for proto in protocols:
-            s = self.dumps(i, 2)
+            s = self.dumps(i, proto)
             x = self.loads(s)
             self.assertEqual(dir(x), dir(i))
-            self.assertTrue(x.attr is x)
+            self.assertIs(x.attr, x)
 
     def test_recursive_multi(self):
         l = []
@@ -628,6 +628,14 @@ class _AbstractPickleTests(unittest.TestCase):
                     b"'abc\"", # open quote and close quote don't match
                     b"'abc'   ?", # junk after close quote
                     b"'\\'", # trailing backslash
+                    # Variations on issue #17710
+                    b"'",
+                    b'"',
+                    b"' ",
+                    b"'  ",
+                    b"'   ",
+                    b"'    ",
+                    b'"    ',
                     # some tests of the quoting rules
                     ## b"'abc\"\''",
                     ## b"'\\\\a\'\'\'\\\'\\\\\''",
@@ -1228,7 +1236,31 @@ class _AbstractPickleTests(unittest.TestCase):
         dumped = b'\x80\x03X\x01\x00\x00\x00ar\xff\xff\xff\xff.'
         self.assertRaises(ValueError, self.loads, dumped)
 
-class _AbstractBytestrTests(unittest.TestCase):
+    def _check_pickling_with_opcode(self, obj, opcode, proto):
+        pickled = self.dumps(obj, proto)
+        self.assertTrue(opcode_in_pickle(opcode, pickled))
+        unpickled = self.loads(pickled)
+        self.assertEqual(obj, unpickled)
+
+    def test_appends_on_non_lists(self):
+        # Issue #17720
+        obj = REX_six([1, 2, 3])
+        for proto in protocols:
+            if proto == 0:
+                self._check_pickling_with_opcode(obj, pickle.APPEND, proto)
+            else:
+                self._check_pickling_with_opcode(obj, pickle.APPENDS, proto)
+
+    def test_setitems_on_non_dicts(self):
+        obj = REX_seven({1: -1, 2: -2, 3: -3})
+        for proto in protocols:
+            if proto == 0:
+                self._check_pickling_with_opcode(obj, pickle.SETITEM, proto)
+            else:
+                self._check_pickling_with_opcode(obj, pickle.SETITEMS, proto)
+
+
+class AbstractBytestrTests(unittest.TestCase):
     def unpickleEqual(self, data, unpickled):
         loaded = self.loads(data, encoding="bytes")
         self.assertEqual(loaded, unpickled)
@@ -1282,7 +1314,7 @@ class _AbstractBytestrTests(unittest.TestCase):
                 b'T,\x01\x00\x00xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxq\x00.',
                 b'x'*300)
 
-class _AbstractBytesFallbackTests(unittest.TestCase):
+class AbstractBytesFallbackTests(unittest.TestCase):
     def unpickleEqual(self, data, unpickled):
         loaded = self.loads(data, errors="bytes")
         self.assertEqual(loaded, unpickled)
@@ -1296,7 +1328,7 @@ class _AbstractBytesFallbackTests(unittest.TestCase):
                 {'x': 'ascii', 'y': b'\xff'})
 
 
-class _BigmemPickleTests(unittest.TestCase):
+class BigmemPickleTests(unittest.TestCase):
 
     # Binary protocols can serialize longs of up to 2GB-1
 
@@ -1380,18 +1412,18 @@ class _BigmemPickleTests(unittest.TestCase):
 # Test classes for reduce_ex
 
 class REX_one(object):
+    """No __reduce_ex__ here, but inheriting it from object"""
     _reduce_called = 0
     def __reduce__(self):
         self._reduce_called = 1
         return REX_one, ()
-    # No __reduce_ex__ here, but inheriting it from object
 
 class REX_two(object):
+    """No __reduce__ here, but inheriting it from object"""
     _proto = None
     def __reduce_ex__(self, proto):
         self._proto = proto
         return REX_two, ()
-    # No __reduce__ here, but inheriting it from object
 
 class REX_three(object):
     _proto = None
@@ -1402,18 +1434,45 @@ class REX_three(object):
         raise TestFailed("This __reduce__ shouldn't be called")
 
 class REX_four(object):
+    """Calling base class method should succeed"""
     _proto = None
     def __reduce_ex__(self, proto):
         self._proto = proto
         return object.__reduce_ex__(self, proto)
-    # Calling base class method should succeed
 
 class REX_five(object):
+    """This one used to fail with infinite recursion"""
     _reduce_called = 0
     def __reduce__(self):
         self._reduce_called = 1
         return object.__reduce__(self)
-    # This one used to fail with infinite recursion
+
+class REX_six(object):
+    """This class is used to check the 4th argument (list iterator) of the reduce
+    protocol.
+    """
+    def __init__(self, items=None):
+        self.items = items if items is not None else []
+    def __eq__(self, other):
+        return type(self) is type(other) and self.items == self.items
+    def append(self, item):
+        self.items.append(item)
+    def __reduce__(self):
+        return type(self), (), None, iter(self.items), None
+
+class REX_seven(object):
+    """This class is used to check the 5th argument (dict iterator) of the reduce
+    protocol.
+    """
+    def __init__(self, table=None):
+        self.table = table if table is not None else {}
+    def __eq__(self, other):
+        return type(self) is type(other) and self.table == self.table
+    def __setitem__(self, key, value):
+        self.table[key] = value
+    def __reduce__(self):
+        return type(self), (), None, None, iter(self.table.items())
+
 
 # Test classes for newobj
 
@@ -1460,7 +1519,7 @@ class BadGetattr:
         self.foo
 
 
-class _AbstractPickleModuleTests(unittest.TestCase):
+class AbstractPickleModuleTests(unittest.TestCase):
 
     def test_dump_closed_file(self):
         import os
@@ -1520,7 +1579,7 @@ class _AbstractPickleModuleTests(unittest.TestCase):
         self.assertRaises(EOFError, pickle.loads, s)
 
 
-class _AbstractPersistentPicklerTests(unittest.TestCase):
+class AbstractPersistentPicklerTests(unittest.TestCase):
 
     # This class defines persistent_id() and persistent_load()
     # functions that should be used by the pickler.  All even integers
@@ -1556,7 +1615,7 @@ class _AbstractPersistentPicklerTests(unittest.TestCase):
         self.assertEqual(self.load_count, 5)
 
 
-class _AbstractPicklerUnpicklerObjectTests(unittest.TestCase):
+class AbstractPicklerUnpicklerObjectTests(unittest.TestCase):
 
     pickler_class = None
     unpickler_class = None
@@ -1768,7 +1827,7 @@ class AAA(object):
 class BBB(object):
     pass
 
-class _AbstractDispatchTableTests(unittest.TestCase):
+class AbstractDispatchTableTests(unittest.TestCase):
 
     def test_default_dispatch_table(self):
         # No dispatch_table attribute by default
