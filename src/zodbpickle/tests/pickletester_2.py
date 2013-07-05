@@ -2,6 +2,7 @@ import unittest
 import StringIO
 import cStringIO
 import copy_reg
+import sys
 
 from test.test_support import TestFailed, have_unicode, TESTFN
 try:
@@ -1024,6 +1025,21 @@ class AbstractPickleTests(unittest.TestCase):
             y_keys = sorted(y.__dict__)
             for x_key, y_key in zip(x_keys, y_keys):
                 self.assertIs(x_key, y_key)
+
+if sys.version_info < (2, 7):
+
+    def assertIs(self, expr1, expr2, msg=None):
+        self.assertTrue(expr1 is expr2, msg)
+
+    def assertIn(self, expr1, expr2, msg=None):
+        self.assertTrue(expr1 in expr2, msg)
+
+    def assertNotIn(self, expr1, expr2, msg=None):
+        self.assertTrue(expr1 not in expr2, msg)
+
+    AbstractPickleTests.assertIs = assertIs
+    AbstractPickleTests.assertIn = assertIn
+    AbstractPickleTests.assertNotIn = assertNotIn
 
 
 # Test classes for reduce_ex
