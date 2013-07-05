@@ -1589,7 +1589,7 @@ save_long(PicklerObject *self, PyObject *obj)
          * byte at the start, and cut it back later if possible.
          */
         nbytes = (nbits >> 3) + 1;
-        if (nbytes > INT_MAX) {
+        if (nbytes > 0x7fffffffL) {
             PyErr_SetString(PyExc_OverflowError,
                             "long too large to pickle");
             goto error;
@@ -1846,12 +1846,12 @@ save_bytes(PicklerObject *self, PyObject *obj)
             return -1;
 
         if (size < 256) {
-            header[0] = (SHORT_BINBYTES);
+            header[0] = SHORT_BINBYTES;
             header[1] = (unsigned char)size;
             len = 2;
         }
         else if (size <= 0xffffffffL) {
-            header[0] = (BINBYTES);
+            header[0] = BINBYTES;
             header[1] = (unsigned char)(size & 0xff);
             header[2] = (unsigned char)((size >> 8) & 0xff);
             header[3] = (unsigned char)((size >> 16) & 0xff);
@@ -1860,7 +1860,7 @@ save_bytes(PicklerObject *self, PyObject *obj)
         }
         else {
             PyErr_SetString(PyExc_OverflowError,
-                            "cannot serialize a bytes object larger than 4GB");
+                            "cannot serialize a bytes object larger than 4 GiB");
             return -1;          /* string too large */
         }
 
@@ -1868,6 +1868,9 @@ save_bytes(PicklerObject *self, PyObject *obj)
             return -1;
 
         if (_Pickler_Write(self, PyBytes_AS_STRING(obj), size) < 0)
+            return -1;
+
+        if (memo_put(self, obj) < 0)
             return -1;
 
         return 0;
@@ -1957,7 +1960,7 @@ save_unicode(PicklerObject *self, PyObject *obj)
         size = PyBytes_GET_SIZE(encoded);
         if (size > 0xffffffffL) {
             PyErr_SetString(PyExc_OverflowError,
-                            "cannot serialize a string larger than 4GB");
+                            "cannot serialize a string larger than 4 GiB");
             goto error;          /* string too large */
         }
 
@@ -3027,7 +3030,7 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
     if (listitems == Py_None)
         listitems = NULL;
     else if (!PyIter_Check(listitems)) {
-        PyErr_Format(PicklingError, "Fourth element of tuple"
+        PyErr_Format(PicklingError, "fourth element of the tuple "
                      "returned by __reduce__ must be an iterator, not %s",
                      Py_TYPE(listitems)->tp_name);
         return -1;
@@ -3036,7 +3039,7 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
     if (dictitems == Py_None)
         dictitems = NULL;
     else if (!PyIter_Check(dictitems)) {
-        PyErr_Format(PicklingError, "Fifth element of tuple"
+        PyErr_Format(PicklingError, "fifth element of the tuple "
                      "returned by __reduce__ must be an iterator, not %s",
                      Py_TYPE(dictitems)->tp_name);
         return -1;
@@ -3530,22 +3533,20 @@ PyDoc_STRVAR(Pickler_doc,
 "\n"
 "If fix_imports is True and protocol is less than 3, pickle will try to\n"
 "map the new Python 3.x names to the old module names used in Python\n"
-"2.x, so that the pickle data stream is readable with Python 2.x.\n"
-);
+"2.x, so that the pickle data stream is readable with Python 2.x.\n");
 
 static int
 Pickler_init(PicklerObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {
-        "file", "protocol", "fix_imports", 0};
+    static char *kwlist[] = {"file", "protocol", "fix_imports", 0};
     PyObject *file;
     PyObject *proto_obj = NULL;
     PyObject *fix_imports = Py_True;
     _Py_IDENTIFIER(persistent_id);
     _Py_IDENTIFIER(dispatch_table);
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|OOO:Pickler", kwlist,
-                                     &file, &proto_obj, &fix_imports))
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|OO:Pickler",
+                                     kwlist, &file, &proto_obj, &fix_imports))
         return -1;
 
     /* In case of multiple __init__() calls, clear previous content. */
@@ -4264,7 +4265,7 @@ load_string(UnpicklerObject *self)
 
     if ((len = _Unpickler_Readline(self, &s)) < 0)
         return -1;
-    if (len < 3)
+    if (len < 2)
         return bad_readline();
     if ((s = strdup(s)) == NULL) {
         PyErr_NoMemory();
@@ -4272,14 +4273,14 @@ load_string(UnpicklerObject *self)
     }
 
     /* Strip outermost quotes */
-    while (s[len - 1] <= ' ')
+    while (len > 0 && s[len - 1] <= ' ')
         len--;
-    if (s[0] == '"' && s[len - 1] == '"') {
+    if (len > 1 && s[0] == '"' && s[len - 1] == '"') {
         s[len - 1] = '\0';
         p = s + 1;
         len -= 2;
     }
-    else if (s[0] == '\'' && s[len - 1] == '\'') {
+    else if (len > 1 && s[0] == '\'' && s[len - 1] == '\'') {
         s[len - 1] = '\0';
         p = s + 1;
         len -= 2;
@@ -4296,7 +4297,6 @@ load_string(UnpicklerObject *self)
     free(s);
     if (bytes == NULL)
         return -1;
-
     str = decode_string(self, bytes);
     Py_DECREF(bytes);
     if (str == NULL)
@@ -4378,6 +4378,7 @@ load_binstring(UnpicklerObject *self)
     if (_Unpickler_Read(self, &s, x) < 0)
         return -1;
 
+    /* Convert Python 2.x strings to unicode or bytes. */
     bytes = PyBytes_FromStringAndSize(s, x);
     if (bytes == NULL)
         return -1;
@@ -4406,6 +4407,7 @@ load_short_binstring(UnpicklerObject *self)
     if (_Unpickler_Read(self, &s, x) < 0)
         return -1;
 
+    /* Convert Python 2.x strings to unicode or bytes. */
     bytes = PyBytes_FromStringAndSize(s, x);
     if (bytes == NULL)
         return -1;
@@ -5141,11 +5143,13 @@ do_append(UnpicklerObject *self, Py_ssize_t x)
             if (result == NULL) {
                 Pdata_clear(self->stack, i + 1);
                 Py_SIZE(self->stack) = x;
+                Py_DECREF(append_func);
                 return -1;
             }
             Py_DECREF(result);
         }
         Py_SIZE(self->stack) = x;
+        Py_DECREF(append_func);
     }
 
     return 0;
@@ -6602,14 +6606,12 @@ PyDoc_STRVAR(pickle_dump_doc,
 "\n"
 "If fix_imports is True and protocol is less than 3, pickle will try to\n"
 "map the new Python 3.x names to the old module names used in Python 2.x,\n"
-"so that the pickle data stream is readable with Python 2.x.\n"
-);
+"so that the pickle data stream is readable with Python 2.x.\n");
 
 static PyObject *
 pickle_dump(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {
-        "obj", "file", "protocol", "fix_imports", 0};
+    static char *kwlist[] = {"obj", "file", "protocol", "fix_imports", 0};
     PyObject *obj;
     PyObject *file;
     PyObject *proto = NULL;
@@ -6624,7 +6626,7 @@ pickle_dump(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "OO|OOO:dump", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "OO|OO:dump", kwlist,
                                      &obj, &file, &proto, &fix_imports))
         return NULL;
 
@@ -6668,14 +6670,12 @@ PyDoc_STRVAR(pickle_dumps_doc,
 "\n"
 "If fix_imports is True and *protocol* is less than 3, pickle will try to\n"
 "map the new Python 3.x names to the old module names used in Python 2.x,\n"
-"so that the pickle data stream is readable with Python 2.x.\n"
-);
+"so that the pickle data stream is readable with Python 2.x.\n");
 
 static PyObject *
 pickle_dumps(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {
-        "obj", "protocol", "fix_imports", 0};
+    static char *kwlist[] = {"obj", "protocol", "fix_imports", 0};
     PyObject *obj;
     PyObject *proto = NULL;
     PyObject *result;
@@ -6690,7 +6690,7 @@ pickle_dumps(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|OOO:dumps", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|OO:dumps", kwlist,
                                      &obj, &proto, &fix_imports))
         return NULL;
 
