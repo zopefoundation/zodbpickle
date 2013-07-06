@@ -1439,21 +1439,21 @@ def decode_long(data):
 
 # Shorthands
 
-def dump(obj, file, protocol=None, *, fix_imports=True):
+def _dump(obj, file, protocol=None, *, fix_imports=True):
     Pickler(file, protocol, fix_imports=fix_imports).dump(obj)
 
-def dumps(obj, protocol=None, *, fix_imports=True):
+def _dumps(obj, protocol=None, *, fix_imports=True):
     f = io.BytesIO()
     Pickler(f, protocol, fix_imports=fix_imports).dump(obj)
     res = f.getvalue()
     assert isinstance(res, bytes_types)
     return res
 
-def load(file, *, fix_imports=True, encoding="ASCII", errors="strict"):
+def _load(file, *, fix_imports=True, encoding="ASCII", errors="strict"):
     return Unpickler(file, fix_imports=fix_imports,
                      encoding=encoding, errors=errors).load()
 
-def loads(s, *, fix_imports=True, encoding="ASCII", errors="strict"):
+def _loads(s, *, fix_imports=True, encoding="ASCII", errors="strict"):
     if isinstance(s, str):
         raise TypeError("Can't load pickle from unicode string")
     file = io.BytesIO(s)
@@ -1465,6 +1465,7 @@ try:
     from zodbpickle._pickle import *
 except ImportError:
     Pickler, Unpickler = _Pickler, _Unpickler
+    dump, dumps, load, loads = _dump, _dumps, _load, _loads
 
 # Doctest
 def _test():
