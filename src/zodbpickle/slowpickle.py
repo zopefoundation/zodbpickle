@@ -26,6 +26,8 @@ if sys.version_info[0] >= 3:
     del p
     # pick up all names that the module defines
     from .pickle_3 import *
+    # do not share the globals with a fast version
+    del sys.modules['zodbpickle.pickle_3']
 else:
     # pick up all names that the module defines
     from .pickle_2 import *

@@ -33,6 +33,8 @@ To get a more deterministic choice of the implementation, use one of::
     from zodbpickle import fastpickle # always C
     from zodbpickle import slowpickle # always Python
 
+Both modules can co-exist which is helpful for comparison.
+
 But there is a bit more to consider, so please read on!
 
 Loading/Storing Python 2 Strings

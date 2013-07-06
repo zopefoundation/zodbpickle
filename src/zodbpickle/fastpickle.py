@@ -21,6 +21,8 @@ So this is a rare case where 'import *' is exactly the right thing to do.
 # pick up all names that the module defines
 if sys.version_info[0] >= 3:
     from .pickle_3 import *
+    # do not share the globals with a slow version
+    del sys.modules['zodbpickle.pickle_3']
 else:
     from .pickle_2 import *
 # also make sure that we really have the fast version, although
