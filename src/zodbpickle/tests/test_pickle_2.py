@@ -1,10 +1,46 @@
+import cStringIO
+import io
 import unittest
 from cStringIO import StringIO
 
-from .pickletester_2 import AbstractPickleTests
-from .pickletester_2 import AbstractPickleModuleTests
-from .pickletester_2 import AbstractPersistentPicklerTests
-from .pickletester_2 import AbstractPicklerUnpicklerObjectTests
+from .pickletester_2 import (AbstractPickleTests,
+                             AbstractPickleModuleTests,
+                             AbstractPersistentPicklerTests,
+                             AbstractPicklerUnpicklerObjectTests,
+                             BigmemPickleTests)
+
+from test import test_support
+
+class cStringIOMixin:
+    output = input = cStringIO.StringIO
+
+    def close(self, f):
+        pass
+
+class BytesIOMixin:
+    output = input = io.BytesIO
+
+    def close(self, f):
+        pass
+
+class FileIOMixin:
+
+    def output(self):
+        return open(test_support.TESTFN, 'wb+')
+
+    def input(self, data):
+        f = open(test_support.TESTFN, 'wb+')
+        try:
+            f.write(data)
+            f.seek(0)
+            return f
+        except:
+            f.close()
+            raise
+
+    def close(self, f):
+        f.close()
+        test_support.unlink(test_support.TESTFN)
 
 
 class PickleTests(AbstractPickleTests, AbstractPickleModuleTests):
@@ -33,7 +69,7 @@ class PicklerTests(AbstractPickleTests):
 
     def dumps(self, arg, proto=0, fast=0):
         from zodbpickle.pickle_2 import Pickler
-        f = StringIO()
+        f = cStringIO.StringIO()
         p = Pickler(f, proto)
         if fast:
             p.fast = fast
@@ -43,7 +79,7 @@ class PicklerTests(AbstractPickleTests):
 
     def loads(self, buf):
         from zodbpickle.pickle_2 import Unpickler
-        f = StringIO(buf)
+        f = cStringIO.StringIO(buf)
         u = Unpickler(f)
         return u.load()
 
@@ -55,7 +91,7 @@ class PersPicklerTests(AbstractPersistentPicklerTests):
         class PersPickler(Pickler):
             def persistent_id(subself, obj):
                 return self.persistent_id(obj)
-        f = StringIO()
+        f = cStringIO.StringIO()
         p = PersPickler(f, proto)
         if fast:
             p.fast = fast
@@ -68,7 +104,7 @@ class PersPicklerTests(AbstractPersistentPicklerTests):
         class PersUnpickler(Unpickler):
             def persistent_load(subself, obj):
                 return self.persistent_load(obj)
-        f = StringIO(buf)
+        f = cStringIO.StringIO(buf)
         u = PersUnpickler(f)
         return u.load()
 
@@ -77,13 +113,26 @@ class PicklerUnpicklerObjectTests(AbstractPicklerUnpicklerObjectTests):
 
     @property
     def pickler_class(self):
-        from zodbpickle._pickle import Pickler
+        from zodbpickle.pickle_2 import Pickler
         return  Pickler
 
     @property
     def unpickler_class(self):
-        from zodbpickle._pickle import Unpickler
+        from zodbpickle.pickle_2 import Unpickler
         return  Unpickler
+
+
+class PickleBigmemPickleTests(BigmemPickleTests):
+
+    def dumps(self, arg, proto=0, fast=0):
+        from zodbpickle import pickle_2
+        # Ignore fast
+        return pickle_2.dumps(arg, proto)
+
+    def loads(self, buf):
+        from zodbpickle import pickle_2
+        # Ignore fast
+        return pickle_2.loads(buf)
 
 
 class cPickleBase(object):
@@ -113,51 +162,84 @@ class cPickleTests(AbstractPickleTests,
 class cPicklePicklerTests(AbstractPickleTests, cPickleBase):
 
     def dumps(self, arg, proto=0):
-        from zodbpickle._pickle import Pickler
-        f = StringIO()
-        p = Pickler(f, proto)
-        p.dump(arg)
-        f.seek(0)
-        return f.read()
+        from zodbpickle import _pickle
+        f = self.output()
+        try:
+            p = _pickle.Pickler(f, proto)
+            p.dump(arg)
+            f.seek(0)
+            return f.read()
+        finally:
+            self.close(f)
 
     def loads(self, buf):
-        from zodbpickle._pickle import Unpickler
-        f = StringIO(buf)
-        p = Unpickler(f)
-        return p.load()
+        from zodbpickle import _pickle
+        f = self.input(buf)
+        try:
+            p = _pickle.Unpickler(f)
+            return p.load()
+        finally:
+            self.close(f)
+
+class cStringIOCPicklerTests(cStringIOMixin, cPicklePicklerTests):
+    pass
+
+class BytesIOCPicklerTests(BytesIOMixin, cPicklePicklerTests):
+    pass
+
+class FileIOCPicklerTests(FileIOMixin, cPicklePicklerTests):
+    pass
 
 
 class cPickleListPicklerTests(AbstractPickleTests, cPickleBase):
 
     def dumps(self, arg, proto=0):
-        from zodbpickle._pickle import Pickler
-        p = Pickler(proto)
+        from zodbpickle import _pickle
+        p = _pickle.Pickler(proto)
         p.dump(arg)
         return p.getvalue()
 
     def loads(self, *args):
-        from zodbpickle._pickle import Unpickler
-        f = StringIO(args[0])
-        p = Unpickler(f)
-        return p.load()
+        from zodbpickle import _pickle
+        f = self.input(args[0])
+        try:
+            p = _pickle.Unpickler(f)
+            return p.load()
+        finally:
+            self.close(f)
+
+class cStringIOCPicklerListTests(cStringIOMixin, cPickleListPicklerTests):
+    pass
+
+class BytesIOCPicklerListTests(BytesIOMixin, cPickleListPicklerTests):
+    pass
+
+class FileIOCPicklerListTests(FileIOMixin, cPickleListPicklerTests):
+    pass
 
 
 class cPickleFastPicklerTests(AbstractPickleTests, cPickleBase):
 
     def dumps(self, arg, proto=0):
-        from zodbpickle._pickle import Pickler
-        f = StringIO()
-        p = Pickler(f, proto)
-        p.fast = 1
-        p.dump(arg)
-        f.seek(0)
-        return f.read()
+        from zodbpickle import _pickle
+        f = self.output()
+        try:
+            p = _pickle.Pickler(f, proto)
+            p.fast = 1
+            p.dump(arg)
+            f.seek(0)
+            return f.read()
+        finally:
+            self.close(f)
 
     def loads(self, *args):
-        from zodbpickle._pickle import Unpickler
-        f = StringIO(args[0])
-        p = Unpickler(f)
-        return p.load()
+        from zodbpickle import _pickle
+        f = self.input(args[0])
+        try:
+            p = _pickle.Unpickler(f)
+            return p.load()
+        finally:
+            self.close(f)
 
     def test_recursive_list(self):
         self.assertRaises(ValueError,
@@ -195,6 +277,16 @@ class cPickleFastPicklerTests(AbstractPickleTests, cPickleBase):
         b = self.loads(self.dumps(a))
         self.assertEqual(a, b)
 
+class cStringIOCPicklerFastTests(cStringIOMixin, cPickleFastPicklerTests):
+    pass
+
+class BytesIOCPicklerFastTests(BytesIOMixin, cPickleFastPicklerTests):
+    pass
+
+class FileIOCPicklerFastTests(FileIOMixin, cPickleFastPicklerTests):
+    pass
+
+
 class cPicklePicklerUnpicklerObjectTests(AbstractPicklerUnpicklerObjectTests):
 
     @property
@@ -207,10 +299,21 @@ class cPicklePicklerUnpicklerObjectTests(AbstractPicklerUnpicklerObjectTests):
         from zodbpickle._pickle import Unpickler
         return Unpickler
 
+class cPickleBigmemPickleTests(BigmemPickleTests):
+
+    def dumps(self, arg, proto=0, fast=0):
+        from zodbpickle import _pickle
+        # Ignore fast
+        return _pickle.dumps(arg, proto)
+
+    def loads(self, buf):
+        from zodbpickle import _pickle
+        # Ignore fast
+        return _pickle.loads(buf)
+
 
 class Node(object):
     pass
-
 
 class cPickleDeepRecursive(unittest.TestCase):
 
@@ -218,21 +321,21 @@ class cPickleDeepRecursive(unittest.TestCase):
         # This should raise a RecursionLimit but in some
         # platforms (FreeBSD, win32) sometimes raises KeyError instead,
         # or just silently terminates the interpreter (=crashes).
-        from zodbpickle._pickle import dumps
+        from zodbpickle import _pickle
         nodes = [Node() for i in range(500)]
         for n in nodes:
             n.connections = list(nodes)
             n.connections.remove(n)
-        self.assertRaises((AttributeError, RuntimeError), dumps, n)
+        self.assertRaises((AttributeError, RuntimeError), _pickle.dumps, n)
 
     def test_issue3179(self):
         # Safe test, because I broke this case when fixing the
         # behaviour for the previous test.
-        from zodbpickle._pickle import dumps
+        from zodbpickle import _pickle
         res=[]
         for x in range(1,2000):
             res.append(dict(doc=x, similar=[]))
-        dumps(res)
+        _pickle.dumps(res)
 
 
 def test_suite():
@@ -242,10 +345,22 @@ def test_suite():
         unittest.makeSuite(PicklerTests),
         unittest.makeSuite(PersPicklerTests),
         unittest.makeSuite(PicklerUnpicklerObjectTests),
+        unittest.makeSuite(PickleBigmemPickleTests),
+        
         unittest.makeSuite(cPickleTests),
-        unittest.makeSuite(cPicklePicklerTests),
-        unittest.makeSuite(cPickleListPicklerTests),
-        unittest.makeSuite(cPickleFastPicklerTests),
+        unittest.makeSuite(cStringIOCPicklerTests),
+        unittest.makeSuite(BytesIOCPicklerTests),
+        unittest.makeSuite(FileIOCPicklerTests),        
+        unittest.makeSuite(cStringIOCPicklerListTests),
+        unittest.makeSuite(BytesIOCPicklerListTests),
+        unittest.makeSuite(FileIOCPicklerListTests),
+        unittest.makeSuite(cStringIOCPicklerFastTests),
+        unittest.makeSuite(BytesIOCPicklerFastTests),
+        unittest.makeSuite(FileIOCPicklerFastTests),
         unittest.makeSuite(cPickleDeepRecursive),
         unittest.makeSuite(cPicklePicklerUnpicklerObjectTests),
+        unittest.makeSuite(cPickleBigmemPickleTests),
     ))
+
+if __name__ == '__main__':
+    test_support.run_unittest(test_suite())
