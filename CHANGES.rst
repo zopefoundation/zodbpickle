@@ -1,6 +1,17 @@
 ``zodbpickle`` Changelog
 ========================
 
+0.5.1 (2013-07-06)
+------------------
+
+- Update all code and tests to Python 2.6.8, 2.7.5, 3.2.5, 3.3.2 .
+
+- Add the modules ``zodbpickle.fastpickle`` and ``zodbpickle.slowpickle``.
+  This provides a version-independent choice of the C or Python
+  implementation.
+
+- Fix a minor bug on OS X
+
 0.5.0 (2013-06-14)
 ------------------
 

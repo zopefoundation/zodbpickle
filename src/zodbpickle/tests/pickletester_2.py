@@ -2,8 +2,16 @@ import unittest
 import StringIO
 import cStringIO
 import copy_reg
+import sys
 
 from test.test_support import TestFailed, have_unicode, TESTFN
+try:
+    from test.test_support import _2G, _1M, precisionbigmemtest
+except ImportError:
+    # this import might fail when run on older Python versions by test_xpickle
+    _2G = _1M = 0
+    def precisionbigmemtest(*args, **kwargs):
+        return lambda self: None
 
 from zodbpickle import pickle_2 as pickle
 from zodbpickle import _pickle as cPickle
@@ -414,7 +422,7 @@ def create_data():
     x.append(5)
     return x
 
-class _AbstractPickleTests(unittest.TestCase):
+class AbstractPickleTests(unittest.TestCase):
     # Subclass must define self.dumps, self.loads, self.error.
 
     _testdata = create_data()
@@ -461,15 +469,15 @@ class _AbstractPickleTests(unittest.TestCase):
     # there's a comment with an exclamation point there whose meaning
     # is a mystery.  cPickle also suppresses PUT for objects with a refcount
     # of 1.
-    #def dont_test_disassembly(self):
-    #    from pickletools import dis
-    #
-    #   for proto, expected in (0, DATA0_DIS), (1, DATA1_DIS):
-    #       s = self.dumps(self._testdata, proto)
-    #       filelike = cStringIO.StringIO()
-    #       dis(s, out=filelike)
-    #       got = filelike.getvalue()
-    #       self.assertEqual(expected, got)
+    def dont_test_disassembly(self):
+        from pickletools import dis
+
+        for proto, expected in (0, DATA0_DIS), (1, DATA1_DIS):
+            s = self.dumps(self._testdata, proto)
+            filelike = cStringIO.StringIO()
+            dis(s, out=filelike)
+            got = filelike.getvalue()
+            self.assertEqual(expected, got)
 
     def test_recursive_list(self):
         l = []
@@ -503,10 +511,10 @@ class _AbstractPickleTests(unittest.TestCase):
         i = C()
         i.attr = i
         for proto in protocols:
-            s = self.dumps(i, 2)
+            s = self.dumps(i, proto)
             x = self.loads(s)
             self.assertEqual(dir(x), dir(i))
-            self.assertTrue(x.attr is x)
+            self.assertIs(x.attr, x)
 
     def test_recursive_multi(self):
         l = []
@@ -532,6 +540,8 @@ class _AbstractPickleTests(unittest.TestCase):
                     "'abc\"", # open quote and close quote don't match
                     "'abc'   ?", # junk after close quote
                     "'\\'", # trailing backslash
+                    "'",    # issue #17710
+                    "' ",   # issue #17710
                     # some tests of the quoting rules
                     #"'abc\"\''",
                     #"'\\\\a\'\'\'\\\'\\\\\''",
@@ -820,8 +830,8 @@ class _AbstractPickleTests(unittest.TestCase):
 
             # Dump using protocol 1 for comparison.
             s1 = self.dumps(x, 1)
-            self.assertTrue(__name__ in s1)
-            self.assertTrue("MyList" in s1)
+            self.assertIn(__name__, s1)
+            self.assertIn("MyList", s1)
             self.assertEqual(opcode_in_pickle(opcode, s1), False)
 
             y = self.loads(s1)
@@ -830,8 +840,8 @@ class _AbstractPickleTests(unittest.TestCase):
 
             # Dump using protocol 2 for test.
             s2 = self.dumps(x, 2)
-            self.assertFalse(__name__ in s2)
-            self.assertFalse("MyList" in s2)
+            self.assertNotIn(__name__, s2)
+            self.assertNotIn("MyList", s2)
             self.assertEqual(opcode_in_pickle(opcode, s2), True)
 
             y = self.loads(s2)
@@ -1014,7 +1024,22 @@ class _AbstractPickleTests(unittest.TestCase):
             x_keys = sorted(x.__dict__)
             y_keys = sorted(y.__dict__)
             for x_key, y_key in zip(x_keys, y_keys):
-                self.assertTrue(x_key is y_key)
+                self.assertIs(x_key, y_key)
+
+if sys.version_info < (2, 7):
+
+    def assertIs(self, expr1, expr2, msg=None):
+        self.assertTrue(expr1 is expr2, msg)
+
+    def assertIn(self, expr1, expr2, msg=None):
+        self.assertTrue(expr1 in expr2, msg)
+
+    def assertNotIn(self, expr1, expr2, msg=None):
+        self.assertTrue(expr1 not in expr2, msg)
+
+    AbstractPickleTests.assertIs = assertIs
+    AbstractPickleTests.assertIn = assertIn
+    AbstractPickleTests.assertNotIn = assertNotIn
 
 
 # Test classes for reduce_ex
@@ -1098,7 +1123,7 @@ class SimpleNewObj(object):
         # raise an error, to make sure this isn't called
         raise TypeError("SimpleNewObj.__init__() didn't expect to get called")
 
-class _AbstractPickleModuleTests(unittest.TestCase):
+class AbstractPickleModuleTests(unittest.TestCase):
 
     def test_dump_closed_file(self):
         import os
@@ -1163,7 +1188,7 @@ class _AbstractPickleModuleTests(unittest.TestCase):
         self.assertRaises((IndexError, cPickle.UnpicklingError),
                           self.module.loads, s)
 
-class _AbstractPersistentPicklerTests(unittest.TestCase):
+class AbstractPersistentPicklerTests(unittest.TestCase):
 
     # This class defines persistent_id() and persistent_load()
     # functions that should be used by the pickler.  All even integers
@@ -1198,7 +1223,7 @@ class _AbstractPersistentPicklerTests(unittest.TestCase):
         self.assertEqual(self.id_count, 5)
         self.assertEqual(self.load_count, 5)
 
-class _AbstractPicklerUnpicklerObjectTests(unittest.TestCase):
+class AbstractPicklerUnpicklerObjectTests(unittest.TestCase):
 
     pickler_class = None
     unpickler_class = None
@@ -1310,3 +1335,31 @@ class _AbstractPicklerUnpicklerObjectTests(unittest.TestCase):
         f.write(pickled2)
         f.seek(0)
         self.assertEqual(unpickler.load(), data2)
+
+class BigmemPickleTests(unittest.TestCase):
+
+    # Memory requirements: 1 byte per character for input strings, 1 byte
+    # for pickled data, 1 byte for unpickled strings, 1 byte for internal
+    # buffer and 1 byte of free space for resizing of internal buffer.
+
+    @precisionbigmemtest(size=_2G + 100*_1M, memuse=5)
+    def test_huge_strlist(self, size):
+        chunksize = 2**20
+        data = []
+        while size > chunksize:
+            data.append('x' * chunksize)
+            size -= chunksize
+            chunksize += 1
+        data.append('y' * size)
+
+        try:
+            for proto in protocols:
+                try:
+                    pickled = self.dumps(data, proto)
+                    res = self.loads(pickled)
+                    self.assertEqual(res, data)
+                finally:
+                    res = None
+                    pickled = None
+        finally:
+            data = None
