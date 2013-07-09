@@ -38,7 +38,7 @@ __all__ = ["PickleError", "PicklingError", "UnpicklingError", "Pickler",
            "Unpickler", "dump", "dumps", "load", "loads"]
 
 # These are purely informational; no code uses these.
-format_version = "2.0"                  # File format version we write
+format_version = "3.0"                  # File format version we write
 compatible_formats = ["1.0",            # Original protocol 0
                       "1.1",            # Protocol 0 with INST added
                       "1.2",            # Original protocol 1

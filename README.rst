@@ -9,10 +9,33 @@ This package presents a uniform pickling interface for ZODB:
   which Python2 applications can use to pickle binary values such that
   they will be unpickled as ``bytes`` under Py3k.
 
-- Under Py3k, this package forks the ``pickle`` moudule (and the supporting
+- Under Py3k, this package forks the ``pickle`` module (and the supporting
   C extension) from both Python 3.2 and Python 3.3.  The fork add support
   for the ``noload`` operations used by ZODB.
 
+
+General Usage
+-------------
+
+To get compatibility between Python 2 and 3 pickling, replace::
+
+    import pickle
+    
+by::
+
+    from zodbpickle import pickle
+    
+This provides compatibility, but has the effect that you get the fast implementation
+in Python 3, while Python 2 uses the slow version.
+
+To get a more deterministic choice of the implementation, use one of::
+
+    from zodbpickle import fastpickle # always C
+    from zodbpickle import slowpickle # always Python
+
+Both modules can co-exist which is helpful for comparison.
+
+But there is a bit more to consider, so please read on!
 
 Loading/Storing Python 2 Strings
 --------------------------------
