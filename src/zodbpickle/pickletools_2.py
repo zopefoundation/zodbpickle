@@ -140,6 +140,7 @@ copy_reg.safe_constructors are removed from the unpickling code.
 References to these variables in the descriptions below are to be seen
 as describing unpickling in Python 2.2 and before.
 """
+
 # Meta-rule:  Descriptions are stored in instances of descriptor objects,
 # with plain constructors.  No meta-language is defined from which
 # descriptors could be constructed.  If you want, e.g., XML, write a little
@@ -2121,8 +2122,8 @@ Exercise the INST/OBJ/BUILD family.
 >>> from zodbpickle import pickletools_2 as pickletools
 >>> dis(pickle.dumps(pickletools.dis, 0))
     0: c    GLOBAL     'zodbpickle.pickletools_2 dis'
-   28: p    PUT        0
-   31: .    STOP
+   30: p    PUT        0
+   33: .    STOP
 highest protocol among opcodes = 0
 
 >>> from zodbpickle.pickletools_2 import _Example
@@ -2133,19 +2134,19 @@ highest protocol among opcodes = 0
     2: p    PUT        0
     5: (    MARK
     6: i        INST       'zodbpickle.pickletools_2 _Example' (MARK at 5)
-   39: p    PUT        1
-   42: (    MARK
-   43: d        DICT       (MARK at 31)
-   44: p    PUT        2
-   47: S    STRING     'value'
-   56: p    PUT        3
-   59: I    INT        42
-   63: s    SETITEM
-   64: b    BUILD
-   65: a    APPEND
-   66: g    GET        1
-   69: a    APPEND
-   70: .    STOP
+   41: p    PUT        1
+   44: (    MARK
+   45: d        DICT       (MARK at 44)
+   46: p    PUT        2
+   49: S    STRING     'value'
+   58: p    PUT        3
+   61: I    INT        42
+   65: s    SETITEM
+   66: b    BUILD
+   67: a    APPEND
+   68: g    GET        1
+   71: a    APPEND
+   72: .    STOP
 highest protocol among opcodes = 0
 
 >>> dis(pickle.dumps(x, 1))
@@ -2154,19 +2155,19 @@ highest protocol among opcodes = 0
     3: (    MARK
     4: (        MARK
     5: c            GLOBAL     'zodbpickle.pickletools_2 _Example'
-   28: q            BINPUT     1
-   40: o            OBJ        (MARK at 4)
-   41: q        BINPUT     2
-   43: }        EMPTY_DICT
-   44: q        BINPUT     3
-   46: U        SHORT_BINSTRING 'value'
-   53: q        BINPUT     4
-   55: K        BININT1    42
-   57: s        SETITEM
-   58: b        BUILD
-   59: h        BINGET     2
-   61: e        APPENDS    (MARK at 3)
-   62: .    STOP
+   40: q            BINPUT     1
+   42: o            OBJ        (MARK at 4)
+   43: q        BINPUT     2
+   45: }        EMPTY_DICT
+   46: q        BINPUT     3
+   48: U        SHORT_BINSTRING 'value'
+   55: q        BINPUT     4
+   57: K        BININT1    42
+   59: s        SETITEM
+   60: b        BUILD
+   61: h        BINGET     2
+   63: e        APPENDS    (MARK at 3)
+   64: .    STOP
 highest protocol among opcodes = 1
 
 Try "the canonical" recursive-object test.
@@ -2293,3 +2294,14 @@ highest protocol among opcodes = 2
    18: .    STOP
 highest protocol among opcodes = 2
 """
+
+__test__ = {'disassembler_test': _dis_test,
+            'disassembler_memo_test': _memo_test,
+           }
+
+def _test():
+    import doctest
+    return doctest.testmod()
+
+if __name__ == "__main__":
+    _test()
