@@ -1,6 +1,15 @@
 ``zodbpickle`` Changelog
 ========================
 
+Unreleased
+----------
+
+- Import accelerator from *our* extension module under Py3k.
+  See https://github.com/zopefoundation/zodbpickle/issues/6,
+  https://github.com/zopefoundation/zodbpickle/issues/7.
+
+- Fix unpickler's ``load_short_binstring`` across supported platforms.
+
 0.5.1 (2013-07-06)
 ------------------
 
