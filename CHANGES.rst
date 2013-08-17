@@ -1,8 +1,8 @@
 ``zodbpickle`` Changelog
 ========================
 
-Unreleased
-----------
+0.5.2 (2013-08-17)
+------------------
 
 - Import accelerator from *our* extension module under Py3k.
   See https://github.com/zopefoundation/zodbpickle/issues/6,
