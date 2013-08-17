@@ -1029,9 +1029,8 @@ class _Unpickler:
 
     def load_short_binstring(self):
         len = ord(self.read(1))
-        data = bytes(self.read(len))
-        value = str(data, self.encoding, self.errors)
-        self.append(value)
+        data = self.read(len)
+        self.append(self.decode_string(data))
     dispatch[SHORT_BINSTRING[0]] = load_short_binstring
 
     def load_short_binbytes(self):
@@ -1463,7 +1462,7 @@ def _loads(s, *, fix_imports=True, encoding="ASCII", errors="strict"):
 
 # Use the faster _pickle if possible
 try:
-    from _pickle import *
+    from zodbpickle._pickle import *
 except ImportError:
     Pickler, Unpickler = _Pickler, _Unpickler
     dump, dumps, load, loads = _dump, _dumps, _load, _loads
