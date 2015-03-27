@@ -7,7 +7,8 @@ from .pickletester_2 import (AbstractPickleTests,
                              AbstractPickleModuleTests,
                              AbstractPersistentPicklerTests,
                              AbstractPicklerUnpicklerObjectTests,
-                             BigmemPickleTests)
+                             BigmemPickleTests,
+                             has_c_implementation)
 
 from test import test_support
 
@@ -340,27 +341,31 @@ class cPickleDeepRecursive(unittest.TestCase):
 
 def test_suite():
     import unittest
-    return unittest.TestSuite((
+    tests = [
         unittest.makeSuite(PickleTests),
         unittest.makeSuite(PicklerTests),
         unittest.makeSuite(PersPicklerTests),
         unittest.makeSuite(PicklerUnpicklerObjectTests),
         unittest.makeSuite(PickleBigmemPickleTests),
-        
-        unittest.makeSuite(cPickleTests),
-        unittest.makeSuite(cStringIOCPicklerTests),
-        unittest.makeSuite(BytesIOCPicklerTests),
-        unittest.makeSuite(FileIOCPicklerTests),        
-        unittest.makeSuite(cStringIOCPicklerListTests),
-        unittest.makeSuite(BytesIOCPicklerListTests),
-        unittest.makeSuite(FileIOCPicklerListTests),
-        unittest.makeSuite(cStringIOCPicklerFastTests),
-        unittest.makeSuite(BytesIOCPicklerFastTests),
-        unittest.makeSuite(FileIOCPicklerFastTests),
-        unittest.makeSuite(cPickleDeepRecursive),
-        unittest.makeSuite(cPicklePicklerUnpicklerObjectTests),
-        unittest.makeSuite(cPickleBigmemPickleTests),
-    ))
+	]
+
+    if has_c_implementation:
+        tests.extend([
+            unittest.makeSuite(cPickleTests),
+            unittest.makeSuite(cStringIOCPicklerTests),
+            unittest.makeSuite(BytesIOCPicklerTests),
+            unittest.makeSuite(FileIOCPicklerTests),
+            unittest.makeSuite(cStringIOCPicklerListTests),
+            unittest.makeSuite(BytesIOCPicklerListTests),
+            unittest.makeSuite(FileIOCPicklerListTests),
+            unittest.makeSuite(cStringIOCPicklerFastTests),
+            unittest.makeSuite(BytesIOCPicklerFastTests),
+            unittest.makeSuite(FileIOCPicklerFastTests),
+            unittest.makeSuite(cPickleDeepRecursive),
+            unittest.makeSuite(cPicklePicklerUnpicklerObjectTests),
+            unittest.makeSuite(cPickleBigmemPickleTests),
+        ])
+    return unittest.TestSuite(tests)
 
 if __name__ == '__main__':
     test_support.run_unittest(test_suite())

@@ -13,6 +13,7 @@
 ##############################################################################
 """Setup"""
 import os
+import platform
 import sys
 
 from setuptools import Extension, find_packages, setup
@@ -28,6 +29,17 @@ elif sys.version_info[:2] == (3, 2):
     EXT = 'src/zodbpickle/_pickle_32.c'
 else:
     EXT = 'src/zodbpickle/_pickle_33.c'
+
+# PyPy won't build the extension.
+py_impl = getattr(platform, 'python_implementation', lambda: None)
+is_pypy = py_impl() == 'PyPy'
+is_pure = 'PURE_PYTHON' in os.environ
+if is_pypy or is_pure:
+    ext_modules = []
+else:
+    ext_modules = [Extension(name='zodbpickle._pickle',
+                             sources=[EXT])]
+
 
 setup(
     name='zodbpickle',
@@ -50,6 +62,7 @@ setup(
         'Programming Language :: Python :: 3.2',
         'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: Implementation :: CPython',
+        'Programming Language :: Python :: Implementation :: PyPy',
         'Framework :: ZODB',
         'Topic :: Database',
         'Topic :: Software Development :: Libraries :: Python Modules',
@@ -60,10 +73,7 @@ setup(
     platforms=['any'],
     packages=find_packages('src'),
     package_dir = {'':'src'},
-    ext_modules = [
-        Extension(name='zodbpickle._pickle',
-                  sources=[EXT])
-        ],
+    ext_modules = ext_modules,
     extras_require = {
         'test': (),
         'testing': ['nose', 'coverage'],

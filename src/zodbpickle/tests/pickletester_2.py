@@ -13,8 +13,16 @@ except ImportError:
     def precisionbigmemtest(*args, **kwargs):
         return lambda self: None
 
+from . import _is_pypy
+from . import _is_pure
 from zodbpickle import pickle_2 as pickle
-from zodbpickle import _pickle as cPickle
+try:
+    from zodbpickle import _pickle as cPickle
+    has_c_implementation = not _is_pypy and not _is_pure
+except ImportError:
+    cPickle = pickle
+    has_c_implementation = False
+
 from zodbpickle import pickletools_2 as pickletools
 
 # Tests that try a number of pickle protocols should have a
@@ -1169,6 +1177,8 @@ class AbstractPickleModuleTests(unittest.TestCase):
         s = StringIO.StringIO("X''.")
         self.assertRaises(EOFError, self.module.load, s)
 
+    @unittest.skipIf(_is_pypy,
+                     "Fails to access the redefined builtins")
     def test_restricted(self):
         # issue7128: cPickle failed in restricted mode
         builtins = {'pickleme': self.module,
