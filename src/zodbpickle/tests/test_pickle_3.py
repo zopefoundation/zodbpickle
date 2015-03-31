@@ -3,6 +3,7 @@ import collections
 import unittest
 import doctest
 import sys
+from test import support as test_support
 
 from .pickletester_3 import AbstractPickleTests
 from .pickletester_3 import AbstractPickleModuleTests
@@ -13,11 +14,13 @@ from .pickletester_3 import BigmemPickleTests
 from .pickletester_3 import AbstractBytestrTests
 from .pickletester_3 import AbstractBytesFallbackTests
 
+from . import _is_pypy
+from . import _is_pure
 from zodbpickle import pickle_3 as pickle
 
 try:
     from zodbpickle import _pickle
-    has_c_implementation = True
+    has_c_implementation = not _is_pypy and not _is_pure
 except ImportError:
     has_c_implementation = False
 
@@ -170,3 +173,6 @@ def test_suite():
     ] + [
         doctest.DocTestSuite(pickle),
     ])
+
+if __name__ == '__main__':
+    test_support.run_unittest(test_suite())

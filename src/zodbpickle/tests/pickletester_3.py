@@ -32,6 +32,8 @@ except ImportError:
 _PY33 = sys.version_info[:2] >= (3, 3)
 
 from zodbpickle.pickle_3 import bytes_types
+from . import _is_pure
+from . import _is_pypy
 
 # Tests that try a number of pickle protocols should have a
 #     for proto in protocols:
@@ -425,7 +427,7 @@ DATA5 = (b'\x80\x02cCookie\nSimpleCookie\nq\x00)\x81q\x01U\x03key'
 
 # set([3]) pickled from 2.x with protocol 2
 DATA6 = b'\x80\x02c__builtin__\nset\nq\x00]q\x01K\x03a\x85q\x02Rq\x03.'
-
+DATA6_PYPY = b'\x80\x02c__builtin__\nset\nq\x00K\x03\x85q\x01\x85q\x02Rq\x03.'
 
 def create_data():
     c = C()
@@ -1106,8 +1108,12 @@ class AbstractPickleTests(unittest.TestCase):
         x = BadGetattr()
         for proto in 0, 1:
             self.assertRaises(RuntimeError, self.dumps, x, proto)
-        # protocol 2 don't raise a RuntimeError.
-        d = self.dumps(x, 2)
+
+        # protocol 2 don't raise a RuntimeError, except under PyPy
+        if _is_pypy or _is_pure:
+            self.assertRaises(RuntimeError, self.dumps, x, 2)
+        else:
+            self.dumps(x, 2)
 
     def test_reduce_bad_iterator(self):
         # Issue4176: crash when 4th and 5th items of __reduce__()
@@ -1146,6 +1152,10 @@ class AbstractPickleTests(unittest.TestCase):
                              "Failed protocol %d: %r != %r"
                              % (proto, obj, loaded))
 
+    @unittest.skipIf(_is_pypy,
+                     'PyPy does not guarantee the identity of strings. '
+                     'See the discussion on '
+                     'http://pypy.readthedocs.org/en/latest/cpython_differences.html#object-identity-of-primitive-values-is-and-id')
     def test_attribute_name_interning(self):
         # Test that attribute names of pickled objects are interned when
         # unpickling.
@@ -1179,8 +1189,14 @@ class AbstractPickleTests(unittest.TestCase):
         # bytecode that 2.x will still understand.
         dumped = self.dumps(range(5), 2)
         self.assertEqual(dumped, DATA4)
+
         dumped = self.dumps(set([3]), 2)
-        self.assertEqual(dumped, DATA6)
+        if not _is_pypy:
+            # The integer in the set is pickled differently under PyPy
+            # due to the differing identity semantics (?)
+            self.assertEqual(dumped, DATA6)
+        else:
+            self.assertEqual(dumped, DATA6_PYPY)
 
     def test_large_pickles(self):
         # Test the correctness of internal buffering routines when handling
