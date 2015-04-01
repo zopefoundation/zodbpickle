@@ -11,3 +11,4 @@ parts
 *.so
 __pycache__
 *.pyc
+.dir-locals.el
