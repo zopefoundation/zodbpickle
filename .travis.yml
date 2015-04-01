@@ -2,7 +2,11 @@ language: python
 sudo: false
 python:
     - pypy
+    - 2.6
+    - 2.7
+    - 3.2
     - 3.3
+    - 3.4
 install:
     - pip install . --use-mirrors
 script:
