@@ -848,7 +848,9 @@ class _Unpickler:
     def noload(self):
         """Read a pickled object representation from the open file.
 
-        Don't return anything useful, just go through the motions.
+        If the object was an intrinsic type such as a literal list, dict
+        or tuple, return it. Otherwise (if the object was an instance),
+        return nothing useful.
         """
         # Check whether Unpickler was initialized correctly. This is
         # only needed to mimic the behavior of _pickle.Unpickler.dump().
@@ -1336,22 +1338,38 @@ class _Unpickler:
     nl_dispatch[GLOBAL[0]] = noload_global
 
     def noload_append(self):
-        self.stack.pop() # skip value
+        if self.stack[-2] is not None:
+            self.load_append()
+        else:
+            self.stack.pop()
     nl_dispatch[APPEND[0]] = noload_append
 
     def noload_appends(self):
+        stack = self.stack
         mark = self.marker()
+        list = stack[mark - 1]
+        if list is not None:
+            list.extend(stack[mark + 1:])
         del self.stack[mark:]
     nl_dispatch[APPENDS[0]] = noload_appends
 
     def noload_setitem(self):
-        self.stack.pop() # skip value
-        self.stack.pop() # skip key
+        if self.stack[-3] is not None:
+            self.load_setitem()
+        else:
+            self.stack.pop() # skip value
+            self.stack.pop() # skip key
     nl_dispatch[SETITEM[0]] = noload_setitem
 
     def noload_setitems(self):
+        stack = self.stack
         mark = self.marker()
-        del self.stack[mark:]
+        dict = stack[mark - 1]
+        if dict is not None:
+            for i in range(mark + 1, len(stack), 2):
+                dict[stack[i]] = stack[i + 1]
+
+        del stack[mark:]
     nl_dispatch[SETITEMS[0]] = noload_setitems
 
     def noload_reduce(self):
