@@ -1177,16 +1177,17 @@ class AbstractPickleModuleTests(unittest.TestCase):
         s = StringIO.StringIO("X''.")
         self.assertRaises(EOFError, self.module.load, s)
 
-    @unittest.skipIf(_is_pypy,
-                     "Fails to access the redefined builtins")
-    def test_restricted(self):
-        # issue7128: cPickle failed in restricted mode
-        builtins = {'pickleme': self.module,
-                    '__import__': __import__}
-        d = {}
-        teststr = "def f(): pickleme.dumps(0)"
-        exec teststr in {'__builtins__': builtins}, d
-        d['f']()
+    if not _is_pypy:
+        # PyPy cannot redefine the builtins;
+        # don't use unittest.skipIf because that's not in 2.6
+        def test_restricted(self):
+            # issue7128: cPickle failed in restricted mode
+            builtins = {'pickleme': self.module,
+                        '__import__': __import__}
+            d = {}
+            teststr = "def f(): pickleme.dumps(0)"
+            exec teststr in {'__builtins__': builtins}, d
+            d['f']()
 
     def test_bad_input(self):
         # Test issue4298
