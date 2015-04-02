@@ -1,8 +1,12 @@
 ``zodbpickle`` Changelog
 ========================
 
-0.6 (unreleased)
-----------------
+0.6.0 (unreleased)
+------------------
+
+- Restore the ``noload`` behaviour from Python 2.6 and provide the
+  ``noload`` method on the non-C-accelerated unpicklers under PyPy and
+  Python 2.
 
 - Add support for PyPy, PyPy3, and Python 3.4.
 

@@ -1825,20 +1825,87 @@ class AbstractPicklerUnpicklerObjectTests(unittest.TestCase):
         unpickler = self.unpickler_class(f)
         unpickler.noload() # read past _NOLOAD_OBJECT
         self.assertEqual(f.tell(), after['_NOLOAD_OBJECT'])
-        unpickler.noload() # read past aaa
+
+        noload = unpickler.noload() # read past aaa
+        self.assertEqual(noload, None)
         self.assertEqual(f.tell(), after['aaa'])
+
         unpickler.noload() # read past bbb
         self.assertEqual(f.tell(), after['bbb'])
-        unpickler.noload() # read past ccc
+
+        noload = unpickler.noload() # read past ccc
+        self.assertEqual(noload, ccc)
         self.assertEqual(f.tell(), after['ccc'])
-        unpickler.noload() # read past ddd
+
+        noload = unpickler.noload() # read past ddd
+        self.assertEqual(noload, ddd)
         self.assertEqual(f.tell(), after['ddd'])
-        unpickler.noload() # read past eee
+
+        noload = unpickler.noload() # read past eee
+        self.assertEqual(noload, eee)
         self.assertEqual(f.tell(), after['eee'])
-        unpickler.noload() # read past fff
+
+        noload = unpickler.noload() # read past fff
+        self.assertEqual(noload, fff)
         self.assertEqual(f.tell(), after['fff'])
-        unpickler.noload() # read past ggg
+
+        noload = unpickler.noload() # read past ggg
+        self.assertEqual(noload, ggg)
         self.assertEqual(f.tell(), after['ggg'])
+
+    def test_functional_noload_dict_subclass(self):
+        """noload() doesn't break or produce any output given a dict subclass"""
+        # See http://bugs.python.org/issue1101399
+        o = MyDict()
+        o['x'] = 1
+        f = io.BytesIO()
+        pickler = self.pickler_class(f, protocol=2)
+        pickler.dump(o)
+        f.seek(0)
+        unpickler = self.unpickler_class(f)
+        noload = unpickler.noload()
+        self.assertEqual(noload, None)
+
+
+    def test_functional_noload_list_subclass(self):
+        """noload() doesn't break or produce any output given a list subclass"""
+        # See http://bugs.python.org/issue1101399
+        o = MyList()
+        o.append(1)
+        f = io.BytesIO()
+        pickler = self.pickler_class(f, protocol=2)
+        pickler.dump(o)
+        f.seek(0)
+        unpickler = self.unpickler_class(f)
+        noload = unpickler.noload()
+        self.assertEqual(noload, None)
+
+    def test_functional_noload_dict(self):
+        """noload() implements the Python 2.6 behaviour and fills in dicts"""
+        # See http://bugs.python.org/issue1101399
+        o = dict()
+        o['x'] = 1
+        f = io.BytesIO()
+        pickler = self.pickler_class(f, protocol=2)
+        pickler.dump(o)
+        f.seek(0)
+        unpickler = self.unpickler_class(f)
+        noload = unpickler.noload()
+        self.assertEqual(noload, o)
+
+
+    def test_functional_noload_list(self):
+        """noload() implements the Python 2.6 behaviour and fills in lists"""
+        # See http://bugs.python.org/issue1101399
+        o = list()
+        o.append(1)
+        f = io.BytesIO()
+        pickler = self.pickler_class(f, protocol=2)
+        pickler.dump(o)
+        f.seek(0)
+        unpickler = self.unpickler_class(f)
+        noload = unpickler.noload()
+        self.assertEqual(noload, o)
 
 
 # Tests for dispatch_table attribute

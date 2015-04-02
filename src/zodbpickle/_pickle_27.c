@@ -5326,31 +5326,66 @@ noload_extension(Unpicklerobject *self, int nbytes)
 }
 
 static int
+do_noload_append(Unpicklerobject *self, Py_ssize_t  x)
+{
+    PyObject *list = 0;
+    Py_ssize_t len;
+
+    len=self->stack->length;
+    if (!( len >= x && x > 0 ))  return stackUnderflow();
+    /* nothing to do */
+    if (len==x) return 0;
+
+    list=self->stack->data[x-1];
+    if (list == Py_None) {
+        return Pdata_clear(self->stack, x);
+    }
+    else {
+        return do_append(self, x);
+    }
+
+}
+
+static int
 noload_append(Unpicklerobject *self)
 {
-    return Pdata_clear(self->stack, self->stack->length - 1);
+    return do_noload_append(self, self->stack->length - 1);
 }
 
 static int
 noload_appends(Unpicklerobject *self)
 {
-    Py_ssize_t i;
-    if ((i = marker(self)) < 0) return -1;
-    return Pdata_clear(self->stack, i);
+    return do_noload_append(self, marker(self));
+}
+
+static int
+do_noload_setitems(Unpicklerobject *self, Py_ssize_t x)
+{
+    PyObject *dict = 0;
+    Py_ssize_t len;
+
+    if (!( (len=self->stack->length) >= x
+           && x > 0 ))  return stackUnderflow();
+
+    dict=self->stack->data[x-1];
+    if (dict == Py_None) {
+        return Pdata_clear(self->stack, x);
+    }
+    else {
+        return do_setitems(self, x);
+    }
 }
 
 static int
 noload_setitem(Unpicklerobject *self)
 {
-    return Pdata_clear(self->stack, self->stack->length - 2);
+    return do_noload_setitems(self, self->stack->length - 2);
 }
 
 static int
 noload_setitems(Unpicklerobject *self)
 {
-    Py_ssize_t i;
-    if ((i = marker(self)) < 0) return -1;
-    return Pdata_clear(self->stack, i);
+    return do_noload_setitems(self, marker(self));
 }
 
 static PyObject *
