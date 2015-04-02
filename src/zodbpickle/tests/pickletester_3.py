@@ -30,6 +30,8 @@ except ImportError:
         return wrapper
 
 _PY33 = sys.version_info[:2] >= (3, 3)
+_PY34 = sys.version_info[:2] >= (3, 4)
+_PY343 = sys.version_info[:3] >= (3, 4, 3)
 
 from zodbpickle.pickle_3 import bytes_types
 from . import _is_pure
@@ -1109,8 +1111,8 @@ class AbstractPickleTests(unittest.TestCase):
         for proto in 0, 1:
             self.assertRaises(RuntimeError, self.dumps, x, proto)
 
-        # protocol 2 don't raise a RuntimeError, except under PyPy
-        if _is_pypy or _is_pure:
+        # protocol 2 don't raise a RuntimeError, except under PyPy, or Python >= 3.4
+        if _is_pypy or (_is_pure and not _PY33) or _PY34:
             self.assertRaises(RuntimeError, self.dumps, x, 2)
         else:
             self.dumps(x, 2)
@@ -1180,7 +1182,14 @@ class AbstractPickleTests(unittest.TestCase):
         loaded = self.loads(DATA5)
         self.assertEqual(type(loaded), SimpleCookie)
         self.assertEqual(list(loaded.keys()), ["key"])
-        self.assertEqual(loaded["key"].value, "Set-Cookie: key=value")
+        if _PY343:
+            # The SimpleCookie object changed the way it gets
+            # constructed in Python 3.4.3; the old behaviour was
+            # broken.
+            # See http://bugs.python.org/issue22775
+            self.assertEqual(loaded["key"].value, "value")
+        else:
+            self.assertEqual(loaded["key"].value, "Set-Cookie: key=value")
 
     def test_pickle_to_2x(self):
         # Pickle non-trivial data with protocol 2, expecting that it yields
