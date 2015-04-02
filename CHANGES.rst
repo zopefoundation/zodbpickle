@@ -1,7 +1,7 @@
 ``zodbpickle`` Changelog
 ========================
 
-0.6.0 (unreleased)
+0.6.0 (2015-04-02)
 ------------------
 
 - Restore the ``noload`` behaviour from Python 2.6 and provide the
