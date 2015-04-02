@@ -4,6 +4,20 @@ import cStringIO
 import copy_reg
 import sys
 
+try:
+    from unittest import skipIf
+except ImportError:
+    def skipIf(condition, message):
+        def _decorator(fn):
+            if condition:
+                return fn
+            else:
+                def skipped(self):
+                    pass
+                skipped.__doc__ = '%s skipped: %s' % (fn.__name__, message)
+                return skipped
+        return _decorator
+
 from test.test_support import TestFailed, have_unicode, TESTFN
 try:
     from test.test_support import _2G, _1M, precisionbigmemtest
@@ -1177,8 +1191,7 @@ class AbstractPickleModuleTests(unittest.TestCase):
         s = StringIO.StringIO("X''.")
         self.assertRaises(EOFError, self.module.load, s)
 
-    @unittest.skipIf(_is_pypy,
-                     "Fails to access the redefined builtins")
+    @skipIf(_is_pypy, "Fails to access the redefined builtins")
     def test_restricted(self):
         # issue7128: cPickle failed in restricted mode
         builtins = {'pickleme': self.module,
