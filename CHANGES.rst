@@ -1,6 +1,11 @@
 ``zodbpickle`` Changelog
 ========================
 
+0.6 (unreleased)
+----------------
+
+- Add support for PyPy, PyPy3, and Python 3.4.
+
 0.5.2 (2013-08-17)
 ------------------
 
