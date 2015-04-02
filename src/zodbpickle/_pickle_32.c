@@ -1889,10 +1889,10 @@ raw_unicode_escape(const Py_UNICODE *s, Py_ssize_t size)
 #else
     const Py_ssize_t expandsize = 6;
 #endif
-    
+
     if (size > PY_SSIZE_T_MAX / expandsize)
         return PyErr_NoMemory();
-    
+
     repr = PyByteArray_FromStringAndSize(NULL, expandsize * size);
     if (repr == NULL)
         return NULL;
@@ -3042,7 +3042,7 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
             use_newobj = 0;
         }
         else {
-            use_newobj = PyUnicode_Check(name_str) && 
+            use_newobj = PyUnicode_Check(name_str) &&
                 PyUnicode_Compare(name_str, newobj_str) == 0;
             Py_DECREF(name_str);
         }
@@ -3147,7 +3147,7 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
         return -1;
 
     if (state) {
-        if (save(self, state, 0) < 0 || 
+        if (save(self, state, 0) < 0 ||
             _Pickler_Write(self, &build_op, 1) < 0)
             return -1;
     }
@@ -3401,7 +3401,7 @@ Pickler_dump(PicklerObject *self, PyObject *args)
        Developers often forget to call __init__() in their subclasses, which
        would trigger a segfault without this check. */
     if (self->write == NULL) {
-        PyErr_Format(PicklingError, 
+        PyErr_Format(PicklingError,
                      "Pickler.__init__() was not called by %s.__init__()",
                      Py_TYPE(self)->tp_name);
         return NULL;
@@ -3881,7 +3881,7 @@ static PyTypeObject Pickler_Type = {
     0,                                  /*tp_is_gc*/
 };
 
-/* Temporary helper for calling self.find_class(). 
+/* Temporary helper for calling self.find_class().
 
    XXX: It would be nice to able to avoid Python function call overhead, by
    using directly the C version of find_class(), when find_class() is not
@@ -3934,7 +3934,7 @@ load_int(UnpicklerObject *self)
         return bad_readline();
 
     errno = 0;
-    /* XXX: Should the base argument of strtol() be explicitly set to 10? 
+    /* XXX: Should the base argument of strtol() be explicitly set to 10?
        XXX(avassalotti): Should this uses PyOS_strtol()? */
     x = strtol(s, &endptr, 0);
 
@@ -5125,7 +5125,7 @@ do_setitems(UnpicklerObject *self, Py_ssize_t x)
         return stack_underflow();
     if (len == x)  /* nothing to do */
         return 0;
-    if ((len - x) % 2 != 0) { 
+    if ((len - x) % 2 != 0) {
         /* Currupt or hostile pickle -- we never write one like this. */
         PyErr_SetString(UnpicklingError, "odd number of items for SETITEMS");
         return -1;
@@ -5482,7 +5482,7 @@ Unpickler_load(UnpicklerObject *self)
        not call Unpickler.__init__(). Here, we simply ensure that self->read
        is not NULL. */
     if (self->read == NULL) {
-        PyErr_Format(UnpicklingError, 
+        PyErr_Format(UnpicklingError,
                      "Unpickler.__init__() was not called by %s.__init__()",
                      Py_TYPE(self)->tp_name);
         return NULL;
@@ -5576,31 +5576,66 @@ noload_extension(UnpicklerObject *self, int nbytes)
 }
 
 static int
+do_noload_append(UnpicklerObject *self, Py_ssize_t  x)
+{
+    PyObject *list = 0;
+    Py_ssize_t len;
+
+    len=Py_SIZE(self->stack);
+    if (!( len >= x && x > 0 ))  return stack_underflow();
+    /* nothing to do */
+    if (len==x) return 0;
+
+    list=self->stack->data[x-1];
+    if (list == Py_None) {
+        return Pdata_clear(self->stack, x);
+    }
+    else {
+        return do_append(self, x);
+    }
+
+}
+
+static int
 noload_append(UnpicklerObject *self)
 {
-    return Pdata_clear(self->stack, Py_SIZE(self->stack) - 1);
+    return do_noload_append(self, Py_SIZE(self->stack) - 1);
 }
 
 static int
 noload_appends(UnpicklerObject *self)
 {
-    int i;
-    if ((i = marker(self)) < 0) return -1;
-    return Pdata_clear(self->stack, i);
+    return do_noload_append(self, marker(self));
+}
+
+static int
+do_noload_setitems(UnpicklerObject *self, Py_ssize_t x)
+{
+    PyObject *dict = 0;
+    Py_ssize_t len;
+
+    if (!( (len=Py_SIZE(self->stack)) >= x
+           && x > 0 ))  return stackUnderflow();
+
+    dict=self->stack->data[x-1];
+    if (dict == Py_None) {
+        return Pdata_clear(self->stack, x);
+    }
+    else {
+        return do_setitems(self, x);
+    }
 }
 
 static int
 noload_setitem(UnpicklerObject *self)
 {
-    return Pdata_clear(self->stack, Py_SIZE(self->stack) - 2);
+    return do_noload_setitems(self, Py_SIZE(self->stack) - 2);
 }
 
 static int
 noload_setitems(UnpicklerObject *self)
 {
-    int i;
-    if ((i = marker(self)) < 0) return -1;
-    return Pdata_clear(self->stack, i);
+    return do_noload_setitems(self, marker(self));
 }
 
 static PyObject *
@@ -6018,7 +6053,7 @@ Unpickler_find_class(UnpicklerObject *self, PyObject *args)
         global = PyObject_GetAttr(module, global_name);
         Py_DECREF(module);
     }
-    else { 
+    else {
         global = PyObject_GetAttr(module, global_name);
     }
     return global;
@@ -6198,7 +6233,7 @@ Unpickler_init(UnpicklerObject *self, PyObject *args, PyObject *kwds)
  * intentional, as these should be treated as black-box implementation details.
  *
  * We do, however, have to implement pickling/unpickling support because of
- * real-world code like cvs2svn. 
+ * real-world code like cvs2svn.
  */
 
 typedef struct {
