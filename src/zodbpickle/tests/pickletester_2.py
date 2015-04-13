@@ -28,6 +28,7 @@ except ImportError:
     def precisionbigmemtest(*args, **kwargs):
         return lambda self: None
 
+from . import _is_jython
 from . import _is_pypy
 from . import _is_pure
 from zodbpickle import pickle_2 as pickle
@@ -1035,6 +1036,9 @@ class AbstractPickleTests(unittest.TestCase):
                              "Failed protocol %d: %r != %r"
                              % (proto, obj, loaded))
 
+    @skipIf(_is_jython, "Jython interns strings at the Java level "
+                        "but creates new PyString wrappers when __dict__ is "
+                        "accessed. See PyStringMap.")
     def test_attribute_name_interning(self):
         # Test that attribute names of pickled objects are interned when
         # unpickling.
@@ -1100,8 +1104,12 @@ class REX_five(object):
     _reduce_called = 0
     def __reduce__(self):
         self._reduce_called = 1
+        if _is_jython:
+            return super(REX_five,self).__reduce__()
         return object.__reduce__(self)
-    # This one used to fail with infinite recursion
+    # This one used to fail with infinite recursion;
+    # on Jython 2.7rc2 it still does if super() is not used; this
+    # is a bug in Jython http://bugs.jython.org/issue2323
 
 # Test classes for newobj
 
@@ -1192,7 +1200,7 @@ class AbstractPickleModuleTests(unittest.TestCase):
         s = StringIO.StringIO("X''.")
         self.assertRaises(EOFError, self.module.load, s)
 
-    @skipIf(_is_pypy, "Fails to access the redefined builtins")
+    @skipIf(_is_pypy or _is_jython, "Fails to access the redefined builtins")
     def test_restricted(self):
         # issue7128: cPickle failed in restricted mode
         builtins = {'pickleme': self.module,

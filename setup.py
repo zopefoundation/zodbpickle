@@ -30,11 +30,12 @@ elif sys.version_info[:2] == (3, 2):
 else:
     EXT = 'src/zodbpickle/_pickle_33.c'
 
-# PyPy won't build the extension.
+# PyPy and jython won't build the extension.
 py_impl = getattr(platform, 'python_implementation', lambda: None)
 is_pypy = py_impl() == 'PyPy'
+is_jython = py_impl() == 'Jython'
 is_pure = 'PURE_PYTHON' in os.environ
-if is_pypy or is_pure:
+if is_pypy or is_jython or is_pure:
     ext_modules = []
 else:
     ext_modules = [Extension(name='zodbpickle._pickle',
@@ -64,6 +65,7 @@ setup(
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: Implementation :: CPython',
         'Programming Language :: Python :: Implementation :: PyPy',
+        'Programming Language :: Python :: Implementation :: Jython',
         'Framework :: ZODB',
         'Topic :: Database',
         'Topic :: Software Development :: Libraries :: Python Modules',
