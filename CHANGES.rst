@@ -4,7 +4,7 @@
 0.6.1 (unreleased)
 ------------------
 
-- Add support for Jython.
+- Add support for Jython 2.7.
 
 0.6.0 (2015-04-02)
 ------------------
