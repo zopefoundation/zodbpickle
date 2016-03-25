@@ -25,8 +25,6 @@ README = (open(os.path.join(here, 'README.rst')).read()
 
 if sys.version_info[:1] < (3,):
     EXT = 'src/zodbpickle/_pickle_27.c'
-elif sys.version_info[:2] == (3, 2):
-    EXT = 'src/zodbpickle/_pickle_32.c'
 else:
     EXT = 'src/zodbpickle/_pickle_33.c'
 
@@ -61,6 +59,7 @@ setup(
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: Implementation :: CPython',
         'Programming Language :: Python :: Implementation :: PyPy',
         'Programming Language :: Python :: Implementation :: Jython',
