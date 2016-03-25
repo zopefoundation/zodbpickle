@@ -1,8 +1,10 @@
 ``zodbpickle`` Changelog
 ========================
 
-0.6.1 (unreleased)
+0.7.0 (unreleased)
 ------------------
+
+- Drop support for Python 2.6 and 3.2.
 
 - Add support for Jython 2.7.
 
