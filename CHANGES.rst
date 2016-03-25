@@ -8,6 +8,8 @@
 
 - Add support for Jython 2.7.
 
+- Add support for Python 3.5.
+
 0.6.0 (2015-04-02)
 ------------------
 
