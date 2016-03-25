@@ -1,6 +1,17 @@
 ``zodbpickle`` README
 =====================
 
+.. image:: https://travis-ci.org/zopefoundation/zodbpickle.png?branch=master
+        :target: https://travis-ci.org/zopefoundation/zodbpickle
+
+.. image:: https://img.shields.io/pypi/v/zodbpickle.svg
+        :target: https://pypi.python.org/pypi/zodbpickle
+        :alt: PyPI
+
+.. image:: https://img.shields.io/pypi/pyversions/zodbpickle.svg
+        :target: https://pypi.python.org/pypi/zodbpickle
+        :alt: Python versions
+
 This package presents a uniform pickling interface for ZODB:
 
 - Under Python2, this package forks both Python 2.7's ``pickle`` and
