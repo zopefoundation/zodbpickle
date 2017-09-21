@@ -218,7 +218,7 @@ Pdata_grow(Pdata *self)
     if (new_allocated > PY_SSIZE_T_MAX - allocated)
         goto nomemory;
     new_allocated += allocated;
-    if (new_allocated > (PY_SSIZE_T_MAX / sizeof(PyObject *)))
+    if ((size_t)new_allocated > ((size_t)PY_SSIZE_T_MAX / sizeof(PyObject *)))
         goto nomemory;
     data = PyMem_REALLOC(data, new_allocated * sizeof(PyObject *));
     if (data == NULL)
