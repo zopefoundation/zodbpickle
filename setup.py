@@ -60,6 +60,7 @@ setup(
         'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: Implementation :: CPython',
         'Programming Language :: Python :: Implementation :: PyPy',
         'Programming Language :: Python :: Implementation :: Jython',
@@ -69,19 +70,19 @@ setup(
         'Operating System :: Microsoft :: Windows',
         'Operating System :: Unix',
         'Operating System :: MacOS :: MacOS X',
-        ],
+    ],
     platforms=['any'],
     packages=find_packages('src'),
-    package_dir = {'':'src'},
-    ext_modules = ext_modules,
-    extras_require = {
-        'test': (),
+    package_dir={'': 'src'},
+    ext_modules=ext_modules,
+    extras_require={
+        'test': [],
         'testing': ['nose', 'coverage'],
-        },
+    },
     test_suite='zodbpickle.tests.test_pickle.test_suite',
     install_requires=[
         'setuptools',
-        ],
+    ],
     include_package_data=True,
-    zip_safe=False
-    )
+    zip_safe=False,
+)
