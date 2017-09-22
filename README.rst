@@ -31,11 +31,11 @@ General Usage
 To get compatibility between Python 2 and 3 pickling, replace::
 
     import pickle
-    
+
 by::
 
     from zodbpickle import pickle
-    
+
 This provides compatibility, but has the effect that you get the fast implementation
 in Python 3, while Python 2 uses the slow version.
 
@@ -116,7 +116,7 @@ Example 3: everything breaks down ::
     $ python3
     >>> from zodbpickle import pickle
     >>> class Foo(object): pass
-    ... 
+    ...
     >>> foo = pickle.loads("ccopy_reg\n_reconstructor\np0\n(c__main__\nFoo\np1\nc__builtin__\nobject\np2\nNtp3\nRp4\n(dp5\nS'x'\np6\nS'hello'\np7\nsb.", encoding='bytes')
     >>> foo.x
     Traceback (most recent call last):
