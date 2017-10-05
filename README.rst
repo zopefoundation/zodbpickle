@@ -1,7 +1,7 @@
 ``zodbpickle`` README
 =====================
 
-.. image:: https://travis-ci.org/zopefoundation/zodbpickle.png?branch=master
+.. image:: https://travis-ci.org/zopefoundation/zodbpickle.svg?branch=master
         :target: https://travis-ci.org/zopefoundation/zodbpickle
 
 .. image:: https://img.shields.io/pypi/v/zodbpickle.svg
