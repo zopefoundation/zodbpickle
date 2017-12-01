@@ -24,6 +24,15 @@ This package presents a uniform pickling interface for ZODB:
   C extension) from both Python 3.2 and Python 3.3.  The fork add support
   for the ``noload`` operations used by ZODB.
 
+Caution
+-------
+
+``zodbpickle`` relies on Python's ``pickle`` module.
+The ``pickle`` module is not intended to be secure against erroneous or
+maliciously constructed data. Never unpickle data received from an
+untrusted or unauthenticated source as arbitrary code might be executed.
+
+Also see https://docs.python.org/3.6/library/pickle.html
 
 General Usage
 -------------
