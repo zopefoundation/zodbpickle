@@ -4,7 +4,7 @@
 0.7.1 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Add a warning to the readme not to use untrusted pickles.
 
 
 0.7.0 (2017-09-22)
