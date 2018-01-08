@@ -46,7 +46,7 @@ setup(
     description='Fork of Python 3 pickle module.',
     author='Python and Zope Foundation',
     author_email='zodb-dev@zope.org',
-    url='http://pypi.python.org/pypi/zodbpickle',
+    url='https://github.com/zopefoundation/zodbpickle',
     license='PSFL 2 and ZPL 2.1',
     long_description=README,
     classifiers=[
