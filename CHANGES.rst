@@ -1,10 +1,12 @@
 ``zodbpickle`` Changelog
 ========================
 
-0.7.1 (unreleased)
+1.0.0 (unreleased)
 ------------------
 
 - Add a warning to the readme not to use untrusted pickles.
+
+- Drop support for Python 3.3.
 
 
 0.7.0 (2017-09-22)
