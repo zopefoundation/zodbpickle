@@ -97,7 +97,7 @@ class PyPicklerUnpicklerObjectTests(AbstractPicklerUnpicklerObjectTests):
     unpickler_class = pickle._Unpickler
 
 
-if sys.version_info >= (3, 3):
+if sys.version_info >= (3, 4):
     class PyDispatchTableTests(AbstractDispatchTableTests):
         pickler_class = pickle._Pickler
         def get_dispatch_table(self):
@@ -139,7 +139,7 @@ if has_c_implementation:
         pickler_class = _pickle.Pickler
         unpickler_class = _pickle.Unpickler
 
-    if sys.version_info >= (3, 3):
+    if sys.version_info >= (3, 4):
         class CDispatchTableTests(AbstractDispatchTableTests):
             pickler_class = pickle.Pickler
             def get_dispatch_table(self):
@@ -154,7 +154,7 @@ if has_c_implementation:
 def choose_tests():
     tests = [PickleTests, PyPicklerTests, PyPersPicklerTests,
              PyPicklerBytestrTests, PyPicklerBytesFallbackTests]
-    if sys.version_info >= (3, 3):
+    if sys.version_info >= (3, 4):
         tests.extend([PyDispatchTableTests, PyChainDispatchTableTests])
     if has_c_implementation:
         tests.extend([CPicklerTests, CPersPicklerTests,
@@ -163,7 +163,7 @@ def choose_tests():
                       PyPicklerUnpicklerObjectTests,
                       CPicklerUnpicklerObjectTests,
                       InMemoryPickleTests])
-        if sys.version_info >= (3, 3):
+        if sys.version_info >= (3, 4):
             tests.extend([CDispatchTableTests, CChainDispatchTableTests])
     return tests
 

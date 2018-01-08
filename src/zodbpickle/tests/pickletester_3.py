@@ -29,7 +29,6 @@ except ImportError:
                 sys.settrace(original_trace)
         return wrapper
 
-_PY33 = sys.version_info[:2] >= (3, 3)
 _PY34 = sys.version_info[:2] >= (3, 4)
 _PY343 = sys.version_info[:3] >= (3, 4, 3)
 
@@ -779,14 +778,14 @@ class AbstractPickleTests(unittest.TestCase):
                 u = self.loads(s)
                 self.assertEqual(t, u)
 
-    @unittest.skipUnless(_PY33, "only for Python >= 3.3")
+    @unittest.skipUnless(_PY34, "only for Python >= 3.4")
     def test_ellipsis(self):
         for proto in protocols:
             s = self.dumps(..., proto)
             u = self.loads(s)
             self.assertEqual(..., u)
 
-    @unittest.skipUnless(_PY33, "only for Python >= 3.3")
+    @unittest.skipUnless(_PY34, "only for Python >= 3.4")
     def test_notimplemented(self):
         for proto in protocols:
             s = self.dumps(NotImplemented, proto)
@@ -1112,7 +1111,7 @@ class AbstractPickleTests(unittest.TestCase):
             self.assertRaises(RuntimeError, self.dumps, x, proto)
 
         # protocol 2 don't raise a RuntimeError, except under PyPy, or Python >= 3.4
-        if _is_pypy or (_is_pure and not _PY33) or _PY34:
+        if _is_pypy or _PY34:
             self.assertRaises(RuntimeError, self.dumps, x, 2)
         else:
             self.dumps(x, 2)
@@ -1222,7 +1221,7 @@ class AbstractPickleTests(unittest.TestCase):
         empty = self.loads(b'\x80\x03U\x00q\x00.', encoding='koi8-r')
         self.assertEqual(empty, '')
 
-    @unittest.skipUnless(_PY33, "only for Python >= 3.3")
+    @unittest.skipUnless(_PY34, "only for Python >= 3.4")
     def test_int_pickling_efficiency(self):
         # Test compacity of int representation (see issue #12744)
         for proto in protocols:
