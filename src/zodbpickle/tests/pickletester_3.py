@@ -29,11 +29,9 @@ except ImportError:
                 sys.settrace(original_trace)
         return wrapper
 
-_PY34 = sys.version_info[:2] >= (3, 4)
 _PY343 = sys.version_info[:3] >= (3, 4, 3)
 
 from zodbpickle.pickle_3 import bytes_types
-from . import _is_pure
 from . import _is_pypy
 
 # Tests that try a number of pickle protocols should have a
@@ -778,14 +776,12 @@ class AbstractPickleTests(unittest.TestCase):
                 u = self.loads(s)
                 self.assertEqual(t, u)
 
-    @unittest.skipUnless(_PY34, "only for Python >= 3.4")
     def test_ellipsis(self):
         for proto in protocols:
             s = self.dumps(..., proto)
             u = self.loads(s)
             self.assertEqual(..., u)
 
-    @unittest.skipUnless(_PY34, "only for Python >= 3.4")
     def test_notimplemented(self):
         for proto in protocols:
             s = self.dumps(NotImplemented, proto)
@@ -1107,14 +1103,8 @@ class AbstractPickleTests(unittest.TestCase):
     @no_tracing
     def test_bad_getattr(self):
         x = BadGetattr()
-        for proto in 0, 1:
+        for proto in (0, 1, 2):
             self.assertRaises(RuntimeError, self.dumps, x, proto)
-
-        # protocol 2 don't raise a RuntimeError, except under PyPy, or Python >= 3.4
-        if _is_pypy or _PY34:
-            self.assertRaises(RuntimeError, self.dumps, x, 2)
-        else:
-            self.dumps(x, 2)
 
     def test_reduce_bad_iterator(self):
         # Issue4176: crash when 4th and 5th items of __reduce__()
@@ -1221,7 +1211,6 @@ class AbstractPickleTests(unittest.TestCase):
         empty = self.loads(b'\x80\x03U\x00q\x00.', encoding='koi8-r')
         self.assertEqual(empty, '')
 
-    @unittest.skipUnless(_PY34, "only for Python >= 3.4")
     def test_int_pickling_efficiency(self):
         # Test compacity of int representation (see issue #12744)
         for proto in protocols:

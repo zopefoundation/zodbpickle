@@ -2,7 +2,6 @@ import io
 import collections
 import unittest
 import doctest
-import sys
 from test import support as test_support
 
 from .pickletester_3 import AbstractPickleTests
@@ -97,17 +96,18 @@ class PyPicklerUnpicklerObjectTests(AbstractPicklerUnpicklerObjectTests):
     unpickler_class = pickle._Unpickler
 
 
-if sys.version_info >= (3, 4):
-    class PyDispatchTableTests(AbstractDispatchTableTests):
-        pickler_class = pickle._Pickler
-        def get_dispatch_table(self):
-            return pickle.dispatch_table.copy()
+class PyDispatchTableTests(AbstractDispatchTableTests):
+    pickler_class = pickle._Pickler
+
+    def get_dispatch_table(self):
+        return pickle.dispatch_table.copy()
 
 
-    class PyChainDispatchTableTests(AbstractDispatchTableTests):
-        pickler_class = pickle._Pickler
-        def get_dispatch_table(self):
-            return collections.ChainMap({}, pickle.dispatch_table)
+class PyChainDispatchTableTests(AbstractDispatchTableTests):
+    pickler_class = pickle._Pickler
+
+    def get_dispatch_table(self):
+        return collections.ChainMap({}, pickle.dispatch_table)
 
 
 if has_c_implementation:
@@ -139,33 +139,45 @@ if has_c_implementation:
         pickler_class = _pickle.Pickler
         unpickler_class = _pickle.Unpickler
 
-    if sys.version_info >= (3, 4):
-        class CDispatchTableTests(AbstractDispatchTableTests):
-            pickler_class = pickle.Pickler
-            def get_dispatch_table(self):
-                return pickle.dispatch_table.copy()
+    class CDispatchTableTests(AbstractDispatchTableTests):
+        pickler_class = pickle.Pickler
 
-        class CChainDispatchTableTests(AbstractDispatchTableTests):
-            pickler_class = pickle.Pickler
-            def get_dispatch_table(self):
-                return collections.ChainMap({}, pickle.dispatch_table)
+        def get_dispatch_table(self):
+            return pickle.dispatch_table.copy()
+
+    class CChainDispatchTableTests(AbstractDispatchTableTests):
+        pickler_class = pickle.Pickler
+
+        def get_dispatch_table(self):
+            return collections.ChainMap({}, pickle.dispatch_table)
 
 
 def choose_tests():
-    tests = [PickleTests, PyPicklerTests, PyPersPicklerTests,
-             PyPicklerBytestrTests, PyPicklerBytesFallbackTests]
-    if sys.version_info >= (3, 4):
-        tests.extend([PyDispatchTableTests, PyChainDispatchTableTests])
+    tests = [
+        PickleTests,
+        PyPicklerTests,
+        PyPersPicklerTests,
+        PyPicklerBytestrTests,
+        PyPicklerBytesFallbackTests,
+        PyDispatchTableTests,
+        PyChainDispatchTableTests,
+    ]
     if has_c_implementation:
-        tests.extend([CPicklerTests, CPersPicklerTests,
-                      CPicklerBytestrTests, CPicklerBytesFallbackTests,
-                      CDumpPickle_LoadPickle, DumpPickle_CLoadPickle,
-                      PyPicklerUnpicklerObjectTests,
-                      CPicklerUnpicklerObjectTests,
-                      InMemoryPickleTests])
-        if sys.version_info >= (3, 4):
-            tests.extend([CDispatchTableTests, CChainDispatchTableTests])
+        tests.extend([
+            CPicklerTests,
+            CPersPicklerTests,
+            CPicklerBytestrTests,
+            CPicklerBytesFallbackTests,
+            CDumpPickle_LoadPickle,
+            DumpPickle_CLoadPickle,
+            PyPicklerUnpicklerObjectTests,
+            CPicklerUnpicklerObjectTests,
+            InMemoryPickleTests,
+            CDispatchTableTests,
+            CChainDispatchTableTests,
+        ])
     return tests
+
 
 def test_suite():
     return unittest.TestSuite([
