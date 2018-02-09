@@ -1,8 +1,8 @@
 ``zodbpickle`` Changelog
 ========================
 
-1.0.0 (unreleased)
-------------------
+1.0 (2018-02-09)
+----------------
 
 - Add a warning to the readme not to use untrusted pickles.
 
