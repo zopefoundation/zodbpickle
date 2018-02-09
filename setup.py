@@ -70,6 +70,7 @@ setup(
         'Operating System :: Unix',
         'Operating System :: MacOS :: MacOS X',
     ],
+    keywords='zodb pickle',
     platforms=['any'],
     packages=find_packages('src'),
     package_dir={'': 'src'},
