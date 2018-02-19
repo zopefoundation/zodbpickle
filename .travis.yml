@@ -28,7 +28,7 @@ matrix:
             - docker
           env: DOCKER_IMAGE=quay.io/pypa/manylinux1_x86_64
           before_install:
-            - if [[ $TRAVIS_TAG ]]; then bash .manylinux.sh; fi
+            - bash .manylinux.sh
             - exit 0
         - services:
             - docker
@@ -36,7 +36,7 @@ matrix:
             - DOCKER_IMAGE=quay.io/pypa/manylinux1_i686
             - PRE_CMD=linux32
           before_install:
-            - if [[ $TRAVIS_TAG ]]; then bash .manylinux.sh; fi
+            - bash .manylinux.sh
             - exit 0
 before_install:
     - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then git clone https://github.com/MacPython/terryfy; fi
@@ -58,9 +58,9 @@ after_success:
     - echo repository=https://pypi.python.org/pypi     >> ~/.pypirc
     - echo username=zope.wheelbuilder                  >> ~/.pypirc
     - echo password=$PYPIPASSWORD                      >> ~/.pypirc
-    - if [[ $TRAVIS_TAG && "$TRAVIS_OS_NAME" == "osx" ]]; then pip install twine; fi
-    - if [[ $TRAVIS_TAG && "$TRAVIS_OS_NAME" == "osx" ]]; then python setup.py bdist_wheel; fi
-    - if [[ $TRAVIS_TAG && "$TRAVIS_OS_NAME" == "osx" ]]; then twine upload dist/*; fi
+    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then pip install twine; fi
+    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then python setup.py bdist_wheel; fi
+    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then twine upload dist/*; fi
 env:
     global:
         secure: "edbJQIhe7grjaug7dxExoyB0zkrLca5IphzuQd2IfjGjBCY6Dn+QEBtDOMOcPjUsSvgxWL2XG2ZGIFF33bsoFlq0bZFPMtv5ZQ6jcpYQEpPX61fHsNzPs2RXavpHgHFC4aXt1o7jH7aSeImV98WWsNZTL5rhW4aHbgOM/jnnWdc="
