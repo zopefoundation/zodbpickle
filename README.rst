@@ -4,6 +4,10 @@
 .. image:: https://travis-ci.org/zopefoundation/zodbpickle.svg?branch=master
         :target: https://travis-ci.org/zopefoundation/zodbpickle
 
+.. image:: https://coveralls.io/repos/github/zopefoundation/zodbpickle/badge.svg
+   :target: https://coveralls.io/github/zopefoundation/zodbpickle
+   :alt: Coverage status
+
 .. image:: https://img.shields.io/pypi/v/zodbpickle.svg
         :target: https://pypi.python.org/pypi/zodbpickle
         :alt: PyPI
