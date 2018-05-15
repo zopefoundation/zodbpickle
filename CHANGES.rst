@@ -1,10 +1,11 @@
 ``zodbpickle`` Changelog
 ========================
 
-1.1 (unreleased)
+1.0.1 (unreleased)
 ----------------
 
-- Nothing changed yet.
+- Fix a memory leak in pickle protocol 3 under Python 2. See `issue 36
+  <https://github.com/zopefoundation/zodbpickle/issues/36>`_.
 
 
 1.0 (2018-02-09)

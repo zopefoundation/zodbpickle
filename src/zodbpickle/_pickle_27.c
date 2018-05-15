@@ -3900,12 +3900,24 @@ load_binbytes(Unpicklerobject *self)
         return -1;
 
     if (!( args = PyTuple_New(1) ))
-        return -1;
+        goto done;
 
     if (!(PyTuple_SET_ITEM(args, 0, py_string)))
-        return -1;
+        /* practically speaking this macro cannot fail */
+        goto done;
 
     if (!( py_binary = PyObject_CallObject(BinaryType, args)))
+        goto done;
+
+done:
+    if (!args) {
+        /* The tuple steals the string reference,
+         * so we don't need to decref it if we have the tuple.
+         */
+        Py_XDECREF(py_string);
+    }
+    Py_XDECREF(args);
+    if ( !py_binary )
         return -1;
 
     PDATA_PUSH(self->stack, py_binary, -1);
@@ -3929,15 +3941,28 @@ load_short_binbytes(Unpicklerobject *self)
 
     if (self->read_func(self, &s, l) < 0) return -1;
 
-    if (!( py_string = PyString_FromStringAndSize(s, l)))  return -1;
+    if (!( py_string = PyString_FromStringAndSize(s, l)))
+        return -1;
 
     if (!( args = PyTuple_New(1) ))
-        return -1;
+        goto done;
 
     if (!(PyTuple_SET_ITEM(args, 0, py_string)))
-        return -1;
+        /* practically speaking this macro cannot fail */
+        goto done;
 
     if (!( py_binary = PyObject_CallObject(BinaryType, args)))
+        goto done;
+
+done:
+    if (!args) {
+        /* The tuple steals the string reference,
+         * so we don't need to decref it if we have the tuple.
+         */
+        Py_XDECREF(py_string);
+    }
+    Py_XDECREF(args);
+    if ( !py_binary )
         return -1;
 
     PDATA_PUSH(self->stack, py_binary, -1);
