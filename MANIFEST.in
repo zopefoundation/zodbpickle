@@ -5,6 +5,8 @@ include tox.ini
 include appveyor.yml
 include buildout.cfg
 include patches/*.diff
+include .coveragerc
+include *.sh
 
 recursive-include src *
 
