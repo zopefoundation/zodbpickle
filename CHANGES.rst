@@ -2,7 +2,7 @@
  Changelog
 ===========
 
-1.0.1 (unreleased)
+1.0.1 (2018-05-16)
 ==================
 
 - Fix a memory leak in pickle protocol 3 under Python 2. See `issue 36
