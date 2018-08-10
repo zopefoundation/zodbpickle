@@ -9,6 +9,9 @@ python:
     - pypy3
 matrix:
     include:
+        - python: 3.7
+          dist: xenial
+          sudo: true
         # It's important to use 'macpython' builds to get the least
         # restrictive wheel tag. It's also important to avoid
         # 'homebrew 3' because it floats instead of being a specific version.
@@ -23,7 +26,10 @@ matrix:
           env: TERRYFY_PYTHON='macpython 3.5'
         - os: osx
           language: generic
-          env: TERRYFY_PYTHON='macpython 3.6.0'
+          env: TERRYFY_PYTHON='macpython 3.6.1'
+        - os: osx
+          language: generic
+          env: TERRYFY_PYTHON='macpython 3.7.0'
         - services:
             - docker
           env: DOCKER_IMAGE=quay.io/pypa/manylinux1_x86_64

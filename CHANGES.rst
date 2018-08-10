@@ -5,7 +5,7 @@
 1.0.2 (unreleased)
 ==================
 
-- Nothing changed yet.
+- Add support for Python 3.7.
 
 
 1.0.1 (2018-05-16)

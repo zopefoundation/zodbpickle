@@ -13,6 +13,8 @@ environment:
     - python: 35-x64
     - python: 36
     - python: 36-x64
+    - python: 37
+    - python: 37-x64
 
 install:
   - "SET PATH=C:\\Python%PYTHON%;c:\\Python%PYTHON%\\scripts;%PATH%"
@@ -20,6 +22,7 @@ install:
   - pip install -e .
 
 build_script:
+  - python -m pip install -U pip
   - pip install wheel
   - python -W ignore setup.py -q bdist_wheel
 
@@ -31,6 +34,6 @@ artifacts:
     name: wheel
 
 deploy_script:
-  - ps: if ($env:APPVEYOR_REPO_TAG -eq $TRUE) { pip install twine; twine upload dist/* }
+  - ps: if ($env:APPVEYOR_REPO_TAG -eq $TRUE) { pip install twine; twine upload --skip-existing dist/* }
 
 deploy: on
