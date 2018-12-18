@@ -5,7 +5,7 @@
 1.0.3 (unreleased)
 ==================
 
-- Nothing changed yet.
+- Fix a bug: zodbpickle.slowpickle assigned `_Pickler` to `Unpickler`.
 
 
 1.0.2 (2018-08-10)
