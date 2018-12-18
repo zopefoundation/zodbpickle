@@ -21,7 +21,7 @@ So this is a rare case where 'import *' is exactly the right thing to do.
 if sys.version_info[0] >= 3:
     import zodbpickle.pickle_3 as p
     # undo the replacement with fast versions
-    p.Pickler, p.Unpickler = p._Pickler, p._Pickler
+    p.Pickler, p.Unpickler = p._Pickler, p._Unpickler
     p.dump, p.dumps, p.load, p.loads = p._dump, p._dumps, p._load, p._loads
     del p
     # pick up all names that the module defines
