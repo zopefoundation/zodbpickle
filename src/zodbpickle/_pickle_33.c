@@ -736,7 +736,7 @@ _Pickler_Write(PicklerObject *self, const char *s, Py_ssize_t n)
                 PyErr_NoMemory();
                 return -1;
             }
-            self->max_output_len = (self->output_len + n) / 2 * 3;
+            self->max_output_len = (self->output_len + n) / 2 * 3 + 1;
             if (_PyBytes_Resize(&self->output_buffer, self->max_output_len) < 0)
                 return -1;
         }
