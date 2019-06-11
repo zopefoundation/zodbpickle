@@ -1272,6 +1272,29 @@ class AbstractPickleTests(unittest.TestCase):
             else:
                 self._check_pickling_with_opcode(obj, pickle.SETITEMS, proto)
 
+    def test_corrupted_pickle(self):
+        # Former C implementation produced corrupted pickles on these samples.
+        # See https://github.com/zopefoundation/zodbpickle/pull/47
+        sample1 = ['a'] * 17509
+        dumped = self.dumps(sample1, 0)
+        loaded = self.loads(dumped)
+        self.assertEqual(loaded, sample1)
+
+        sample2 = ['a'] * 34992
+        dumped = self.dumps(sample2, 1)
+        loaded = self.loads(dumped)
+        self.assertEqual(loaded, sample2)
+
+        sample3 = ['a'] * 34991
+        dumped = self.dumps(sample3, 2)
+        loaded = self.loads(dumped)
+        self.assertEqual(loaded, sample3)
+
+        sample4 = ['a'] * 34991
+        dumped = self.dumps(sample4, 3)
+        loaded = self.loads(dumped)
+        self.assertEqual(loaded, sample4)
+
 
 class AbstractBytestrTests(unittest.TestCase):
     def unpickleEqual(self, data, unpickled):
