@@ -6,7 +6,7 @@
 ==================
 
 - Fix pickle corruption under certain conditions. See `pull request 47
-  https://github.com/zopefoundation/zodbpickle/pull/47`_.
+  <https://github.com/zopefoundation/zodbpickle/pull/47>`_.
 
 
 1.0.3 (2018-12-18)
