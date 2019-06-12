@@ -2,7 +2,7 @@
  Changelog
 ===========
 
-1.0.4 (unreleased)
+1.0.4 (2019-06-12)
 ==================
 
 - Fix pickle corruption under certain conditions. See `pull request 47
