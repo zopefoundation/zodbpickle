@@ -42,7 +42,7 @@ else:
 
 setup(
     name='zodbpickle',
-    version='1.0.5.dev0',
+    version='1.1.dev0',
     description='Fork of Python 2 and 3 pickle module.',
     author='Python and Zope Foundation',
     author_email='zodb-dev@zope.org',
@@ -57,10 +57,10 @@ setup(
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: Implementation :: CPython',
         'Programming Language :: Python :: Implementation :: PyPy',
         'Programming Language :: Python :: Implementation :: Jython',
