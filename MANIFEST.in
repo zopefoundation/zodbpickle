@@ -8,9 +8,4 @@ include patches/*.diff
 include .coveragerc
 include *.sh
 
-recursive-include src *
-
-global-exclude *.dll
-global-exclude *.pyc
-global-exclude *.pyo
-global-exclude *.so
+recursive-include src *.c
