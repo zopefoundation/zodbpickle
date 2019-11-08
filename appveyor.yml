@@ -34,7 +34,7 @@ build_script:
   - python -W ignore setup.py -q bdist_wheel
 
 test_script:
-  - python setup.py test -q
+  - python setup.py -q test
 
 artifacts:
   - path: 'dist\*.whl'
