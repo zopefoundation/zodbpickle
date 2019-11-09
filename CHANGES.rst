@@ -2,10 +2,10 @@
  Changelog
 ===========
 
-1.1 (unreleased)
+1.1 (2019-11-09)
 ================
 
-- Add support for Python 3.8b1.
+- Add support for Python 3.8.
 
 - Drop support for Python 3.4.
 
