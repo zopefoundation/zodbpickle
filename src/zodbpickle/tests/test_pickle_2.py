@@ -339,14 +339,54 @@ class cPickleDeepRecursive(unittest.TestCase):
         _pickle.dumps(res)
 
 
+class BinaryTests(unittest.TestCase):
+
+    def test_has_no_attrs(self):
+        from zodbpickle import binary
+        b = binary('abc')
+        with self.assertRaises(AttributeError):
+            setattr(b, 'attr', 42)
+
+    def test_can_subclass(self):
+        from zodbpickle import binary
+        class MyBinary(binary):
+            pass
+
+        my = MyBinary('')
+        my.attr = 42
+        self.assertEqual(my, '')
+        self.assertEqual(my.attr, 42)
+
+class cBinaryTests(unittest.TestCase):
+
+    def test_same_size(self):
+        # PyPy doesn't support sys.getsizeof, but
+        # we don't run these tests there.
+        import sys
+        from zodbpickle import binary
+
+        s = b'abcdef'
+        b = binary(s)
+        self.assertEqual(sys.getsizeof(b), sys.getsizeof(s))
+
+    def test_not_tracked_by_gc(self):
+        # PyPy doesn't have gc.is_tracked, but we don't
+        # run these tests there.
+        import gc
+        from zodbpickle import binary
+        s = b'abcdef'
+        b = binary(s)
+        self.assertFalse(gc.is_tracked(s))
+        self.assertFalse(gc.is_tracked(b))
+
 def test_suite():
-    import unittest
     tests = [
         unittest.makeSuite(PickleTests),
         unittest.makeSuite(PicklerTests),
         unittest.makeSuite(PersPicklerTests),
         unittest.makeSuite(PicklerUnpicklerObjectTests),
         unittest.makeSuite(PickleBigmemPickleTests),
+        unittest.makeSuite(BinaryTests),
 	]
 
     if has_c_implementation:
@@ -364,6 +404,7 @@ def test_suite():
             unittest.makeSuite(cPickleDeepRecursive),
             unittest.makeSuite(cPicklePicklerUnpicklerObjectTests),
             unittest.makeSuite(cPickleBigmemPickleTests),
+            unittest.makeSuite(cBinaryTests),
         ])
     return unittest.TestSuite(tests)
 
