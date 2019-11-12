@@ -177,7 +177,10 @@ static PyTypeObject BinaryType_t = {
     0,                          /* tp_methods */
     0,                          /* tp_members */
     0,                          /* tp_getset */
-    &PyString_Type,             /* tp_base */
+    /* The Windows compiler compalins that this is not a constant. */
+    /* So initialize later. */
+    /* &PyString_Type, */       /* tp_base */
+    0,                          /* tp_base */
     0,                          /* tp_dict */
     0,                          /* tp_descr_get */
     0,                          /* tp_descr_set */
@@ -6223,6 +6226,7 @@ init_stuff(PyObject *module_dict)
         return -1;
     BinaryType_t.tp_basicsize = PyString_Type.tp_basicsize;
     BinaryType_t.tp_itemsize = PyString_Type.tp_itemsize;
+    BinaryType_t.tp_base = &PyString_Type;
     if (PyType_Ready(&BinaryType_t) < 0)
         return -1;
 
