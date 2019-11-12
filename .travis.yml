@@ -2,9 +2,9 @@ language: python
 
 env:
   global:
-    - TWINE_USERNAME: zope.wheelbuilder
-    # this sets $PYPIPASSWORD
-    - secure: "edbJQIhe7grjaug7dxExoyB0zkrLca5IphzuQd2IfjGjBCY6Dn+QEBtDOMOcPjUsSvgxWL2XG2ZGIFF33bsoFlq0bZFPMtv5ZQ6jcpYQEpPX61fHsNzPs2RXavpHgHFC4aXt1o7jH7aSeImV98WWsNZTL5rhW4aHbgOM/jnnWdc="
+    TWINE_USERNAME: zope.wheelbuilder
+    TWINE_PASSWORD:
+      secure: "XzTCQRXXZhnB0y5MjBOKU4BkRHThIdYW+yGwrBHoDE0WGSazQHNy1ZArFwz82NIKlMLWmnbrR78gMtmjzi4KXKhRJ0g5mHwJfUrEauMFIZWsfgdIrUucZ/ll+/U5nw9031k/0z9oSg7xn26aS/HPmKIoJ3vRuiAL+RGLgAxUHtI="
 
 python:
   - 2.7
@@ -67,20 +67,31 @@ install:
   - pip install .
 
 script:
+  - python --version
   - coverage run setup.py -q test
+  - python setup.py -q bdist_wheel
 
 after_success:
   - coveralls
   - |
-    if [[ $TRAVIS_TAG && "$TRAVIS_OS_NAME" == "osx" ]]; then
-      pip install twine
-      python setup.py bdist_wheel
-      TWINE_PASSWORD=$PYPIPASSWORD twine upload --skip-existing dist/*
+    if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+      # macpython 3.5 doesn't support recent TLS protocols which causes twine
+      # upload to fail, so we use the system Python to run twine
+      /usr/bin/python -m ensurepip --user
+      /usr/bin/python -m pip install --user -U pip
+      /usr/bin/python -m pip install --user -U -I twine
+      /usr/bin/python -m twine check dist/*
+      if [[ $TRAVIS_TAG ]]; then
+        /usr/bin/python -m twine upload --skip-existing dist/*
+      fi
     fi
   - |
-    if [[ $TRAVIS_TAG && -n "$DOCKER_IMAGE" ]]; then
+    if [[ -n "$DOCKER_IMAGE" ]]; then
       pip install twine
-      TWINE_PASSWORD=$PYPIPASSWORD twine upload --skip-existing wheelhouse/*
+      twine check wheelhouse/*
+      if [[ $TRAVIS_TAG ]]; then
+        twine upload --skip-existing wheelhouse/*
+      fi
     fi
 
 notifications:
