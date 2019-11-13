@@ -2,7 +2,7 @@
  Changelog
 ===========
 
-2.0.0 (unreleased)
+2.0.0 (2019-11-13)
 ==================
 
 - CPython 2: Make ``zodbpickle.binary`` objects smaller and untracked
