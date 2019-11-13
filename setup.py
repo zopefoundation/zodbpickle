@@ -19,9 +19,11 @@ import sys
 from setuptools import Extension, find_packages, setup
 
 here = os.path.abspath(os.path.dirname(__file__))
-README = (open(os.path.join(here, 'README.rst')).read()
-          + '\n\n' +
-          open(os.path.join(here, 'CHANGES.rst')).read())
+def read(fname):
+    with open(os.path.join(here, fname)) as f:
+        return f.read()
+
+README = read('README.rst') + '\n\n' + read('CHANGES.rst')
 
 if sys.version_info[:1] < (3,):
     EXT = 'src/zodbpickle/_pickle_27.c'
@@ -33,7 +35,7 @@ py_impl = getattr(platform, 'python_implementation', lambda: None)
 is_pypy = py_impl() == 'PyPy'
 is_jython = py_impl() == 'Jython'
 is_pure = 'PURE_PYTHON' in os.environ
-if is_pypy or is_jython or is_pure:
+if is_pypy or is_jython:
     ext_modules = []
 else:
     ext_modules = [Extension(name='zodbpickle._pickle',
