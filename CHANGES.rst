@@ -2,11 +2,14 @@
  Changelog
 ===========
 
-1.1.1 (unreleased)
+2.0.0 (unreleased)
 ==================
 
-- Nothing changed yet.
-
+- CPython 2: Make ``zodbpickle.binary`` objects smaller and untracked
+  by the garbage collector. Now they behave more like the native bytes
+  object. Just like it, and just like on Python 3, they cannot have
+  arbitrary attributes or be weakly referenced. See `issue 53
+  <https://github.com/zopefoundation/zodbpickle/issues/53>`_.
 
 1.1 (2019-11-09)
 ================

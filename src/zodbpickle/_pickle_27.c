@@ -118,7 +118,6 @@ static PyObject *PicklingError;
 static PyObject *UnpickleableError;
 static PyObject *UnpicklingError;
 static PyObject *BadPickleGet;
-static PyObject *BinaryType;  /* from zodbpickle import binary */
 
 /* As the name says, an empty tuple. */
 static PyObject *empty_tuple;
@@ -143,6 +142,56 @@ static PyObject *__class___str, *__getinitargs___str, *__dict___str,
   *write_str, *append_str,
   *read_str, *readline_str, *__main___str,
   *dispatch_table_str;
+
+static PyTypeObject BinaryType_t = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "zodbpickle.binary",        /* tp_name */
+    /* the sizes are filled in from PyString_Type later */
+    0,                          /* tp_basicsize */
+    0,                          /* tp_itemsize */
+    0,                          /* tp_dealloc */
+    0,                          /* tp_print */
+    0,                          /* tp_getattr */
+    0,                          /* tp_setattr */
+    0,                          /* tp_compare */
+    0,                          /* tp_repr */
+    0,                          /* tp_as_number */
+    0,                          /* tp_as_sequence */
+    0,                          /* tp_as_mapping */
+    0,                          /* tp_hash */
+    0,                          /* tp_call */
+    0,                          /* tp_str */
+    0,                          /* tp_getattro */
+    0,                          /* tp_setattro */
+    0,                          /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_CHECKTYPES |
+        Py_TPFLAGS_BASETYPE | Py_TPFLAGS_STRING_SUBCLASS |
+        Py_TPFLAGS_HAVE_NEWBUFFER,
+    NULL,                       /* tp_doc */
+    0,                          /* tp_traverse */
+    0,                          /* tp_clear */
+    0,                          /* tp_richcompare */
+    0,                          /* tp_weaklistoffset */
+    0,                          /* tp_iter */
+    0,                          /* tp_iternext */
+    0,                          /* tp_methods */
+    0,                          /* tp_members */
+    0,                          /* tp_getset */
+    /* The Windows compiler compalins that this is not a constant. */
+    /* So initialize later. */
+    /* &PyString_Type, */       /* tp_base */
+    0,                          /* tp_base */
+    0,                          /* tp_dict */
+    0,                          /* tp_descr_get */
+    0,                          /* tp_descr_set */
+    0,                          /* tp_dictoffset */
+    0,                          /* tp_init */
+    0,                          /* tp_alloc */
+    0,                          /* tp_new */
+    0,                          /* tp_free */
+};
+
+static PyObject* BinaryType = (PyObject*)&BinaryType_t;
 
 /*************************************************************************
  Internal Data type for pickle data.                                     */
@@ -2716,10 +2765,6 @@ save(Picklerobject *self, PyObject *args, int pers_save)
 
     switch (type->tp_name[0]) {
     case 'b':
-        if (strcmp(type->tp_name, "binary") == 0) {
-            res = save_bytes(self, args);
-            goto finally;
-        }
         if (args == Py_False || args == Py_True) {
             res = save_bool(self, args);
             goto finally;
@@ -2768,6 +2813,14 @@ save(Picklerobject *self, PyObject *args, int pers_save)
         }
         break;
 #endif
+    case 'z':
+	/* No need to also support plain 'binary' as we would get from a type
+	   defined in Python; if we're running then our C BinaryType should be
+	   in use. */
+        if (strcmp(type->tp_name, "zodbpickle.binary") == 0) {
+            res = save_bytes(self, args);
+            goto finally;
+        }
     }
 
     if (Py_REFCNT(args) > 1) {
@@ -6159,6 +6212,7 @@ static struct PyMethodDef cPickle_methods[] = {
   { NULL, NULL }
 };
 
+
 static int
 init_stuff(PyObject *module_dict)
 {
@@ -6169,6 +6223,11 @@ init_stuff(PyObject *module_dict)
     if (PyType_Ready(&Unpicklertype) < 0)
         return -1;
     if (PyType_Ready(&Picklertype) < 0)
+        return -1;
+    BinaryType_t.tp_basicsize = PyString_Type.tp_basicsize;
+    BinaryType_t.tp_itemsize = PyString_Type.tp_itemsize;
+    BinaryType_t.tp_base = &PyString_Type;
+    if (PyType_Ready(&BinaryType_t) < 0)
         return -1;
 
     INIT_STR(__class__);
@@ -6288,6 +6347,10 @@ init_stuff(PyObject *module_dict)
                              BadPickleGet) < 0)
         return -1;
 
+    if (PyDict_SetItemString(module_dict, "binary",
+                             BinaryType) < 0)
+        return -1;
+
     PycString_IMPORT;
 
     return 0;
@@ -6308,6 +6371,7 @@ init_pickle(void)
     Py_TYPE(&Picklertype) = &PyType_Type;
     Py_TYPE(&Unpicklertype) = &PyType_Type;
     Py_TYPE(&PdataType) = &PyType_Type;
+    Py_TYPE(&BinaryType_t) = &PyType_Type;
 
     /* Initialize some pieces. We need to do this before module creation,
      * so we're forced to use a temporary dictionary. :(
@@ -6341,18 +6405,6 @@ init_pickle(void)
     i = PyModule_AddIntConstant(m, "HIGHEST_PROTOCOL", HIGHEST_PROTOCOL);
     if (i < 0)
         return;
-
-    if (BinaryType == NULL) {
-        PyObject *zodbpickle_module = PyImport_ImportModule("zodbpickle");
-        if (zodbpickle_module == NULL) {
-            return;
-        }
-        BinaryType = PyObject_GetAttrString(zodbpickle_module, "binary");
-        Py_DECREF(zodbpickle_module);
-        if (BinaryType == NULL) {
-            return;
-        }
-    }
 
     /* These are purely informational; no code uses them. */
     /* File format version we write. */
