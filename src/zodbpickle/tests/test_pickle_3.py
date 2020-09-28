@@ -16,6 +16,7 @@ from .pickletester_3 import AbstractBytesFallbackTests
 from . import _is_pypy
 from . import _is_pure
 from zodbpickle import pickle_3 as pickle
+from zodbpickle import pickletools_3 as pickletools
 
 try:
     from zodbpickle import _pickle
@@ -184,6 +185,7 @@ def test_suite():
         unittest.makeSuite(t) for t in choose_tests()
     ] + [
         doctest.DocTestSuite(pickle),
+        doctest.DocTestSuite(pickletools),
     ])
 
 if __name__ == '__main__':
