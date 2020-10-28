@@ -1,8 +1,8 @@
 ``zodbpickle`` README
 =====================
 
-.. image:: https://travis-ci.org/zopefoundation/zodbpickle.svg?branch=master
-        :target: https://travis-ci.org/zopefoundation/zodbpickle
+.. image:: https://travis-ci.com/zopefoundation/zodbpickle.svg?branch=master
+        :target: https://travis-ci.com/zopefoundation/zodbpickle
 
 .. image:: https://coveralls.io/repos/github/zopefoundation/zodbpickle/badge.svg
    :target: https://coveralls.io/github/zopefoundation/zodbpickle
