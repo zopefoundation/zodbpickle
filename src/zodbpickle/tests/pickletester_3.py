@@ -11,7 +11,12 @@ from test.support import (
     TestFailed, run_with_locale,
     _2G, _4G, bigmemtest,
     )
-from test.support.os_helper import TESTFN
+
+try:
+    from test.support import TESTFN
+except ImportError:
+    # changed import path in 3.10
+    from test.support.os_helper import TESTFN
 
 try:
     from test.support import no_tracing
