@@ -8,9 +8,10 @@ from zodbpickle import pickle_3 as pickle
 from zodbpickle import pickletools_3 as pickletools
 
 from test.support import (
-    TestFailed, TESTFN, run_with_locale,
+    TestFailed, run_with_locale,
     _2G, _4G, bigmemtest,
     )
+from test.support.os_helper import TESTFN
 
 try:
     from test.support import no_tracing

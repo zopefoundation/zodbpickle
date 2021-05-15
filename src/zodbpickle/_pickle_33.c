@@ -84,6 +84,8 @@ enum opcode {
 #undef FALSE
 #define FALSE "I00\n"
 
+#define _PyUnicode_AsStringAndSize PyUnicode_AsUTF8AndSize
+
 enum {
    /* Keep in synch with pickle.Pickler._BATCHSIZE.  This is how many elements
       batch_list/dict() pumps out before doing APPENDS/SETITEMS.  Nothing will
@@ -176,7 +178,7 @@ Pdata_New(void)
 
     if (!(self = PyObject_New(Pdata, &Pdata_Type)))
         return NULL;
-    Py_SIZE(self) = 0;
+    Py_SET_SIZE(self, 0);
     self->allocated = 8;
     self->data = PyMem_MALLOC(self->allocated * sizeof(PyObject *));
     if (self->data)
@@ -202,7 +204,7 @@ Pdata_clear(Pdata *self, Py_ssize_t clearto)
     while (--i >= clearto) {
         Py_CLEAR(self->data[i]);
     }
-    Py_SIZE(self) = clearto;
+    Py_SET_SIZE(self, clearto);
     return 0;
 }
 
@@ -280,7 +282,7 @@ Pdata_poptuple(Pdata *self, Py_ssize_t start)
     for (i = start, j = 0; j < len; i++, j++)
         PyTuple_SET_ITEM(tuple, j, self->data[i]);
 
-    Py_SIZE(self) = start;
+    Py_SET_SIZE(self, start);
     return tuple;
 }
 
@@ -297,7 +299,7 @@ Pdata_poplist(Pdata *self, Py_ssize_t start)
     for (i = start, j = 0; j < len; i++, j++)
         PyList_SET_ITEM(list, j, self->data[i]);
 
-    Py_SIZE(self) = start;
+    Py_SET_SIZE(self, start);
     return list;
 }
 
@@ -3539,7 +3541,7 @@ static int
 Pickler_init(PicklerObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"file", "protocol", "fix_imports", 0};
-    PyObject *file;
+    PyObject *file, *tmp;
     PyObject *proto_obj = NULL;
     PyObject *fix_imports = Py_True;
     _Py_IDENTIFIER(persistent_id);
@@ -3579,14 +3581,16 @@ Pickler_init(PicklerObject *self, PyObject *args, PyObject *kwds)
     self->fast_nesting = 0;
     self->fast_memo = NULL;
     self->pers_func = NULL;
-    if (_PyObject_HasAttrId((PyObject *)self, &PyId_persistent_id)) {
+    if (_PyObject_LookupAttrId((PyObject *)self, &PyId_persistent_id, &tmp) > 0) {
+        Py_DECREF(tmp);
         self->pers_func = _PyObject_GetAttrId((PyObject *)self,
                                               &PyId_persistent_id);
         if (self->pers_func == NULL)
             return -1;
     }
     self->dispatch_table = NULL;
-    if (_PyObject_HasAttrId((PyObject *)self, &PyId_dispatch_table)) {
+    if (_PyObject_LookupAttrId((PyObject *)self, &PyId_dispatch_table, &tmp) > 0) {
+        Py_DECREF(tmp);
         self->dispatch_table = _PyObject_GetAttrId((PyObject *)self,
                                                    &PyId_dispatch_table);
         if (self->dispatch_table == NULL)
@@ -4575,7 +4579,8 @@ load_dict(UnpicklerObject *self)
 
 static PyObject *
 instantiate(PyObject *cls, PyObject *args)
-{
+{   
+    PyObject *tmp;
     PyObject *result = NULL;
     _Py_IDENTIFIER(__getinitargs__);
     /* Caller must assure args are a tuple.  Normally, args come from
@@ -4583,7 +4588,8 @@ instantiate(PyObject *cls, PyObject *args)
        into a newly created tuple. */
     assert(PyTuple_Check(args));
     if (Py_SIZE(args) > 0 || !PyType_Check(cls) ||
-        _PyObject_HasAttrId(cls, &PyId___getinitargs__)) {
+        _PyObject_LookupAttrId(cls, &PyId___getinitargs__, &tmp)) {
+        Py_DECREF(tmp);
         result = PyObject_CallObject(cls, args);
     }
     else {
@@ -4837,7 +4843,7 @@ load_pop(UnpicklerObject *self)
     } else if (len > 0) {
         len--;
         Py_DECREF(self->stack->data[len]);
-        Py_SIZE(self->stack) = len;
+        Py_SET_SIZE(self->stack, len);
     } else {
         return stack_underflow();
     }
@@ -5142,13 +5148,13 @@ do_append(UnpicklerObject *self, Py_ssize_t x)
             result = _Unpickler_FastCall(self, append_func, value);
             if (result == NULL) {
                 Pdata_clear(self->stack, i + 1);
-                Py_SIZE(self->stack) = x;
+                Py_SET_SIZE(self->stack, x);
                 Py_DECREF(append_func);
                 return -1;
             }
             Py_DECREF(result);
         }
-        Py_SIZE(self->stack) = x;
+        Py_SET_SIZE(self->stack, x);
         Py_DECREF(append_func);
     }
 
@@ -6217,7 +6223,7 @@ static int
 Unpickler_init(UnpicklerObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"file", "fix_imports", "encoding", "errors", 0};
-    PyObject *file;
+    PyObject *file, *tmp;
     PyObject *fix_imports = Py_True;
     char *encoding = NULL;
     char *errors = NULL;
@@ -6256,7 +6262,8 @@ Unpickler_init(UnpicklerObject *self, PyObject *args, PyObject *kwds)
     if (self->fix_imports == -1)
         return -1;
 
-    if (_PyObject_HasAttrId((PyObject *)self, &PyId_persistent_load)) {
+    if (_PyObject_LookupAttrId((PyObject *)self, &PyId_persistent_load, &tmp)) {
+        Py_DECREF(tmp);
         self->pers_func = _PyObject_GetAttrId((PyObject *)self,
                                               &PyId_persistent_load);
         if (self->pers_func == NULL)
