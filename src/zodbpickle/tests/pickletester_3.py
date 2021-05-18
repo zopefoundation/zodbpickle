@@ -1,14 +1,16 @@
 import io
+import os
 import unittest
 import sys
 import copyreg
 import weakref
+import tempfile
 from http.cookies import SimpleCookie
 from zodbpickle import pickle_3 as pickle
 from zodbpickle import pickletools_3 as pickletools
 
 from test.support import (
-    TestFailed, TESTFN, run_with_locale,
+    TestFailed, run_with_locale,
     _2G, _4G, bigmemtest,
     )
 
@@ -41,6 +43,8 @@ protocols = range(pickle.HIGHEST_PROTOCOL + 1)
 
 ascii_char_size = 1
 
+fd, TESTFN = tempfile.mkstemp('.pickletester_3')
+os.close(fd)
 
 # Return True if opcode code appears in the pickle, else False.
 def opcode_in_pickle(code, pickle):
