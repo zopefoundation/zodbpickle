@@ -1,7 +1,6 @@
 import cStringIO
 import io
 import unittest
-from cStringIO import StringIO
 
 from .pickletester_2 import (AbstractPickleTests,
                              AbstractPickleModuleTests,
@@ -12,17 +11,20 @@ from .pickletester_2 import (AbstractPickleTests,
 
 from test import test_support
 
+
 class cStringIOMixin:
     output = input = cStringIO.StringIO
 
     def close(self, f):
         pass
 
+
 class BytesIOMixin:
     output = input = io.BytesIO
 
     def close(self, f):
         pass
+
 
 class FileIOMixin:
 
@@ -35,7 +37,7 @@ class FileIOMixin:
             f.write(data)
             f.seek(0)
             return f
-        except:
+        except BaseException:
             f.close()
             raise
 
@@ -89,6 +91,7 @@ class PersPicklerTests(AbstractPersistentPicklerTests):
 
     def dumps(self, arg, proto=0, fast=0):
         from zodbpickle.pickle_2 import Pickler
+
         class PersPickler(Pickler):
             def persistent_id(subself, obj):
                 return self.persistent_id(obj)
@@ -102,6 +105,7 @@ class PersPicklerTests(AbstractPersistentPicklerTests):
 
     def loads(self, buf):
         from zodbpickle.pickle_2 import Unpickler
+
         class PersUnpickler(Unpickler):
             def persistent_load(subself, obj):
                 return self.persistent_load(obj)
@@ -115,12 +119,12 @@ class PicklerUnpicklerObjectTests(AbstractPicklerUnpicklerObjectTests):
     @property
     def pickler_class(self):
         from zodbpickle.pickle_2 import Pickler
-        return  Pickler
+        return Pickler
 
     @property
     def unpickler_class(self):
         from zodbpickle.pickle_2 import Unpickler
-        return  Unpickler
+        return Unpickler
 
 
 class PickleBigmemPickleTests(BigmemPickleTests):
@@ -147,7 +151,7 @@ class cPickleBase(object):
 class cPickleTests(AbstractPickleTests,
                    AbstractPickleModuleTests,
                    cPickleBase,
-                  ):
+                   ):
     def setUp(self):
         from zodbpickle._pickle import dumps
         from zodbpickle._pickle import loads
@@ -182,11 +186,14 @@ class cPicklePicklerTests(AbstractPickleTests, cPickleBase):
         finally:
             self.close(f)
 
+
 class cStringIOCPicklerTests(cStringIOMixin, cPicklePicklerTests):
     pass
 
+
 class BytesIOCPicklerTests(BytesIOMixin, cPicklePicklerTests):
     pass
+
 
 class FileIOCPicklerTests(FileIOMixin, cPicklePicklerTests):
     pass
@@ -209,11 +216,14 @@ class cPickleListPicklerTests(AbstractPickleTests, cPickleBase):
         finally:
             self.close(f)
 
+
 class cStringIOCPicklerListTests(cStringIOMixin, cPickleListPicklerTests):
     pass
 
+
 class BytesIOCPicklerListTests(BytesIOMixin, cPickleListPicklerTests):
     pass
+
 
 class FileIOCPicklerListTests(FileIOMixin, cPickleListPicklerTests):
     pass
@@ -278,11 +288,14 @@ class cPickleFastPicklerTests(AbstractPickleTests, cPickleBase):
         b = self.loads(self.dumps(a))
         self.assertEqual(a, b)
 
+
 class cStringIOCPicklerFastTests(cStringIOMixin, cPickleFastPicklerTests):
     pass
 
+
 class BytesIOCPicklerFastTests(BytesIOMixin, cPickleFastPicklerTests):
     pass
+
 
 class FileIOCPicklerFastTests(FileIOMixin, cPickleFastPicklerTests):
     pass
@@ -300,6 +313,7 @@ class cPicklePicklerUnpicklerObjectTests(AbstractPicklerUnpicklerObjectTests):
         from zodbpickle._pickle import Unpickler
         return Unpickler
 
+
 class cPickleBigmemPickleTests(BigmemPickleTests):
 
     def dumps(self, arg, proto=0, fast=0):
@@ -315,6 +329,7 @@ class cPickleBigmemPickleTests(BigmemPickleTests):
 
 class Node(object):
     pass
+
 
 class cPickleDeepRecursive(unittest.TestCase):
 
@@ -333,8 +348,8 @@ class cPickleDeepRecursive(unittest.TestCase):
         # Safe test, because I broke this case when fixing the
         # behaviour for the previous test.
         from zodbpickle import _pickle
-        res=[]
-        for x in range(1,2000):
+        res = []
+        for x in range(1, 2000):
             res.append(dict(doc=x, similar=[]))
         _pickle.dumps(res)
 
@@ -349,6 +364,7 @@ class BinaryTests(unittest.TestCase):
 
     def test_can_subclass(self):
         from zodbpickle import binary
+
         class MyBinary(binary):
             pass
 
@@ -356,6 +372,7 @@ class BinaryTests(unittest.TestCase):
         my.attr = 42
         self.assertEqual(my, '')
         self.assertEqual(my.attr, 42)
+
 
 class cBinaryTests(unittest.TestCase):
 
@@ -379,6 +396,7 @@ class cBinaryTests(unittest.TestCase):
         self.assertFalse(gc.is_tracked(s))
         self.assertFalse(gc.is_tracked(b))
 
+
 def test_suite():
     tests = [
         unittest.makeSuite(PickleTests),
@@ -387,7 +405,7 @@ def test_suite():
         unittest.makeSuite(PicklerUnpicklerObjectTests),
         unittest.makeSuite(PickleBigmemPickleTests),
         unittest.makeSuite(BinaryTests),
-	]
+    ]
 
     if has_c_implementation:
         tests.extend([
@@ -407,6 +425,7 @@ def test_suite():
             unittest.makeSuite(cBinaryTests),
         ])
     return unittest.TestSuite(tests)
+
 
 if __name__ == '__main__':
     test_support.run_unittest(test_suite())

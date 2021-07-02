@@ -1,3 +1,4 @@
+import __main__
 import io
 import unittest
 import StringIO
@@ -25,6 +26,7 @@ try:
 except ImportError:
     # this import might fail when run on older Python versions by test_xpickle
     _2G = _1M = 0
+
     def precisionbigmemtest(*args, **kwargs):
         return lambda self: None
 
@@ -51,6 +53,8 @@ protocols = range(pickle.HIGHEST_PROTOCOL + 1)
 # 2.4, which didn't include it. This is all to support test_xpickle, which
 # bounces pickled objects through older Python versions to test backwards
 # compatibility.
+
+
 def run_with_locale(catstr, *locales):
     def decorator(func):
         def inner(*args, **kwds):
@@ -61,7 +65,7 @@ def run_with_locale(catstr, *locales):
             except AttributeError:
                 # if the test author gives us an invalid category string
                 raise
-            except:
+            except BaseException:
                 # cannot retrieve original locale, so do nothing
                 locale = orig_locale = None
             else:
@@ -69,7 +73,7 @@ def run_with_locale(catstr, *locales):
                     try:
                         locale.setlocale(category, loc)
                         break
-                    except:
+                    except BaseException:
                         pass
 
             # now run the function, resetting the locale on exceptions
@@ -92,6 +96,8 @@ def opcode_in_pickle(code, pickle):
     return False
 
 # Return the number of times opcode code appears in pickle.
+
+
 def count_opcode(code, pickle):
     n = 0
     for op, dummy, dummy in pickletools.genops(pickle):
@@ -108,6 +114,7 @@ def count_opcode(code, pickle):
 #         fiddle w/ the extension registry's stuff for extension_code
 #     finally:
 #         e.restore()
+
 
 class ExtensionSaver:
     # Remember current registration for code (if any), and remove it (if
@@ -130,17 +137,20 @@ class ExtensionSaver:
         if pair is not None:
             copy_reg.add_extension(pair[0], pair[1], code)
 
+
 class C:
     def __cmp__(self, other):
         return cmp(self.__dict__, other.__dict__)
 
-import __main__
+
 __main__.C = C
 C.__module__ = "__main__"
+
 
 class myint(int):
     def __init__(self, x):
         self.str = str(x)
+
 
 class initarg(C):
 
@@ -151,21 +161,25 @@ class initarg(C):
     def __getinitargs__(self):
         return self.a, self.b
 
+
 class metaclass(type):
     pass
+
 
 class use_metaclass(object):
     __metaclass__ = metaclass
 
+
 class pickling_metaclass(type):
     def __eq__(self, other):
-        return (type(self) == type(other) and
+        return (isinstance(self, type(other)) and
                 self.reduce_args == other.reduce_args)
 
     def __reduce__(self):
         return (create_dynamic_class, self.reduce_args)
 
     __hash__ = None
+
 
 def create_dynamic_class(name, bases):
     result = pickling_metaclass(name, bases, dict())
@@ -174,6 +188,7 @@ def create_dynamic_class(name, bases):
 
 # DATA0 .. DATA2 are the pickles we expect under the various protocols, for
 # the object returned by create_data().
+
 
 # break into multiple strings to avoid confusing font-lock-mode
 DATA0 = """(lp1
@@ -184,7 +199,7 @@ ac__builtin__
 complex
 p2
 """ + \
-"""(F3
+    """(F3
 F0
 tRp3
 aI1
@@ -199,15 +214,15 @@ aI2147483647
 aI-2147483647
 aI-2147483648
 a""" + \
-"""(S'abc'
+    """(S'abc'
 p4
 g4
 """ + \
-"""(i__main__
+    """(i__main__
 C
 p5
 """ + \
-"""(dp6
+    """(dp6
 S'foo'
 p7
 I1
@@ -302,7 +317,7 @@ DATA1 = (']q\x01(K\x00L1L\nG@\x00\x00\x00\x00\x00\x00\x00'
          '\x00\x80J\x00\x00\x00\x80(U\x03abcq\x04h\x04(c__main__\n'
          'C\nq\x05oq\x06}q\x07(U\x03fooq\x08K\x01U\x03barq\tK\x02ubh'
          '\x06tq\nh\nK\x05e.'
-        )
+         )
 
 # Disassembly of DATA1.
 DATA1_DIS = """\
@@ -426,25 +441,27 @@ DATA2_DIS = """\
 highest protocol among opcodes = 2
 """
 
+
 def create_data():
     c = C()
     c.foo = 1
     c.bar = 2
-    x = [0, 1L, 2.0, 3.0+0j]
+    x = [0, 1L, 2.0, 3.0 + 0j]  # noqa: E999 SyntaxError: invalid syntax
     # Append some integer test cases at cPickle.c's internal size
     # cutoffs.
     uint1max = 0xff
     uint2max = 0xffff
     int4max = 0x7fffffff
     x.extend([1, -1,
-              uint1max, -uint1max, -uint1max-1,
-              uint2max, -uint2max, -uint2max-1,
-               int4max,  -int4max,  -int4max-1])
+              uint1max, -uint1max, -uint1max - 1,
+              uint2max, -uint2max, -uint2max - 1,
+               int4max,  -int4max,  -int4max - 1])  # noqa: E127 over-indented
     y = ('abc', 'abc', c, c)
     x.append(y)
     x.append(y)
     x.append(5)
     return x
+
 
 class AbstractPickleTests(unittest.TestCase):
     # Subclass must define self.dumps, self.loads, self.error.
@@ -504,10 +521,10 @@ class AbstractPickleTests(unittest.TestCase):
             self.assertEqual(expected, got)
 
     def test_recursive_list(self):
-        l = []
-        l.append(l)
+        l_ = []
+        l_.append(l_)
         for proto in protocols:
-            s = self.dumps(l, proto)
+            s = self.dumps(l_, proto)
             x = self.loads(s)
             self.assertEqual(len(x), 1)
             self.assertTrue(x is x[0])
@@ -541,13 +558,13 @@ class AbstractPickleTests(unittest.TestCase):
             self.assertIs(x.attr, x)
 
     def test_recursive_multi(self):
-        l = []
-        d = {1:l}
+        l_ = []
+        d = {1: l_}
         i = C()
         i.attr = d
-        l.append(i)
+        l_.append(i)
         for proto in protocols:
-            s = self.dumps(l, proto)
+            s = self.dumps(l_, proto)
             x = self.loads(s)
             self.assertEqual(len(x), 1)
             self.assertEqual(dir(x[0]), dir(i))
@@ -558,17 +575,17 @@ class AbstractPickleTests(unittest.TestCase):
         self.assertRaises(self.error, self.loads, 'garyp')
 
     def test_insecure_strings(self):
-        insecure = ["abc", "2 + 2", # not quoted
-                    #"'abc' + 'def'", # not a single quoted string
-                    "'abc", # quote is not closed
-                    "'abc\"", # open quote and close quote don't match
-                    "'abc'   ?", # junk after close quote
-                    "'\\'", # trailing backslash
+        insecure = ["abc", "2 + 2",  # not quoted
+                    # "'abc' + 'def'", # not a single quoted string
+                    "'abc",  # quote is not closed
+                    "'abc\"",  # open quote and close quote don't match
+                    "'abc'   ?",  # junk after close quote
+                    "'\\'",  # trailing backslash
                     "'",    # issue #17710
                     "' ",   # issue #17710
                     # some tests of the quoting rules
-                    #"'abc\"\''",
-                    #"'\\\\a\'\'\'\\\'\\\\\''",
+                    # "'abc\"\''",
+                    # "'\\\\a\'\'\'\\\'\\\\\''",
                     ]
         for s in insecure:
             buf = "S" + s + "\012p0\012."
@@ -594,7 +611,7 @@ class AbstractPickleTests(unittest.TestCase):
     def test_ints(self):
         import sys
         for proto in protocols:
-            n = sys.maxint
+            n = sys.maxsize
             while n:
                 for expected in (-n, n):
                     s = self.dumps(expected, proto)
@@ -702,9 +719,9 @@ class AbstractPickleTests(unittest.TestCase):
         badpickle = pickle.PROTO + chr(oob) + build_none
         try:
             self.loads(badpickle)
-        except ValueError, detail:
+        except ValueError as detail:
             self.assertTrue(str(detail).startswith(
-                                            "unsupported pickle protocol"))
+                "unsupported pickle protocol"))
         else:
             self.fail("expected bad protocol number to raise ValueError")
 
@@ -769,7 +786,7 @@ class AbstractPickleTests(unittest.TestCase):
                            (3, 2): pickle.TUPLE2,
                            (3, 3): pickle.TUPLE3,
                            (3, 4): pickle.TUPLE,
-                          }
+                           }
         a = ()
         b = (1,)
         c = (1, 2)
@@ -799,7 +816,7 @@ class AbstractPickleTests(unittest.TestCase):
                            (1, False): pickle.INT,
                            (2, False): pickle.NEWFALSE,
                            (3, False): pickle.NEWFALSE,
-                          }
+                           }
         for proto in protocols:
             for x in None, False, True:
                 s = self.dumps(x, proto)
@@ -1006,6 +1023,7 @@ class AbstractPickleTests(unittest.TestCase):
             def __reduce__(self):
                 # 4th item is not an iterator
                 return list, (), None, [], None
+
         class D(object):
             def __reduce__(self):
                 # 5th item is not an iterator
@@ -1053,6 +1071,7 @@ class AbstractPickleTests(unittest.TestCase):
             for x_key, y_key in zip(x_keys, y_keys):
                 self.assertIs(x_key, y_key)
 
+
 if sys.version_info < (2, 7):
 
     def assertIs(self, expr1, expr2, msg=None):
@@ -1073,39 +1092,49 @@ if sys.version_info < (2, 7):
 
 class REX_one(object):
     _reduce_called = 0
+
     def __reduce__(self):
         self._reduce_called = 1
         return REX_one, ()
     # No __reduce_ex__ here, but inheriting it from object
 
+
 class REX_two(object):
     _proto = None
+
     def __reduce_ex__(self, proto):
         self._proto = proto
         return REX_two, ()
     # No __reduce__ here, but inheriting it from object
 
+
 class REX_three(object):
     _proto = None
+
     def __reduce_ex__(self, proto):
         self._proto = proto
         return REX_two, ()
+
     def __reduce__(self):
-        raise TestFailed, "This __reduce__ shouldn't be called"
+        raise TestFailed("This __reduce__ shouldn't be called")
+
 
 class REX_four(object):
     _proto = None
+
     def __reduce_ex__(self, proto):
         self._proto = proto
         return object.__reduce_ex__(self, proto)
     # Calling base class method should succeed
 
+
 class REX_five(object):
     _reduce_called = 0
+
     def __reduce__(self):
         self._reduce_called = 1
         if _is_jython:
-            return super(REX_five,self).__reduce__()
+            return super(REX_five, self).__reduce__()
         return object.__reduce__(self)
     # This one used to fail with infinite recursion;
     # on Jython 2.7rc2 it still does if super() is not used; this
@@ -1113,32 +1142,42 @@ class REX_five(object):
 
 # Test classes for newobj
 
+
 class MyInt(int):
     sample = 1
+
 
 class MyLong(long):
     sample = 1L
 
+
 class MyFloat(float):
     sample = 1.0
+
 
 class MyComplex(complex):
     sample = 1.0 + 0.0j
 
+
 class MyStr(str):
     sample = "hello"
+
 
 class MyUnicode(unicode):
     sample = u"hello \u1234"
 
+
 class MyTuple(tuple):
     sample = (1, 2, 3)
+
 
 class MyList(list):
     sample = [1, 2, 3]
 
+
 class MyDict(dict):
     sample = {"a": 1, "b": 2}
+
 
 myclasses = [MyInt, MyLong, MyFloat,
              MyComplex,
@@ -1149,10 +1188,12 @@ myclasses = [MyInt, MyLong, MyFloat,
 class SlotList(MyList):
     __slots__ = ["foo"]
 
+
 class SimpleNewObj(object):
     def __init__(self, a, b, c):
         # raise an error, to make sure this isn't called
         raise TypeError("SimpleNewObj.__init__() didn't expect to get called")
+
 
 class AbstractPickleModuleTests(unittest.TestCase):
 
@@ -1207,7 +1248,7 @@ class AbstractPickleModuleTests(unittest.TestCase):
                     '__import__': __import__}
         d = {}
         teststr = "def f(): pickleme.dumps(0)"
-        exec teststr in {'__builtins__': builtins}, d
+        exec teststr in {'__builtins__': builtins}, d  # noqa: E999 SyntaxError
         d['f']()
 
     def test_bad_input(self):
@@ -1219,6 +1260,7 @@ class AbstractPickleModuleTests(unittest.TestCase):
         # XXX Why doesn't pickle raise UnpicklingError?
         self.assertRaises((IndexError, cPickle.UnpicklingError),
                           self.module.loads, s)
+
 
 class AbstractPersistentPicklerTests(unittest.TestCase):
 
@@ -1258,9 +1300,11 @@ class AbstractPersistentPicklerTests(unittest.TestCase):
 
 REDUCE_A = 'reduce_A'
 
+
 class AAA(object):
     def __reduce__(self):
         return str, (REDUCE_A,)
+
 
 class BBB(object):
     pass
@@ -1412,38 +1456,39 @@ class AbstractPicklerUnpicklerObjectTests(unittest.TestCase):
 
         f.seek(0)
         unpickler = self.unpickler_class(f)
-        unpickler.noload() # read past _NOLOAD_OBJECT
+        unpickler.noload()  # read past _NOLOAD_OBJECT
 
         self.assertEqual(f.tell(), after['_NOLOAD_OBJECT'])
-        noload = unpickler.noload() # read past aaa
+        noload = unpickler.noload()  # read past aaa
         self.assertEqual(noload, None)
         self.assertEqual(f.tell(), after['aaa'])
 
-        unpickler.noload() # read past bbb
+        unpickler.noload()  # read past bbb
         self.assertEqual(f.tell(), after['bbb'])
 
-        noload = unpickler.noload() # read past ccc
+        noload = unpickler.noload()  # read past ccc
         self.assertEqual(noload, ccc)
         self.assertEqual(f.tell(), after['ccc'])
 
-        noload = unpickler.noload() # read past ddd
+        noload = unpickler.noload()  # read past ddd
         self.assertEqual(noload, ddd)
         self.assertEqual(f.tell(), after['ddd'])
 
-        noload = unpickler.noload() # read past eee
+        noload = unpickler.noload()  # read past eee
         self.assertEqual(noload, eee)
         self.assertEqual(f.tell(), after['eee'])
 
-        noload = unpickler.noload() # read past fff
+        noload = unpickler.noload()  # read past fff
         self.assertEqual(noload, fff)
         self.assertEqual(f.tell(), after['fff'])
 
-        noload = unpickler.noload() # read past ggg
+        noload = unpickler.noload()  # read past ggg
         self.assertEqual(noload, ggg)
         self.assertEqual(f.tell(), after['ggg'])
 
     def test_functional_noload_dict_subclass(self):
-        """noload() doesn't break or produce any output given a dict subclass"""
+        """noload() doesn't break or produce any output given a dict subclass
+        """
         # See http://bugs.python.org/issue1101399
         o = MyDict()
         o['x'] = 1
@@ -1455,9 +1500,9 @@ class AbstractPicklerUnpicklerObjectTests(unittest.TestCase):
         noload = unpickler.noload()
         self.assertEqual(noload, None)
 
-
     def test_functional_noload_list_subclass(self):
-        """noload() doesn't break or produce any output given a list subclass"""
+        """noload() doesn't break or produce any output given a list subclass
+        """
         # See http://bugs.python.org/issue1101399
         o = MyList()
         o.append(1)
@@ -1482,7 +1527,6 @@ class AbstractPicklerUnpicklerObjectTests(unittest.TestCase):
         noload = unpickler.noload()
         self.assertEqual(noload, o)
 
-
     def test_functional_noload_list(self):
         """noload() implements the Python 2.6 behaviour and fills in lists"""
         # See http://bugs.python.org/issue1101399
@@ -1503,7 +1547,7 @@ class BigmemPickleTests(unittest.TestCase):
     # for pickled data, 1 byte for unpickled strings, 1 byte for internal
     # buffer and 1 byte of free space for resizing of internal buffer.
 
-    @precisionbigmemtest(size=_2G + 100*_1M, memuse=5)
+    @precisionbigmemtest(size=_2G + 100 * _1M, memuse=5)
     def test_huge_strlist(self, size):
         chunksize = 2**20
         data = []

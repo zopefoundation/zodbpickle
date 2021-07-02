@@ -5,7 +5,7 @@
 2.0.1 (unreleased)
 ==================
 
-- Nothing changed yet.
+- Add support for Python 3.8.
 
 
 2.0.0 (2019-11-13)

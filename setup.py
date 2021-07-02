@@ -19,9 +19,12 @@ import sys
 from setuptools import Extension, find_packages, setup
 
 here = os.path.abspath(os.path.dirname(__file__))
+
+
 def read(fname):
     with open(os.path.join(here, fname)) as f:
         return f.read()
+
 
 README = read('README.rst') + '\n\n' + read('CHANGES.rst')
 
@@ -34,7 +37,7 @@ else:
 py_impl = getattr(platform, 'python_implementation', lambda: None)
 is_pypy = py_impl() == 'PyPy'
 is_jython = py_impl() == 'Jython'
-is_pure = 'PURE_PYTHON' in os.environ
+is_pure = int(os.environ.get('PURE_PYTHON', '0'))
 if is_pypy or is_jython:
     ext_modules = []
 else:
@@ -63,6 +66,7 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: Implementation :: CPython',
         'Programming Language :: Python :: Implementation :: PyPy',
         'Programming Language :: Python :: Implementation :: Jython',
@@ -79,7 +83,7 @@ setup(
     package_dir={'': 'src'},
     ext_modules=ext_modules,
     extras_require={
-        'test': [],
+        'test': ['zope.testrunner'],
     },
     test_suite='zodbpickle.tests.test_pickle.test_suite',
     install_requires=[

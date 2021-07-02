@@ -10,6 +10,9 @@ dis(pickle, out=None, memo=None, indentlevel=4)
    Print a symbolic disassembly of a pickle.
 '''
 
+from __future__ import print_function
+from struct import unpack as _unpack
+from zodbpickle.pickle_2 import decode_long
 __all__ = ['dis', 'genops', 'optimize']
 
 # Other ideas:
@@ -162,6 +165,7 @@ UP_TO_NEWLINE = -1
 TAKEN_FROM_ARGUMENT1 = -2   # num bytes is 1-byte unsigned int
 TAKEN_FROM_ARGUMENT4 = -3   # num bytes is 4-byte signed little-endian int
 
+
 class ArgumentDescriptor(object):
     __slots__ = (
         # name of descriptor record, also a module global name; a string
@@ -196,7 +200,6 @@ class ArgumentDescriptor(object):
         assert isinstance(doc, str)
         self.doc = doc
 
-from struct import unpack as _unpack
 
 def read_uint1(f):
     r"""
@@ -210,11 +213,12 @@ def read_uint1(f):
         return ord(data)
     raise ValueError("not enough data in stream to read uint1")
 
+
 uint1 = ArgumentDescriptor(
-            name='uint1',
-            n=1,
-            reader=read_uint1,
-            doc="One-byte unsigned integer.")
+    name='uint1',
+    n=1,
+    reader=read_uint1,
+    doc="One-byte unsigned integer.")
 
 
 def read_uint2(f):
@@ -231,11 +235,12 @@ def read_uint2(f):
         return _unpack("<H", data)[0]
     raise ValueError("not enough data in stream to read uint2")
 
+
 uint2 = ArgumentDescriptor(
-            name='uint2',
-            n=2,
-            reader=read_uint2,
-            doc="Two-byte unsigned integer, little-endian.")
+    name='uint2',
+    n=2,
+    reader=read_uint2,
+    doc="Two-byte unsigned integer, little-endian.")
 
 
 def read_int4(f):
@@ -252,11 +257,12 @@ def read_int4(f):
         return _unpack("<i", data)[0]
     raise ValueError("not enough data in stream to read int4")
 
+
 int4 = ArgumentDescriptor(
-           name='int4',
-           n=4,
-           reader=read_int4,
-           doc="Four-byte signed integer, little-endian, 2's complement.")
+    name='int4',
+    n=4,
+    reader=read_int4,
+    doc="Four-byte signed integer, little-endian, 2's complement.")
 
 
 def read_stringnl(f, decode=True, stripquotes=True):
@@ -308,29 +314,33 @@ def read_stringnl(f, decode=True, stripquotes=True):
         data = data.decode('string_escape')
     return data
 
+
 stringnl = ArgumentDescriptor(
-               name='stringnl',
-               n=UP_TO_NEWLINE,
-               reader=read_stringnl,
-               doc="""A newline-terminated string.
+    name='stringnl',
+    n=UP_TO_NEWLINE,
+    reader=read_stringnl,
+    doc="""A newline-terminated string.
 
                    This is a repr-style string, with embedded escapes, and
                    bracketing quotes.
                    """)
 
+
 def read_stringnl_noescape(f):
     return read_stringnl(f, decode=False, stripquotes=False)
 
+
 stringnl_noescape = ArgumentDescriptor(
-                        name='stringnl_noescape',
-                        n=UP_TO_NEWLINE,
-                        reader=read_stringnl_noescape,
-                        doc="""A newline-terminated string.
+    name='stringnl_noescape',
+    n=UP_TO_NEWLINE,
+    reader=read_stringnl_noescape,
+    doc="""A newline-terminated string.
 
                         This is a str-style string, without embedded escapes,
                         or bracketing quotes.  It should consist solely of
                         printable ASCII characters.
                         """)
+
 
 def read_stringnl_noescape_pair(f):
     r"""
@@ -341,11 +351,12 @@ def read_stringnl_noescape_pair(f):
 
     return "%s %s" % (read_stringnl_noescape(f), read_stringnl_noescape(f))
 
+
 stringnl_noescape_pair = ArgumentDescriptor(
-                             name='stringnl_noescape_pair',
-                             n=UP_TO_NEWLINE,
-                             reader=read_stringnl_noescape_pair,
-                             doc="""A pair of newline-terminated strings.
+    name='stringnl_noescape_pair',
+    n=UP_TO_NEWLINE,
+    reader=read_stringnl_noescape_pair,
+    doc="""A pair of newline-terminated strings.
 
                              These are str-style strings, without embedded
                              escapes, or bracketing quotes.  They should
@@ -353,6 +364,7 @@ stringnl_noescape_pair = ArgumentDescriptor(
                              The pair is returned as a single string, with
                              a single blank separating the two strings.
                              """)
+
 
 def read_string4(f):
     r"""
@@ -376,11 +388,12 @@ def read_string4(f):
     raise ValueError("expected %d bytes in a string4, but only %d remain" %
                      (n, len(data)))
 
+
 string4 = ArgumentDescriptor(
-              name="string4",
-              n=TAKEN_FROM_ARGUMENT4,
-              reader=read_string4,
-              doc="""A counted string.
+    name="string4",
+    n=TAKEN_FROM_ARGUMENT4,
+    reader=read_string4,
+    doc="""A counted string.
 
               The first argument is a 4-byte little-endian signed int giving
               the number of bytes in the string, and the second argument is
@@ -405,11 +418,12 @@ def read_string1(f):
     raise ValueError("expected %d bytes in a string1, but only %d remain" %
                      (n, len(data)))
 
+
 string1 = ArgumentDescriptor(
-              name="string1",
-              n=TAKEN_FROM_ARGUMENT1,
-              reader=read_string1,
-              doc="""A counted string.
+    name="string1",
+    n=TAKEN_FROM_ARGUMENT1,
+    reader=read_string1,
+    doc="""A counted string.
 
               The first argument is a 1-byte unsigned int giving the number
               of bytes in the string, and the second argument is that many
@@ -429,18 +443,20 @@ def read_unicodestringnl(f):
         raise ValueError("no newline found when trying to read "
                          "unicodestringnl")
     data = data[:-1]    # lose the newline
-    return unicode(data, 'raw-unicode-escape')
+    return unicode(data, 'raw-unicode-escape')  # noqa: F821 undefined name
+
 
 unicodestringnl = ArgumentDescriptor(
-                      name='unicodestringnl',
-                      n=UP_TO_NEWLINE,
-                      reader=read_unicodestringnl,
-                      doc="""A newline-terminated Unicode string.
+    name='unicodestringnl',
+    n=UP_TO_NEWLINE,
+    reader=read_unicodestringnl,
+    doc="""A newline-terminated Unicode string.
 
                       This is raw-unicode-escape encoded, so consists of
                       printable ASCII characters, and may contain embedded
                       escape sequences.
                       """)
+
 
 def read_unicodestring4(f):
     r"""
@@ -465,15 +481,16 @@ def read_unicodestring4(f):
         raise ValueError("unicodestring4 byte count < 0: %d" % n)
     data = f.read(n)
     if len(data) == n:
-        return unicode(data, 'utf-8')
+        return unicode(data, 'utf-8')  # noqa: F821 undefined name
     raise ValueError("expected %d bytes in a unicodestring4, but only %d "
                      "remain" % (n, len(data)))
 
+
 unicodestring4 = ArgumentDescriptor(
-                    name="unicodestring4",
-                    n=TAKEN_FROM_ARGUMENT4,
-                    reader=read_unicodestring4,
-                    doc="""A counted Unicode string.
+    name="unicodestring4",
+    n=TAKEN_FROM_ARGUMENT4,
+    reader=read_unicodestring4,
+    doc="""A counted Unicode string.
 
                     The first argument is a 4-byte little-endian signed int
                     giving the number of bytes in the string, and the second
@@ -509,7 +526,8 @@ def read_decimalnl_short(f):
     try:
         return int(s)
     except OverflowError:
-        return long(s)
+        return long(s)  # noqa: F821 undefined name
+
 
 def read_decimalnl_long(f):
     r"""
@@ -532,14 +550,14 @@ def read_decimalnl_long(f):
     s = read_stringnl(f, decode=False, stripquotes=False)
     if not s.endswith("L"):
         raise ValueError("trailing 'L' required in %r" % s)
-    return long(s)
+    return long(s)  # noqa: F821 undefined name
 
 
 decimalnl_short = ArgumentDescriptor(
-                      name='decimalnl_short',
-                      n=UP_TO_NEWLINE,
-                      reader=read_decimalnl_short,
-                      doc="""A newline-terminated decimal integer literal.
+    name='decimalnl_short',
+    n=UP_TO_NEWLINE,
+    reader=read_decimalnl_short,
+    doc="""A newline-terminated decimal integer literal.
 
                           This never has a trailing 'L', and the integer fit
                           in a short Python int on the box where the pickle
@@ -549,10 +567,10 @@ decimalnl_short = ArgumentDescriptor(
                           """)
 
 decimalnl_long = ArgumentDescriptor(
-                     name='decimalnl_long',
-                     n=UP_TO_NEWLINE,
-                     reader=read_decimalnl_long,
-                     doc="""A newline-terminated decimal integer literal.
+    name='decimalnl_long',
+    n=UP_TO_NEWLINE,
+    reader=read_decimalnl_long,
+    doc="""A newline-terminated decimal integer literal.
 
                          This has a trailing 'L', and can represent integers
                          of any size.
@@ -568,11 +586,12 @@ def read_floatnl(f):
     s = read_stringnl(f, decode=False, stripquotes=False)
     return float(s)
 
+
 floatnl = ArgumentDescriptor(
-              name='floatnl',
-              n=UP_TO_NEWLINE,
-              reader=read_floatnl,
-              doc="""A newline-terminated decimal floating literal.
+    name='floatnl',
+    n=UP_TO_NEWLINE,
+    reader=read_floatnl,
+    doc="""A newline-terminated decimal floating literal.
 
               In general this requires 17 significant digits for roundtrip
               identity, and pickling then unpickling infinities, NaNs, and
@@ -580,6 +599,7 @@ floatnl = ArgumentDescriptor(
               on itself (e.g., Windows can't read the strings it produces
               for infinities or NaNs).
               """)
+
 
 def read_float8(f):
     r"""
@@ -598,10 +618,10 @@ def read_float8(f):
 
 
 float8 = ArgumentDescriptor(
-             name='float8',
-             n=8,
-             reader=read_float8,
-             doc="""An 8-byte binary representation of a float, big-endian.
+    name='float8',
+    n=8,
+    reader=read_float8,
+    doc="""An 8-byte binary representation of a float, big-endian.
 
              The format is unique to Python, and shared with the struct
              module (format string '>d') "in theory" (the struct and cPickle
@@ -617,7 +637,6 @@ float8 = ArgumentDescriptor(
 
 # Protocol 2 formats
 
-from zodbpickle.pickle_2 import decode_long
 
 def read_long1(f):
     r"""
@@ -640,6 +659,7 @@ def read_long1(f):
         raise ValueError("not enough data in stream to read long1")
     return decode_long(data)
 
+
 long1 = ArgumentDescriptor(
     name="long1",
     n=TAKEN_FROM_ARGUMENT1,
@@ -650,6 +670,7 @@ long1 = ArgumentDescriptor(
     many bytes and interprets them as a little-endian 2's-complement long.
     If the size is 0, that's taken as a shortcut for the long 0L.
     """)
+
 
 def read_long4(f):
     r"""
@@ -673,6 +694,7 @@ def read_long4(f):
     if len(data) != n:
         raise ValueError("not enough data in stream to read long4")
     return decode_long(data)
+
 
 long4 = ArgumentDescriptor(
     name="long4",
@@ -725,70 +747,70 @@ class StackObject(object):
 
 
 pyint = StackObject(
-            name='int',
-            obtype=int,
-            doc="A short (as opposed to long) Python integer object.")
+    name='int',
+    obtype=int,
+    doc="A short (as opposed to long) Python integer object.")
 
 pylong = StackObject(
-             name='long',
-             obtype=long,
-             doc="A long (as opposed to short) Python integer object.")
+    name='long',
+    obtype=long,  # noqa: F821 undefined name
+    doc="A long (as opposed to short) Python integer object.")
 
 pyinteger_or_bool = StackObject(
-                        name='int_or_bool',
-                        obtype=(int, long, bool),
-                        doc="A Python integer object (short or long), or "
-                            "a Python bool.")
+    name='int_or_bool',
+    obtype=(int, long, bool),  # noqa: F821 undefined name
+    doc="A Python integer object (short or long), or "
+    "a Python bool.")
 
 pybool = StackObject(
-             name='bool',
-             obtype=(bool,),
-             doc="A Python bool object.")
+    name='bool',
+    obtype=(bool,),
+    doc="A Python bool object.")
 
 pyfloat = StackObject(
-              name='float',
-              obtype=float,
-              doc="A Python float object.")
+    name='float',
+    obtype=float,
+    doc="A Python float object.")
 
 pystring = StackObject(
-               name='str',
-               obtype=str,
-               doc="A Python string object.")
+    name='str',
+    obtype=str,
+    doc="A Python string object.")
 
 pyunicode = StackObject(
-                name='unicode',
-                obtype=unicode,
-                doc="A Python Unicode string object.")
+    name='unicode',
+    obtype=unicode,  # noqa: F821 undefined name
+    doc="A Python Unicode string object.")
 
 pynone = StackObject(
-             name="None",
-             obtype=type(None),
-             doc="The Python None object.")
+    name="None",
+    obtype=type(None),
+    doc="The Python None object.")
 
 pytuple = StackObject(
-              name="tuple",
-              obtype=tuple,
-              doc="A Python tuple object.")
+    name="tuple",
+    obtype=tuple,
+    doc="A Python tuple object.")
 
 pylist = StackObject(
-             name="list",
-             obtype=list,
-             doc="A Python list object.")
+    name="list",
+    obtype=list,
+    doc="A Python list object.")
 
 pydict = StackObject(
-             name="dict",
-             obtype=dict,
-             doc="A Python dict object.")
+    name="dict",
+    obtype=dict,
+    doc="A Python dict object.")
 
 anyobject = StackObject(
-                name='any',
-                obtype=object,
-                doc="Any kind of object whatsoever.")
+    name='any',
+    obtype=object,
+    doc="Any kind of object whatsoever.")
 
 markobject = StackObject(
-                 name="mark",
-                 obtype=StackObject,
-                 doc="""'The mark' is a unique object.
+    name="mark",
+    obtype=StackObject,
+    doc="""'The mark' is a unique object.
 
                  Opcodes that operate on a variable number of objects
                  generally don't embed the count of objects in the opcode,
@@ -800,9 +822,9 @@ markobject = StackObject(
                  """)
 
 stackslice = StackObject(
-                 name="stackslice",
-                 obtype=StackObject,
-                 doc="""An object representing a contiguous slice of the stack.
+    name="stackslice",
+    obtype=StackObject,
+    doc="""An object representing a contiguous slice of the stack.
 
                  This is used in conjuction with markobject, to represent all
                  of the stack following the topmost markobject.  For example,
@@ -819,6 +841,7 @@ stackslice = StackObject(
 
 ##############################################################################
 # Descriptors for pickle opcodes.
+
 
 class OpcodeInfo(object):
 
@@ -879,7 +902,8 @@ class OpcodeInfo(object):
         assert isinstance(doc, str)
         self.doc = doc
 
-I = OpcodeInfo
+
+I = OpcodeInfo  # noqa: E741 ambiguous variable name 'I'
 opcodes = [
 
     # Ways to spell integers.
@@ -1792,6 +1816,7 @@ for d in opcodes:
     code2op[d.code] = d
 del d
 
+
 def assure_pickle_consistency(verbose=False):
     import re
     from zodbpickle import pickle_2 as pickle
@@ -1800,18 +1825,19 @@ def assure_pickle_consistency(verbose=False):
     for name in pickle.__all__:
         if not re.match("[A-Z][A-Z0-9_]+$", name):
             if verbose:
-                print "skipping %r: it doesn't look like an opcode name" % name
+                print(
+                    "skipping %r: it doesn't look like an opcode name" % name)
             continue
         picklecode = getattr(pickle, name)
         if not isinstance(picklecode, str) or len(picklecode) != 1:
             if verbose:
-                print ("skipping %r: value %r doesn't look like a pickle "
-                       "code" % (name, picklecode))
+                print("skipping %r: value %r doesn't look like a pickle "
+                      "code" % (name, picklecode))
             continue
         if picklecode in copy:
             if verbose:
-                print "checking name %r w/ code %r for consistency" % (
-                      name, picklecode)
+                print("checking name %r w/ code %r for consistency" % (
+                      name, picklecode))
             d = copy[picklecode]
             if d.name != name:
                 raise ValueError("for pickle code %r, pickle.py uses name %r "
@@ -1831,11 +1857,13 @@ def assure_pickle_consistency(verbose=False):
             msg.append("    name %r with code %r" % (d.name, code))
         raise ValueError("\n".join(msg))
 
+
 assure_pickle_consistency()
 del assure_pickle_consistency
 
 ##############################################################################
 # A pickle opcode generator.
+
 
 def genops(pickle):
     """Generate all the opcodes in a pickle.
@@ -1869,7 +1897,8 @@ def genops(pickle):
     if hasattr(pickle, "tell"):
         getpos = pickle.tell
     else:
-        getpos = lambda: None
+        def getpos():
+            return None
 
     while True:
         pos = getpos()
@@ -1894,6 +1923,7 @@ def genops(pickle):
 ##############################################################################
 # A pickle optimizer.
 
+
 def optimize(p):
     'Optimize a pickle string by removing unused PUT opcodes'
     gets = set()            # set of args used by a GET opcode
@@ -1901,10 +1931,11 @@ def optimize(p):
     prevpos = None          # set to pos if previous opcode was a PUT
     for opcode, arg, pos in genops(p):
         if prevpos is not None:
-            puts.append((prevarg, prevpos, pos))
+            puts.append(
+              (prevarg, prevpos, pos))  # noqa: F821 undefined name 'prevarg'
             prevpos = None
         if 'PUT' in opcode.name:
-            prevarg, prevpos = arg, pos
+            prevarg, prevpos = arg, pos  # noqa: F841 variable 'prevarg' unused
         elif 'GET' in opcode.name:
             gets.add(arg)
 
@@ -1920,6 +1951,7 @@ def optimize(p):
 
 ##############################################################################
 # A symbolic pickle disassembler.
+
 
 def dis(pickle, out=None, memo=None, indentlevel=4):
     """Produce a symbolic disassembly of a pickle.
@@ -1969,7 +2001,7 @@ def dis(pickle, out=None, memo=None, indentlevel=4):
     errormsg = None
     for opcode, arg, pos in genops(pickle):
         if pos is not None:
-            print >> out, "%5d:" % pos,
+            print("%5d:" % pos, end='', file=out)
 
         line = "%-4s %s%s" % (repr(opcode.code)[1:-1],
                               indentchunk * len(markstack),
@@ -2034,7 +2066,7 @@ def dis(pickle, out=None, memo=None, indentlevel=4):
                 line += ' ' + repr(arg)
             if markmsg:
                 line += ' ' + markmsg
-        print >> out, line
+        print(line, file=out)
 
         if errormsg:
             # Note that we delayed complaining until the offending opcode
@@ -2053,14 +2085,17 @@ def dis(pickle, out=None, memo=None, indentlevel=4):
 
         stack.extend(after)
 
-    print >> out, "highest protocol among opcodes =", maxproto
+    print("highest protocol among opcodes =", maxproto, file=out)
     if stack:
         raise ValueError("stack not empty after STOP: %r" % stack)
 
 # For use in the doctest, simply as an example of a class to pickle.
+
+
 class _Example:
     def __init__(self, value):
         self.value = value
+
 
 _dis_test = r"""
 >>> from zodbpickle import pickle_2 as pickle
@@ -2297,11 +2332,13 @@ highest protocol among opcodes = 2
 
 __test__ = {'disassembler_test': _dis_test,
             'disassembler_memo_test': _memo_test,
-           }
+            }
+
 
 def _test():
     import doctest
     return doctest.testmod()
+
 
 if __name__ == "__main__":
     _test()
