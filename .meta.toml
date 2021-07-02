@@ -61,3 +61,8 @@ global-env-vars = [
 test-steps = [
     "- zope-testrunner --test-path=src -m zodbpickle.tests.test_pickle$",
     ]
+
+[github-actions]
+test-commands = [
+    "python -m coverage run -p -m zope.testrunner --test-path=src --auto-color --auto-progress -m zodbpickle.tests.test_pickle$",
+    ]
