@@ -1,0 +1,63 @@
+# Generated from:
+# https://github.com/zopefoundation/meta/tree/master/config/c-code
+[meta]
+template = "c-code"
+commit-id = "beb954160d2539dd10e013a553a0af8d48002e0a"
+
+[python]
+with-appveyor = true
+with-windows = false
+with-pypy = true
+with-legacy-python = true
+with-sphinx-doctests = false
+
+[tox]
+use-flake8 = true
+testenv-commands = [
+    "# there's test_pickle_2 for Python 2 and test_pickle_3 for Python 3",
+    "# different test files because metaclass syntax differs on Pythons",
+    "# test_pickle picks and returns the appropriate one",
+    "# without this we'd get an import error (actually syntax error) for one",
+    "# of them",
+    "zope-testrunner --test-path=src -m zodbpickle.tests.test_pickle$ {posargs:-vc}",
+    ]
+coverage-command = "coverage run -m zope.testrunner --test-path=src -m zodbpickle.tests.test_pickle$ {posargs:-vc}"
+
+[coverage]
+fail-under = 63
+
+[flake8]
+additional-config = [
+    "# E221 multiple spaces before operator",
+    "# E225 missing whitespace around operator",
+    "# E262 inline comment should start with '# '",
+    "# F401 imported but unused",
+    "# F403 'import *' used; unable to detect undefined names",
+    "per-file-ignores =",
+    "    src/zodbpickle/fastpickle.py: F401 F403",
+    "    src/zodbpickle/pickle.py: F401 F403",
+    "    src/zodbpickle/pickle_2.py: E221 E262",
+    "    src/zodbpickle/pickle_3.py: E221 E225 E262",
+    "    src/zodbpickle/pickletools_3.py: E221",
+    "    src/zodbpickle/slowpickle.py: F401 F403",
+    ]
+
+[manifest]
+additional-rules = [
+    "include *.sh",
+    "recursive-include patches *.diff",
+    "recursive-include src *.c",
+    ]
+
+[appveyor]
+global-env-vars = [
+    "# Currently the builds use @mgedmin's Appveyor account.  The PyPI token belongs",
+    "# to zope.wheelbuilder, which is managed by @mgedmin and @dataflake.",
+    "global:",
+    "  TWINE_USERNAME: __token__",
+    "  TWINE_PASSWORD:",
+    "    secure: aoZC/+rvJKg8B5GMGIxd1YzSugYzr1vrR0NzX+NBCGjc64YaTc/K4kIRj4eqD0p11Nhl2aGUgHF6qMUcHIAAUybaKU/3Kyp+BwxU5eGX/NZv9S6AsBGVyiHD4oourkczzeB/HGrICEm9TeTcR3lc70SrpxSpYwnDyLv8CUpk0D/iUgQyFT/BERDsBTJEPI3HV/ngmMQrj9g2H7PkfF0yR5ss8AclYcIdWOKTvTapcGLerlK+mFm5muturTCT2njYMP2cv+NV3+Ih6OxSpQlWjw==",
+    ]
+test-steps = [
+    "- zope-testrunner --test-path=src -m zodbpickle.tests.test_pickle$",
+    ]
