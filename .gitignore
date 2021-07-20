@@ -1,5 +1,6 @@
 # Generated from:
 # https://github.com/zopefoundation/meta/tree/master/config/c-code
+*.dll
 *.egg-info/
 *.profraw
 *.pyc
