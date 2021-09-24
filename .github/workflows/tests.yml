@@ -103,6 +103,7 @@ jobs:
           - 3.7
           - 3.8
           - 3.9
+          - 3.10.0-beta.3
         os: [ubuntu-20.04, macos-latest]
         exclude:
           - os: macos-latest
@@ -189,6 +190,7 @@ jobs:
           - 3.7
           - 3.8
           - 3.9
+          - 3.10.0-beta.3
         os: [ubuntu-20.04, macos-latest]
         exclude:
           - os: macos-latest
