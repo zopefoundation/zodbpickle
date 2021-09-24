@@ -27,6 +27,6 @@ else:
     from .pickle_2 import *
 # also make sure that we really have the fast version, although
 # python3 tries to import them by default
-from ._pickle import *   # noqa: E402 import not at top of file
+from ._pickle import *
 
 del sys

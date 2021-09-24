@@ -23,6 +23,9 @@ fi
 ls -ld /cache
 ls -ld /cache/pip
 
+# We need some libraries because we build wheels from scratch:
+yum -y install libffi-devel
+
 # Compile wheels
 for PYBIN in /opt/python/*/bin; do
     if [[ "${PYBIN}" == *"cp27"* ]] || \

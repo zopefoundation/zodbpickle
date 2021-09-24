@@ -24,8 +24,6 @@ Misc variables:
 
 """
 
-import binascii as _binascii
-from zodbpickle import binary as BinaryType
 __version__ = "$Revision: 72223 $"       # Code version
 
 from types import *
@@ -59,11 +57,9 @@ DEFAULT_PROTOCOL = 3
 # marshal.loads() is twice as fast as struct.unpack()!
 mloads = marshal.loads
 
-
 class PickleError(Exception):
     """A common base class for the other pickling exceptions."""
     pass
-
 
 class PicklingError(PickleError):
     """This exception is raised when an unpicklable object is passed to the
@@ -71,7 +67,6 @@ class PicklingError(PickleError):
 
     """
     pass
-
 
 class UnpicklingError(PickleError):
     """This exception is raised when there is a problem unpickling an object,
@@ -86,12 +81,9 @@ class UnpicklingError(PickleError):
 
 # An instance of _Stop is raised by Unpickler.load_stop() in response to
 # the STOP opcode, passing the object that is the result of unpickling.
-
-
 class _Stop(Exception):
     def __init__(self, value):
         self.value = value
-
 
 # Jython has PyStringMap; it's a dict subclass with string keys
 try:
@@ -174,11 +166,12 @@ LONG4           = '\x8b'  # push really big long
 BINBYTES        = 'B'
 SHORT_BINBYTES  = 'C'
 
+from zodbpickle import binary as BinaryType
 
 _tuplesize2code = [EMPTY_TUPLE, TUPLE1, TUPLE2, TUPLE3]
 
 
-__all__.extend([x for x in dir() if re.match("[A-Z][A-Z0-9_]+$", x)])
+__all__.extend([x for x in dir() if re.match("[A-Z][A-Z0-9_]+$",x)])
 del x
 
 
@@ -215,8 +208,7 @@ class Pickler:
         if protocol < 0:
             protocol = HIGHEST_PROTOCOL
         elif not 0 <= protocol <= HIGHEST_PROTOCOL:
-            raise ValueError(
-                "pickle protocol must be <= %d" % HIGHEST_PROTOCOL)
+            raise ValueError("pickle protocol must be <= %d" % HIGHEST_PROTOCOL)
         self.write = file.write
         self.memo = {}
         self.proto = int(protocol)
@@ -300,7 +292,7 @@ class Pickler:
         t = type(obj)
         f = self.dispatch.get(t)
         if f:
-            f(self, obj)  # Call unbound method with explicit self
+            f(self, obj) # Call unbound method with explicit self
             return
 
         # Check copy_reg.dispatch_table
@@ -311,7 +303,7 @@ class Pickler:
             # Check for a class with a custom metaclass; treat as regular class
             try:
                 issc = issubclass(t, TypeType)
-            except TypeError:  # t is not a class (old Boost; see SF #502085)
+            except TypeError: # t is not a class (old Boost; see SF #502085)
                 issc = 0
             if issc:
                 self.save_global(obj)
@@ -330,16 +322,17 @@ class Pickler:
                                         (t.__name__, obj))
 
         # Check for string returned by reduce(), meaning "save as global"
-        if isinstance(rv, StringType):
+        if type(rv) is StringType:
             self.save_global(obj, rv)
             return
 
         # Assert that reduce() returned a tuple
-        if not isinstance(rv, TupleType):
+        if type(rv) is not TupleType:
             raise PicklingError("%s must return string or tuple" % reduce)
 
         # Assert that it returned an appropriately sized tuple
-        if not (2 <= len(rv) <= 5):
+        l = len(rv)
+        if not (2 <= l <= 5):
             raise PicklingError("Tuple returned by %s must have "
                                 "two to five elements" % reduce)
 
@@ -461,7 +454,7 @@ class Pickler:
                     self.write(BININT1 + chr(obj))
                     return
                 if obj <= 0xffff:
-                    self.write("%c%c%c" % (BININT2, obj & 0xff, obj >> 8))
+                    self.write("%c%c%c" % (BININT2, obj&0xff, obj>>8))
                     return
             # Next check for 4-byte signed ints:
             high_bits = obj >> 31  # note that Python shift sign-extends
@@ -525,11 +518,11 @@ class Pickler:
             if self.bin:
                 if unicode:
                     obj = obj.encode("utf-8")
-                len_obj = len(obj)
-                if len_obj < 256 and not unicode:
-                    self.write(SHORT_BINSTRING + chr(len_obj) + obj)
+                l = len(obj)
+                if l < 256 and not unicode:
+                    self.write(SHORT_BINSTRING + chr(l) + obj)
                 else:
-                    s = pack("<i", len_obj)
+                    s = pack("<i", l)
                     if unicode:
                         self.write(BINUNICODE + s + obj)
                     else:
@@ -589,7 +582,7 @@ class Pickler:
             if proto:
                 write(POP_MARK + get)
             else:   # proto 0 -- POP_MARK not available
-                write(POP * (n + 1) + get)
+                write(POP * (n+1) + get)
             return
 
         # No recursion.
@@ -665,7 +658,7 @@ class Pickler:
         self._batch_setitems(obj.iteritems())
 
     dispatch[DictionaryType] = save_dict
-    if PyStringMap is not None:
+    if not PyStringMap is None:
         dispatch[PyStringMap] = save_dict
 
     def _batch_setitems(self, items):
@@ -720,13 +713,13 @@ class Pickler:
         if cls is BinaryType:
             return self.save_binary(obj)
 
-        memo = self.memo
+        memo  = self.memo
         write = self.write
-        save = self.save
+        save  = self.save
 
         if hasattr(obj, '__getinitargs__'):
             args = obj.__getinitargs__()
-            len(args)  # XXX Assert it's a sequence
+            len(args) # XXX Assert it's a sequence
             _keep_alive(args, memo)
         else:
             args = ()
@@ -789,7 +782,7 @@ class Pickler:
                 if code <= 0xff:
                     write(EXT1 + chr(code))
                 elif code <= 0xffff:
-                    write("%c%c%c" % (EXT2, code & 0xff, code >> 8))
+                    write("%c%c%c" % (EXT2, code&0xff, code>>8))
                 else:
                     write(EXT4 + pack("<i", code))
                 return
@@ -803,7 +796,6 @@ class Pickler:
     dispatch[TypeType] = save_global
 
 # Pickling helpers
-
 
 def _keep_alive(x, memo):
     """Keeps a reference to the object x in the memo.
@@ -819,14 +811,13 @@ def _keep_alive(x, memo):
         memo[id(memo)].append(x)
     except KeyError:
         # aha, this is the first one :-)
-        memo[id(memo)] = [x]
+        memo[id(memo)]=[x]
 
 
 # A cache for whichmodule(), mapping a function object to the name of
 # the module in which the function was found.
 
-classmap = {}  # called classmap for backwards compatibility
-
+classmap = {} # called classmap for backwards compatibility
 
 def whichmodule(func, funcname):
     """Figure out the module in which a function occurs.
@@ -845,7 +836,7 @@ def whichmodule(func, funcname):
 
     for name, module in sys.modules.items():
         if module is None:
-            continue  # skip dummy package entries
+            continue # skip dummy package entries
         if name != '__main__' and getattr(module, funcname, None) is func:
             break
     else:
@@ -879,16 +870,16 @@ class Unpickler:
 
         Return the reconstituted object hierarchy specified in the file.
         """
-        self.mark = object()  # any new unique object
+        self.mark = object() # any new unique object
         self.stack = []
         self.append = self.stack.append
         read = self.read
         dispatch = self.dispatch
         try:
-            while True:
+            while 1:
                 key = read(1)
                 dispatch[key](self)
-        except _Stop as stopinst:
+        except _Stop, stopinst:
             return stopinst.value
 
     def noload(self):
@@ -898,16 +889,16 @@ class Unpickler:
         or tuple, return it. Otherwise (if the object was an instance),
         return nothing useful.
         """
-        self.mark = object()  # any new unique object
+        self.mark = object() # any new unique object
         self.stack = []
         self.append = self.stack.append
         read = self.read
         dispatch = self.nl_dispatch
         try:
-            while True:
+            while 1:
                 key = read(1)
                 dispatch[key](self)
-        except _Stop as stopinst:
+        except _Stop, stopinst:
             return stopinst.value
 
     # Return largest index k such that self.stack[k] is self.mark.
@@ -921,9 +912,8 @@ class Unpickler:
     def marker(self):
         stack = self.stack
         mark = self.mark
-        k = len(stack) - 1
-        while stack[k] is not mark:
-            k = k - 1
+        k = len(stack)-1
+        while stack[k] is not mark: k = k-1
         return k
 
     dispatch = {}
@@ -935,7 +925,7 @@ class Unpickler:
     def load_proto(self):
         proto = ord(self.read(1))
         if not 0 <= proto <= HIGHEST_PROTOCOL:
-            raise ValueError("unsupported pickle protocol: %d" % proto)
+            raise ValueError, "unsupported pickle protocol: %d" % proto
     dispatch[PROTO] = load_proto
 
     def load_persid(self):
@@ -1012,14 +1002,14 @@ class Unpickler:
 
     def load_string(self):
         rep = self.readline()[:-1]
-        for q in "\"'":  # double or single quote
+        for q in "\"'": # double or single quote
             if rep.startswith(q):
                 if len(rep) < 2 or not rep.endswith(q):
-                    raise ValueError("insecure string pickle")
+                    raise ValueError, "insecure string pickle"
                 rep = rep[len(q):-len(q)]
                 break
         else:
-            raise ValueError("insecure string pickle")
+            raise ValueError, "insecure string pickle"
         self.append(rep.decode("string-escape"))
     dispatch[STRING] = load_string
 
@@ -1034,12 +1024,12 @@ class Unpickler:
     dispatch[BINBYTES] = load_binbytes
 
     def load_unicode(self):
-        self.append(unicode(self.readline()[:-1], 'raw-unicode-escape'))
+        self.append(unicode(self.readline()[:-1],'raw-unicode-escape'))
     dispatch[UNICODE] = load_unicode
 
     def load_binunicode(self):
         len = mloads('i' + self.read(4))
-        self.append(unicode(self.read(len), 'utf-8'))
+        self.append(unicode(self.read(len),'utf-8'))
     dispatch[BINUNICODE] = load_binunicode
 
     def load_short_binstring(self):
@@ -1054,7 +1044,7 @@ class Unpickler:
 
     def load_tuple(self):
         k = self.marker()
-        self.stack[k:] = [tuple(self.stack[k + 1:])]
+        self.stack[k:] = [tuple(self.stack[k+1:])]
     dispatch[TUPLE] = load_tuple
 
     def load_empty_tuple(self):
@@ -1083,16 +1073,16 @@ class Unpickler:
 
     def load_list(self):
         k = self.marker()
-        self.stack[k:] = [self.stack[k + 1:]]
+        self.stack[k:] = [self.stack[k+1:]]
     dispatch[LIST] = load_list
 
     def load_dict(self):
         k = self.marker()
         d = {}
-        items = self.stack[k + 1:]
+        items = self.stack[k+1:]
         for i in range(0, len(items), 2):
             key = items[i]
-            value = items[i + 1]
+            value = items[i+1]
             d[key] = value
         self.stack[k:] = [d]
     dispatch[DICT] = load_dict
@@ -1103,11 +1093,11 @@ class Unpickler:
     # klass is the class to instantiate, and k points to the topmost mark
     # object, following which are the arguments for klass.__init__.
     def _instantiate(self, klass, k):
-        args = tuple(self.stack[k + 1:])
+        args = tuple(self.stack[k+1:])
         del self.stack[k:]
         instantiated = 0
         if (not args and
-                isinstance(klass, ClassType) and
+                type(klass) is ClassType and
                 not hasattr(klass, "__getinitargs__")):
             try:
                 value = _EmptyClass()
@@ -1120,8 +1110,8 @@ class Unpickler:
         if not instantiated:
             try:
                 value = klass(*args)
-            except TypeError as err:
-                raise TypeError, "in constructor for %s: %s" % (  # noqa: W602 E999 E501
+            except TypeError, err:
+                raise TypeError, "in constructor for %s: %s" % (
                     klass.__name__, str(err)), sys.exc_info()[2]
         self.append(value)
 
@@ -1135,7 +1125,7 @@ class Unpickler:
     def load_obj(self):
         # Stack is ... markobject classobject arg1 arg2 ...
         k = self.marker()
-        klass = self.stack.pop(k + 1)
+        klass = self.stack.pop(k+1)
         self._instantiate(klass, k)
     dispatch[OBJ] = load_obj
 
@@ -1323,26 +1313,26 @@ class Unpickler:
     def noload_obj(self):
         # Stack is ... markobject classobject arg1 arg2 ...
         k = self.marker()
-        klass = self.stack.pop(k + 1)
+        klass = self.stack.pop(k+1)
     nl_dispatch[OBJ[0]] = noload_obj
 
     def noload_inst(self):
-        self.readline()  # skip module
-        self.readline()[:-1]  # skip name
+        self.readline() # skip module
+        self.readline()[:-1] # skip name
         k = self.marker()
-        klass = self.stack.pop(k + 1)
+        klass = self.stack.pop(k+1)
         self.append(None)
     nl_dispatch[INST[0]] = noload_inst
 
     def noload_newobj(self):
-        self.stack.pop()  # skip args
-        self.stack.pop()  # skip cls
+        self.stack.pop() # skip args
+        self.stack.pop() # skip cls
         self.stack.append(None)
     nl_dispatch[NEWOBJ[0]] = noload_newobj
 
     def noload_global(self):
-        self.readline()  # skip module
-        self.readline()[:-1]  # skip name
+        self.readline() # skip module
+        self.readline()[:-1] # skip name
         self.append(None)
     nl_dispatch[GLOBAL[0]] = noload_global
 
@@ -1366,8 +1356,8 @@ class Unpickler:
         if self.stack[-3] is not None:
             self.load_setitem()
         else:
-            self.stack.pop()  # skip value
-            self.stack.pop()  # skip key
+            self.stack.pop() # skip value
+            self.stack.pop() # skip key
     nl_dispatch[SETITEM[0]] = noload_setitem
 
     def noload_setitems(self):
@@ -1382,8 +1372,8 @@ class Unpickler:
     nl_dispatch[SETITEMS[0]] = noload_setitems
 
     def noload_reduce(self):
-        self.stack.pop()  # skip args
-        self.stack.pop()  # skip func
+        self.stack.pop() # skip args
+        self.stack.pop() # skip func
         self.stack.append(None)
     nl_dispatch[REDUCE[0]] = noload_reduce
 
@@ -1420,6 +1410,7 @@ class _EmptyClass:
 
 # Encode/decode longs in linear time.
 
+import binascii as _binascii
 
 def encode_long(x):
     r"""Encode a long to a two's complement little-endian binary string.
@@ -1487,7 +1478,6 @@ def encode_long(x):
     binary = _binascii.unhexlify(ashex)
     return binary[::-1]
 
-
 def decode_long(data):
     r"""Decode a long from a two's complement little-endian binary string.
 
@@ -1511,11 +1501,10 @@ def decode_long(data):
     if nbytes == 0:
         return 0L
     ashex = _binascii.hexlify(data[::-1])
-    n = long(ashex, 16)  # quadratic time before Python 2.3; linear now
+    n = long(ashex, 16) # quadratic time before Python 2.3; linear now
     if data[-1] >= '\x80':
         n -= 1L << (nbytes * 8)
     return n
-
 
 # Shorthands
 
@@ -1524,32 +1513,26 @@ try:
 except ImportError:
     from StringIO import StringIO
 
-
 def dump(obj, file, protocol=None):
     Pickler(file, protocol).dump(obj)
-
 
 def dumps(obj, protocol=None):
     file = StringIO()
     Pickler(file, protocol).dump(obj)
     return file.getvalue()
 
-
 def load(file):
     return Unpickler(file).load()
-
 
 def loads(str):
     file = StringIO(str)
     return Unpickler(file).load()
-
 
 # Doctest
 
 def _test():
     import doctest
     return doctest.testmod()
-
 
 if __name__ == "__main__":
     _test()

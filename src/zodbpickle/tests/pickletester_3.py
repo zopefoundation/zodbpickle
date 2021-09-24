@@ -1,6 +1,3 @@
-import __main__
-from . import _is_pypy
-from zodbpickle.pickle_3 import bytes_types
 import io
 import unittest
 import sys
@@ -13,17 +10,15 @@ from zodbpickle import pickletools_3 as pickletools
 from test.support import (
     TestFailed, TESTFN, run_with_locale,
     _2G, _4G, bigmemtest,
-)
+    )
 
 try:
     from test.support import no_tracing
 except ImportError:
     from functools import wraps
-
     def no_tracing(func):
         if not hasattr(sys, 'gettrace'):
             return func
-
         @wraps(func)
         def wrapper(*args, **kwargs):
             original_trace = sys.gettrace()
@@ -36,6 +31,8 @@ except ImportError:
 
 _PY343 = sys.version_info[:3] >= (3, 4, 3)
 
+from zodbpickle.pickle_3 import bytes_types
+from . import _is_pypy
 
 # Tests that try a number of pickle protocols should have a
 #     for proto in protocols:
@@ -53,8 +50,6 @@ def opcode_in_pickle(code, pickle):
     return False
 
 # Return the number of times opcode code appears in pickle.
-
-
 def count_opcode(code, pickle):
     n = 0
     for op, dummy, dummy in pickletools.genops(pickle):
@@ -108,22 +103,19 @@ class ExtensionSaver:
         if pair is not None:
             copyreg.add_extension(pair[0], pair[1], code)
 
-
 class C:
     def __eq__(self, other):
         return self.__dict__ == other.__dict__
-
 
 class D(C):
     def __init__(self, arg):
         pass
 
-
 class E(C):
     def __getinitargs__(self):
         return ()
 
-
+import __main__
 __main__.C = C
 C.__module__ = "__main__"
 __main__.D = D
@@ -131,11 +123,9 @@ D.__module__ = "__main__"
 __main__.E = E
 E.__module__ = "__main__"
 
-
 class myint(int):
     def __init__(self, x):
         self.str = str(x)
-
 
 class initarg(C):
 
@@ -146,23 +136,19 @@ class initarg(C):
     def __getinitargs__(self):
         return self.a, self.b
 
-
 class metaclass(type):
     pass
-
 
 class use_metaclass(object, metaclass=metaclass):
     pass
 
-
 class pickling_metaclass(type):
     def __eq__(self, other):
-        return (isinstance(self, type(other)) and
+        return (type(self) == type(other) and
                 self.reduce_args == other.reduce_args)
 
     def __reduce__(self):
         return (create_dynamic_class, self.reduce_args)
-
 
 def create_dynamic_class(name, bases):
     result = pickling_metaclass(name, bases, dict())
@@ -171,7 +157,6 @@ def create_dynamic_class(name, bases):
 
 # DATA0 .. DATA2 are the pickles we expect under the various protocols, for
 # the object returned by create_data().
-
 
 DATA0 = (
     b'(lp0\nL0L\naL1L\naF2.0\nac'
@@ -443,27 +428,25 @@ DATA5 = (b'\x80\x02cCookie\nSimpleCookie\nq\x00)\x81q\x01U\x03key'
 DATA6 = b'\x80\x02c__builtin__\nset\nq\x00]q\x01K\x03a\x85q\x02Rq\x03.'
 DATA6_PYPY = b'\x80\x02c__builtin__\nset\nq\x00K\x03\x85q\x01\x85q\x02Rq\x03.'
 
-
 def create_data():
     c = C()
     c.foo = 1
     c.bar = 2
-    x = [0, 1, 2.0, 3.0 + 0j]
+    x = [0, 1, 2.0, 3.0+0j]
     # Append some integer test cases at cPickle.c's internal size
     # cutoffs.
     uint1max = 0xff
     uint2max = 0xffff
     int4max = 0x7fffffff
     x.extend([1, -1,
-              uint1max, -uint1max, -uint1max - 1,
-              uint2max, -uint2max, -uint2max - 1,
-               int4max,  -int4max,  -int4max - 1])  # noqa: E127 over-indented
+              uint1max, -uint1max, -uint1max-1,
+              uint2max, -uint2max, -uint2max-1,
+               int4max,  -int4max,  -int4max-1])
     y = ('abc', 'abc', c, c)
     x.append(y)
     x.append(y)
     x.append(5)
     return x
-
 
 class AbstractPickleTests(unittest.TestCase):
     # Subclass must define self.dumps, self.loads.
@@ -584,10 +567,10 @@ class AbstractPickleTests(unittest.TestCase):
             self.assertEqual(expected, got)
 
     def test_recursive_list(self):
-        l_ = []
-        l_.append(l_)
+        l = []
+        l.append(l)
         for proto in protocols:
-            s = self.dumps(l_, proto)
+            s = self.dumps(l, proto)
             x = self.loads(s)
             self.assertEqual(len(x), 1)
             self.assertTrue(x is x[0])
@@ -621,13 +604,13 @@ class AbstractPickleTests(unittest.TestCase):
             self.assertIs(x.attr, x)
 
     def test_recursive_multi(self):
-        l_ = []
-        d = {1: l_}
+        l = []
+        d = {1:l}
         i = C()
         i.attr = d
-        l_.append(i)
+        l.append(i)
         for proto in protocols:
-            s = self.dumps(l_, proto)
+            s = self.dumps(l, proto)
             x = self.loads(s)
             self.assertEqual(len(x), 1)
             self.assertEqual(dir(x[0]), dir(i))
@@ -640,12 +623,12 @@ class AbstractPickleTests(unittest.TestCase):
 
     def test_insecure_strings(self):
         # XXX Some of these tests are temporarily disabled
-        insecure = [b"abc", b"2 + 2",  # not quoted
-                    # b"'abc' + 'def'", # not a single quoted string
-                    b"'abc",  # quote is not closed
-                    b"'abc\"",  # open quote and close quote don't match
-                    b"'abc'   ?",  # junk after close quote
-                    b"'\\'",  # trailing backslash
+        insecure = [b"abc", b"2 + 2", # not quoted
+                    ## b"'abc' + 'def'", # not a single quoted string
+                    b"'abc", # quote is not closed
+                    b"'abc\"", # open quote and close quote don't match
+                    b"'abc'   ?", # junk after close quote
+                    b"'\\'", # trailing backslash
                     # Variations on issue #17710
                     b"'",
                     b'"',
@@ -655,8 +638,8 @@ class AbstractPickleTests(unittest.TestCase):
                     b"'    ",
                     b'"    ',
                     # some tests of the quoting rules
-                    # b"'abc\"\''",
-                    # b"'\\\\a\'\'\'\\\'\\\\\''",
+                    ## b"'abc\"\''",
+                    ## b"'\\\\a\'\'\'\\\'\\\\\''",
                     ]
         for b in insecure:
             buf = b"S" + b + b"\012p0\012."
@@ -682,7 +665,7 @@ class AbstractPickleTests(unittest.TestCase):
 
     def test_bytes(self):
         for proto in protocols:
-            for s in b'', b'xyz', b'xyz' * 100:
+            for s in b'', b'xyz', b'xyz'*100:
                 p = self.dumps(s, proto)
                 self.assertEqual(self.loads(p), s)
             for s in [bytes([i]) for i in range(256)]:
@@ -716,9 +699,9 @@ class AbstractPickleTests(unittest.TestCase):
     def test_long(self):
         for proto in protocols:
             # 256 bytes is where LONG4 begins.
-            for nbits in 1, 8, 8 * 254, 8 * 255, 8 * 256, 8 * 257:
+            for nbits in 1, 8, 8*254, 8*255, 8*256, 8*257:
                 nbase = 1 << nbits
-                for npos in nbase - 1, nbase, nbase + 1:
+                for npos in nbase-1, nbase, nbase+1:
                     for n in npos, -npos:
                         pickle = self.dumps(n, proto)
                         got = self.loads(pickle)
@@ -822,7 +805,7 @@ class AbstractPickleTests(unittest.TestCase):
             self.loads(badpickle)
         except ValueError as detail:
             self.assertTrue(str(detail).startswith(
-                "unsupported pickle protocol"))
+                                            "unsupported pickle protocol"))
         else:
             self.fail("expected bad protocol number to raise ValueError")
 
@@ -835,7 +818,7 @@ class AbstractPickleTests(unittest.TestCase):
             self.assertEqual(opcode_in_pickle(pickle.LONG1, s), proto >= 2)
 
     def test_long4(self):
-        x = 12345678910111213141516178920 << (256 * 8)
+        x = 12345678910111213141516178920 << (256*8)
         for proto in protocols:
             s = self.dumps(x, proto)
             y = self.loads(s)
@@ -867,7 +850,7 @@ class AbstractPickleTests(unittest.TestCase):
                            (3, 2): pickle.TUPLE2,
                            (3, 3): pickle.TUPLE3,
                            (3, 4): pickle.TUPLE,
-                           }
+                          }
         a = ()
         b = (1,)
         c = (1, 2)
@@ -897,7 +880,7 @@ class AbstractPickleTests(unittest.TestCase):
                            (1, False): pickle.INT,
                            (2, False): pickle.NEWFALSE,
                            (3, False): pickle.NEWFALSE,
-                           }
+                          }
         for proto in protocols:
             for x in None, False, True:
                 s = self.dumps(x, proto)
@@ -1130,7 +1113,6 @@ class AbstractPickleTests(unittest.TestCase):
             def __reduce__(self):
                 # 4th item is not an iterator
                 return list, (), None, [], None
-
         class D(object):
             def __reduce__(self):
                 # 5th item is not an iterator
@@ -1161,11 +1143,10 @@ class AbstractPickleTests(unittest.TestCase):
                              "Failed protocol %d: %r != %r"
                              % (proto, obj, loaded))
 
-    @unittest.skipIf(
-        _is_pypy,
-        'PyPy does not guarantee the identity of strings. '
-        'See the discussion on '
-        'http://pypy.readthedocs.org/en/latest/cpython_differences.html#object-identity-of-primitive-values-is-and-id')  # noqa: E501 line too long
+    @unittest.skipIf(_is_pypy,
+                     'PyPy does not guarantee the identity of strings. '
+                     'See the discussion on '
+                     'http://pypy.readthedocs.org/en/latest/cpython_differences.html#object-identity-of-primitive-values-is-and-id')
     def test_attribute_name_interning(self):
         # Test that attribute names of pickled objects are interned when
         # unpickling.
@@ -1324,51 +1305,50 @@ class AbstractBytestrTests(unittest.TestCase):
         """ Test str from protocol=0
             python 2: pickle.dumps('bytestring \x00\xa0', protocol=0) """
         self.unpickleEqual(
-            b"S'bytestring \\x00\\xa0'\np0\n.",
-            b'bytestring \x00\xa0')
+                b"S'bytestring \\x00\\xa0'\np0\n.",
+                b'bytestring \x00\xa0')
 
     def test_load_str_protocol_1(self):
         """ Test str from protocol=1
         python 2: pickle.dumps('bytestring \x00\xa0', protocol=1) """
         self.unpickleEqual(
-            b'U\rbytestring \x00\xa0q\x00.',
-            b'bytestring \x00\xa0')
+                b'U\rbytestring \x00\xa0q\x00.',
+                b'bytestring \x00\xa0')
 
     def test_load_str_protocol_2(self):
         """ Test str from protocol=2
         python 2: pickle.dumps('bytestring \x00\xa0', protocol=2) """
         self.unpickleEqual(
-            b'\x80\x02U\rbytestring \x00\xa0q\x00.',
-            b'bytestring \x00\xa0')
+                b'\x80\x02U\rbytestring \x00\xa0q\x00.',
+                b'bytestring \x00\xa0')
 
     def test_load_unicode_protocol_0(self):
         """ Test unicode with protocol=0
-        python 2: pickle.dumps(u"\u041a\u043e\u043c\u043f\u044c\u044e\u0442\u0435\u0440", protocol=0) """  # noqa: E501 line too long
+        python 2: pickle.dumps(u"\u041a\u043e\u043c\u043f\u044c\u044e\u0442\u0435\u0440", protocol=0) """
         self.unpickleEqual(
-            b'V\\u041a\\u043e\\u043c\\u043f\\u044c\\u044e\\u0442\\u0435\\u0440\np0\n.',  # noqa: E501 line too long
-            '\u041a\u043e\u043c\u043f\u044c\u044e\u0442\u0435\u0440')
+                b'V\\u041a\\u043e\\u043c\\u043f\\u044c\\u044e\\u0442\\u0435\\u0440\np0\n.',
+                '\u041a\u043e\u043c\u043f\u044c\u044e\u0442\u0435\u0440')
 
     def test_load_unicode_protocol_1(self):
         """ Test unicode with protocol=1
-        python 2: pickle.dumps(u"\u041a\u043e\u043c\u043f\u044c\u044e\u0442\u0435\u0440", protocol=1) """  # noqa: E501 line too long
+        python 2: pickle.dumps(u"\u041a\u043e\u043c\u043f\u044c\u044e\u0442\u0435\u0440", protocol=1) """
         self.unpickleEqual(
-            b'X\x12\x00\x00\x00\xd0\x9a\xd0\xbe\xd0\xbc\xd0\xbf\xd1\x8c\xd1\x8e\xd1\x82\xd0\xb5\xd1\x80q\x00.',  # noqa: E501 line too long
-            '\u041a\u043e\u043c\u043f\u044c\u044e\u0442\u0435\u0440')
+                b'X\x12\x00\x00\x00\xd0\x9a\xd0\xbe\xd0\xbc\xd0\xbf\xd1\x8c\xd1\x8e\xd1\x82\xd0\xb5\xd1\x80q\x00.',
+                '\u041a\u043e\u043c\u043f\u044c\u044e\u0442\u0435\u0440')
 
     def test_load_unicode_protocol_2(self):
         """ Test unicode with protocol=1
-        python 2: pickle.dumps(u"\u041a\u043e\u043c\u043f\u044c\u044e\u0442\u0435\u0440", protocol=2) """  # noqa: E501 line too long
+        python 2: pickle.dumps(u"\u041a\u043e\u043c\u043f\u044c\u044e\u0442\u0435\u0440", protocol=2) """
         self.unpickleEqual(
-            b'\x80\x02X\x12\x00\x00\x00\xd0\x9a\xd0\xbe\xd0\xbc\xd0\xbf\xd1\x8c\xd1\x8e\xd1\x82\xd0\xb5\xd1\x80q\x00.',  # noqa: E501 line too long
-            '\u041a\u043e\u043c\u043f\u044c\u044e\u0442\u0435\u0440')
+                b'\x80\x02X\x12\x00\x00\x00\xd0\x9a\xd0\xbe\xd0\xbc\xd0\xbf\xd1\x8c\xd1\x8e\xd1\x82\xd0\xb5\xd1\x80q\x00.',
+                '\u041a\u043e\u043c\u043f\u044c\u044e\u0442\u0435\u0440')
 
     def test_load_long_str_protocol_1(self):
         """ Test long str with protocol=1
         python 2: pickle.dumps('x'*300, protocol=1) """
         self.unpickleEqual(
-            b'T,\x01\x00\x00xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxq\x00.',  # noqa: E501 line too long
-            b'x' * 300)
-
+                b'T,\x01\x00\x00xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxq\x00.',
+                b'x'*300)
 
 class AbstractBytesFallbackTests(unittest.TestCase):
     def unpickleEqual(self, data, unpickled):
@@ -1380,8 +1360,8 @@ class AbstractBytesFallbackTests(unittest.TestCase):
 
         Python 2: pickle.dumps({'x': 'ascii', 'y': '\xff'}) """
         self.unpickleEqual(
-            b"(dp0\nS'y'\np1\nS'\\xff'\np2\nsS'x'\np3\nS'ascii'\np4\ns.",
-            {'x': 'ascii', 'y': b'\xff'})
+                b"(dp0\nS'y'\np1\nS'\\xff'\np2\nsS'x'\np3\nS'ascii'\np4\ns.",
+                {'x': 'ascii', 'y': b'\xff'})
 
 
 class BigmemPickleTests(unittest.TestCase):
@@ -1470,82 +1450,62 @@ class BigmemPickleTests(unittest.TestCase):
 class REX_one(object):
     """No __reduce_ex__ here, but inheriting it from object"""
     _reduce_called = 0
-
     def __reduce__(self):
         self._reduce_called = 1
         return REX_one, ()
 
-
 class REX_two(object):
     """No __reduce__ here, but inheriting it from object"""
     _proto = None
-
     def __reduce_ex__(self, proto):
         self._proto = proto
         return REX_two, ()
-
 
 class REX_three(object):
     _proto = None
-
     def __reduce_ex__(self, proto):
         self._proto = proto
         return REX_two, ()
-
     def __reduce__(self):
         raise TestFailed("This __reduce__ shouldn't be called")
-
 
 class REX_four(object):
     """Calling base class method should succeed"""
     _proto = None
-
     def __reduce_ex__(self, proto):
         self._proto = proto
         return object.__reduce_ex__(self, proto)
 
-
 class REX_five(object):
     """This one used to fail with infinite recursion"""
     _reduce_called = 0
-
     def __reduce__(self):
         self._reduce_called = 1
         return object.__reduce__(self)
-
 
 class REX_six(object):
     """This class is used to check the 4th argument (list iterator) of the reduce
     protocol.
     """
-
     def __init__(self, items=None):
         self.items = items if items is not None else []
-
     def __eq__(self, other):
-        return isinstance(self, type(other)) and self.items == self.items
-
+        return type(self) is type(other) and self.items == self.items
     def append(self, item):
         self.items.append(item)
-
     def __reduce__(self):
         return type(self), (), None, iter(self.items), None
-
 
 class REX_seven(object):
     """This class is used to check the 5th argument (dict iterator) of the reduce
     protocol.
     """
-
     def __init__(self, table=None):
         self.table = table if table is not None else {}
-
     def __eq__(self, other):
-        return isinstance(self, type(other)) and self.table == self.table
-
+        return type(self) is type(other) and self.table == self.table
     def __setitem__(self, key, value):
         self.table[key] = value
-
     def __reduce__(self):
         return type(self), (), None, None, iter(self.table.items())
 
@@ -1555,34 +1515,26 @@ class REX_seven(object):
 class MyInt(int):
     sample = 1
 
-
 class MyFloat(float):
     sample = 1.0
-
 
 class MyComplex(complex):
     sample = 1.0 + 0.0j
 
-
 class MyStr(str):
     sample = "hello"
-
 
 class MyUnicode(str):
     sample = "hello \u1234"
 
-
 class MyTuple(tuple):
     sample = (1, 2, 3)
-
 
 class MyList(list):
     sample = [1, 2, 3]
 
-
 class MyDict(dict):
     sample = {"a": 1, "b": 2}
-
 
 myclasses = [MyInt, MyFloat,
              MyComplex,
@@ -1593,12 +1545,10 @@ myclasses = [MyInt, MyFloat,
 class SlotList(MyList):
     __slots__ = ["foo"]
 
-
 class SimpleNewObj(object):
     def __init__(self, a, b, c):
         # raise an error, to make sure this isn't called
         raise TypeError("SimpleNewObj.__init__() didn't expect to get called")
-
 
 class BadGetattr:
     def __getattr__(self, key):
@@ -1648,16 +1598,13 @@ class AbstractPickleModuleTests(unittest.TestCase):
         pickle.Pickler(f, protocol=-1)
 
     def test_bad_init(self):
-        # Test issue3664 (pickle can segfault from a badly initialized
-        # Pickler).
+        # Test issue3664 (pickle can segfault from a badly initialized Pickler).
         # Override initialization without calling __init__() of the superclass.
         class BadPickler(pickle.Pickler):
-            def __init__(self):
-                pass
+            def __init__(self): pass
 
         class BadUnpickler(pickle.Unpickler):
-            def __init__(self):
-                pass
+            def __init__(self): pass
 
         self.assertRaises(pickle.PicklingError, BadPickler().dump, 0)
         self.assertRaises(pickle.UnpicklingError, BadUnpickler().load)
@@ -1887,39 +1834,38 @@ class AbstractPicklerUnpicklerObjectTests(unittest.TestCase):
         after['ggg'] = f.tell()
         f.seek(0)
         unpickler = self.unpickler_class(f)
-        unpickler.noload()  # read past _NOLOAD_OBJECT
+        unpickler.noload() # read past _NOLOAD_OBJECT
         self.assertEqual(f.tell(), after['_NOLOAD_OBJECT'])
 
-        noload = unpickler.noload()  # read past aaa
+        noload = unpickler.noload() # read past aaa
         self.assertEqual(noload, None)
         self.assertEqual(f.tell(), after['aaa'])
 
-        unpickler.noload()  # read past bbb
+        unpickler.noload() # read past bbb
         self.assertEqual(f.tell(), after['bbb'])
 
-        noload = unpickler.noload()  # read past ccc
+        noload = unpickler.noload() # read past ccc
         self.assertEqual(noload, ccc)
         self.assertEqual(f.tell(), after['ccc'])
 
-        noload = unpickler.noload()  # read past ddd
+        noload = unpickler.noload() # read past ddd
         self.assertEqual(noload, ddd)
         self.assertEqual(f.tell(), after['ddd'])
 
-        noload = unpickler.noload()  # read past eee
+        noload = unpickler.noload() # read past eee
         self.assertEqual(noload, eee)
         self.assertEqual(f.tell(), after['eee'])
 
-        noload = unpickler.noload()  # read past fff
+        noload = unpickler.noload() # read past fff
         self.assertEqual(noload, fff)
         self.assertEqual(f.tell(), after['fff'])
 
-        noload = unpickler.noload()  # read past ggg
+        noload = unpickler.noload() # read past ggg
         self.assertEqual(noload, ggg)
         self.assertEqual(f.tell(), after['ggg'])
 
     def test_functional_noload_dict_subclass(self):
-        """noload() doesn't break or produce any output given a dict subclass
-        """
+        """noload() doesn't break or produce any output given a dict subclass"""
         # See http://bugs.python.org/issue1101399
         o = MyDict()
         o['x'] = 1
@@ -1931,9 +1877,9 @@ class AbstractPicklerUnpicklerObjectTests(unittest.TestCase):
         noload = unpickler.noload()
         self.assertEqual(noload, None)
 
+
     def test_functional_noload_list_subclass(self):
-        """noload() doesn't break or produce any output given a list subclass
-        """
+        """noload() doesn't break or produce any output given a list subclass"""
         # See http://bugs.python.org/issue1101399
         o = MyList()
         o.append(1)
@@ -1958,6 +1904,7 @@ class AbstractPicklerUnpicklerObjectTests(unittest.TestCase):
         noload = unpickler.noload()
         self.assertEqual(noload, o)
 
+
     def test_functional_noload_list(self):
         """noload() implements the Python 2.6 behaviour and fills in lists"""
         # See http://bugs.python.org/issue1101399
@@ -1976,15 +1923,12 @@ class AbstractPicklerUnpicklerObjectTests(unittest.TestCase):
 
 REDUCE_A = 'reduce_A'
 
-
 class AAA(object):
     def __reduce__(self):
         return str, (REDUCE_A,)
 
-
 class BBB(object):
     pass
-
 
 class AbstractDispatchTableTests(unittest.TestCase):
 
@@ -2041,7 +1985,6 @@ class AbstractDispatchTableTests(unittest.TestCase):
 
         # modify pickling of complex
         REDUCE_1 = 'reduce_1'
-
         def reduce_1(obj):
             return str, (REDUCE_1,)
         dispatch_table[complex] = reduce_1
@@ -2065,7 +2008,6 @@ class AbstractDispatchTableTests(unittest.TestCase):
 
         # revert pickling of BBB and modify pickling of AAA
         REDUCE_2 = 'reduce_2'
-
         def reduce_2(obj):
             return str, (REDUCE_2,)
         dispatch_table[AAA] = reduce_2
@@ -2084,7 +2026,7 @@ if __name__ == "__main__":
         p = pickle.dumps(x, i)
         print("DATA{0} = (".format(i))
         for j in range(0, len(p), 20):
-            b = bytes(p[j:j + 20])
+            b = bytes(p[j:j+20])
             print("    {0!r}".format(b))
         print(")")
         print()

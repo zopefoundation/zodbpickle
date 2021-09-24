@@ -2,7 +2,7 @@
 # https://github.com/zopefoundation/meta/tree/master/config/c-code
 [meta]
 template = "c-code"
-commit-id = "714071087e644310fa021461ed84abf7af43bb7d"
+commit-id = "5b60e8235223c5c73427d4cdf66be5fb2cce3cea"
 
 [python]
 with-appveyor = true
@@ -13,7 +13,7 @@ with-sphinx-doctests = false
 with-future-python = false
 
 [tox]
-use-flake8 = true
+use-flake8 = false
 testenv-commands = [
     "# there's test_pickle_2 for Python 2 and test_pickle_3 for Python 3",
     "# different test files because metaclass syntax differs on Pythons",

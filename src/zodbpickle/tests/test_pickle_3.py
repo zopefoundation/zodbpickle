@@ -46,18 +46,14 @@ class PyPicklerBase(object):
         u = self.unpickler(f, **kwds)
         return u.load()
 
-
 class PyPicklerTests(PyPicklerBase, AbstractPickleTests):
     pass
-
 
 class PyPicklerBytestrTests(PyPicklerBase, AbstractBytestrTests):
     pass
 
-
 class PyPicklerBytesFallbackTests(PyPicklerBase, AbstractBytesFallbackTests):
     pass
-
 
 class InMemoryPickleTests(AbstractPickleTests, BigmemPickleTests):
 
@@ -191,7 +187,6 @@ def test_suite():
         doctest.DocTestSuite(pickle),
         doctest.DocTestSuite(pickletools),
     ])
-
 
 if __name__ == '__main__':
     test_support.run_unittest(test_suite())
