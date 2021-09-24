@@ -1,11 +1,13 @@
-include *.py
+# Generated from:
+# https://github.com/zopefoundation/meta/tree/master/config/c-code
 include *.rst
 include *.txt
+include buildout.cfg
 include tox.ini
 include appveyor.yml
-include buildout.cfg
-include patches/*.diff
 include .coveragerc
-include *.sh
 
+recursive-include src *.py
+include *.sh
+recursive-include patches *.diff
 recursive-include src *.c
