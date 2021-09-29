@@ -2,7 +2,7 @@
  Changelog
 ===========
 
-2.2.0 (unreleased)
+2.2.0 (2021-09-29)
 ==================
 
 - Add support for Python 3.10.
