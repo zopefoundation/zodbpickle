@@ -10,7 +10,7 @@ with-windows = false
 with-pypy = true
 with-legacy-python = true
 with-sphinx-doctests = false
-with-future-python = false
+with-future-python = true
 
 [tox]
 use-flake8 = false

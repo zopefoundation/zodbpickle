@@ -4,6 +4,28 @@
 PyDoc_STRVAR(pickle_module_doc,
 "Optimized C implementation for the Python pickle module.");
 
+
+#if (PY_VERSION_HEX >= 0x30A00B1) /* 3.10.0b1 */
+#ifndef Py_SIZE
+#define Py_SIZE(ob) (((PyVarObject*)(ob))->ob_size)
+#endif
+#define _PyUnicode_AsStringAndSize PyUnicode_AsUTF8AndSize
+/**
+ * The function ``_PyObject_LookupAttrId`` function replaces the combo of
+ * ``_PyObject_HasAttrId`` followed by ``_PyObject_GetAttrId``; our code isn't
+ * structured to take advantage of that, so for now we throw away the
+ * resulting attribute value and continue to make the extra ``Get`` call.
+ */
+static int _PyObject_HasAttrId(PyObject* obj, void* id)
+{
+    int result;
+    PyObject* attr_val;
+    result = _PyObject_LookupAttrId(obj, id, &attr_val);
+    Py_XDECREF(attr_val);
+    return result;
+}
+#endif
+
 /* Bump this when new opcodes are added to the pickle protocol. */
 enum {
     HIGHEST_PROTOCOL = 3,
@@ -1633,7 +1655,7 @@ save_long(PicklerObject *self, PyObject *obj)
             goto error;
     }
     else {
-        char *string;
+        const char *string;
 
         /* proto < 2: write the repr and newline.  This is quadratic-time (in
            the number of digits), in both directions.  We add a trailing 'L'
@@ -2929,7 +2951,7 @@ save_pers(PicklerObject *self, PyObject *obj, PyObject *func)
         }
         else {
             PyObject *pid_str = NULL;
-            char *pid_ascii_bytes;
+            const char *pid_ascii_bytes;
             Py_ssize_t size;
 
             pid_str = PyObject_Str(pid);
