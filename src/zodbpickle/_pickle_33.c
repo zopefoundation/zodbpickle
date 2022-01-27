@@ -5,10 +5,13 @@ PyDoc_STRVAR(pickle_module_doc,
 "Optimized C implementation for the Python pickle module.");
 
 
-#if (PY_VERSION_HEX >= 0x30A00B1) /* 3.10.0b1 */
-#ifndef Py_SIZE
-#define Py_SIZE(ob) (((PyVarObject*)(ob))->ob_size)
+#if !defined(Py_SET_SIZE) && PY_VERSION_HEX < 0x030900A4 /* 3.9.0a4 */
+static inline void _Py_SET_SIZE(PyVarObject *ob, Py_ssize_t size)
+{ ob->ob_size = size; }
+#define Py_SET_SIZE(ob, size) _Py_SET_SIZE((PyVarObject*)(ob), size)
 #endif
+
+#if (PY_VERSION_HEX >= 0x30A00B1) /* 3.10.0b1 */
 #define _PyUnicode_AsStringAndSize PyUnicode_AsUTF8AndSize
 /**
  * The function ``_PyObject_LookupAttrId`` function replaces the combo of
@@ -198,7 +201,7 @@ Pdata_New(void)
 
     if (!(self = PyObject_New(Pdata, &Pdata_Type)))
         return NULL;
-    Py_SIZE(self) = 0;
+    Py_SET_SIZE(self, 0);
     self->allocated = 8;
     self->data = PyMem_MALLOC(self->allocated * sizeof(PyObject *));
     if (self->data)
@@ -224,7 +227,7 @@ Pdata_clear(Pdata *self, Py_ssize_t clearto)
     while (--i >= clearto) {
         Py_CLEAR(self->data[i]);
     }
-    Py_SIZE(self) = clearto;
+    Py_SET_SIZE(self, clearto);
     return 0;
 }
 
@@ -302,7 +305,7 @@ Pdata_poptuple(Pdata *self, Py_ssize_t start)
     for (i = start, j = 0; j < len; i++, j++)
         PyTuple_SET_ITEM(tuple, j, self->data[i]);
 
-    Py_SIZE(self) = start;
+    Py_SET_SIZE(self, start);
     return tuple;
 }
 
@@ -319,7 +322,7 @@ Pdata_poplist(Pdata *self, Py_ssize_t start)
     for (i = start, j = 0; j < len; i++, j++)
         PyList_SET_ITEM(list, j, self->data[i]);
 
-    Py_SIZE(self) = start;
+    Py_SET_SIZE(self, start);
     return list;
 }
 
@@ -643,7 +646,7 @@ PyMemoTable_Set(PyMemoTable *self, PyObject *key, Py_ssize_t value)
     } while (0)
 
 #define FREE_ARG_TUP(self) do {                 \
-        if ((self)->arg->ob_refcnt > 1)         \
+        if (Py_REFCNT((self)->arg) > 1)         \
             Py_CLEAR((self)->arg);              \
     } while (0)
 
@@ -1451,7 +1454,7 @@ fast_save_enter(PicklerObject *self, PyObject *obj)
             PyErr_Format(PyExc_ValueError,
                          "fast mode: can't pickle cyclic objects "
                          "including object type %.200s at %p",
-                         obj->ob_type->tp_name, obj);
+                         Py_TYPE(obj)->tp_name, obj);
             self->fast_nesting = -1;
             return 0;
         }
@@ -4859,7 +4862,7 @@ load_pop(UnpicklerObject *self)
     } else if (len > 0) {
         len--;
         Py_DECREF(self->stack->data[len]);
-        Py_SIZE(self->stack) = len;
+        Py_SET_SIZE(self->stack, len);
     } else {
         return stack_underflow();
     }
@@ -5164,13 +5167,13 @@ do_append(UnpicklerObject *self, Py_ssize_t x)
             result = _Unpickler_FastCall(self, append_func, value);
             if (result == NULL) {
                 Pdata_clear(self->stack, i + 1);
-                Py_SIZE(self->stack) = x;
+                Py_SET_SIZE(self->stack, x);
                 Py_DECREF(append_func);
                 return -1;
             }
             Py_DECREF(result);
         }
-        Py_SIZE(self->stack) = x;
+        Py_SET_SIZE(self->stack, x);
         Py_DECREF(append_func);
     }
 
