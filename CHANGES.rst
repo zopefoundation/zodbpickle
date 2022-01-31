@@ -5,7 +5,7 @@
 2.2.1 (unreleased)
 ==================
 
-- Nothing changed yet.
+- Add support for Python 3.11 (as of 3.11.0a4).
 
 
 2.2.0 (2021-09-29)

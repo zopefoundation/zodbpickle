@@ -28,13 +28,15 @@ yum -y install libffi-devel
 
 # Compile wheels
 for PYBIN in /opt/python/*/bin; do
-    if [[ "${PYBIN}" == *"cp27"* ]] || \
+    if \
+       [[ "${PYBIN}" == *"cp27"* ]] || \
        [[ "${PYBIN}" == *"cp35"* ]] || \
+       [[ "${PYBIN}" == *"cp311"* ]] || \
        [[ "${PYBIN}" == *"cp36"* ]] || \
        [[ "${PYBIN}" == *"cp37"* ]] || \
        [[ "${PYBIN}" == *"cp38"* ]] || \
-       [[ "${PYBIN}" == *"cp310"* ]] || \
-       [[ "${PYBIN}" == *"cp39"* ]]; then
+       [[ "${PYBIN}" == *"cp39"* ]] || \
+       [[ "${PYBIN}" == *"cp310"* ]] ; then
         "${PYBIN}/pip" install -e /io/
         "${PYBIN}/pip" wheel /io/ -w wheelhouse/
         if [ `uname -m` == 'aarch64' ]; then
