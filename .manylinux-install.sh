@@ -40,10 +40,10 @@ for PYBIN in /opt/python/*/bin; do
         "${PYBIN}/pip" install -e /io/
         "${PYBIN}/pip" wheel /io/ -w wheelhouse/
         if [ `uname -m` == 'aarch64' ]; then
-         cd /io/
-         "${PYBIN}/pip" install tox
-         "${PYBIN}/tox" -e py
-         cd ..
+          cd /io/
+          "${PYBIN}/pip" install tox
+          "${PYBIN}/tox" -e py
+          cd ..
         fi
         rm -rf /io/build /io/*.egg-info
     fi
