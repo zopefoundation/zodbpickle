@@ -5,10 +5,25 @@ PyDoc_STRVAR(pickle_module_doc,
 "Optimized C implementation for the Python pickle module.");
 
 
-#if (PY_VERSION_HEX >= 0x30A00B1) /* 3.10.0b1 */
-#ifndef Py_SIZE
-#define Py_SIZE(ob) (((PyVarObject*)(ob))->ob_size)
+// Compatibility with Visual Studio 2013 and older which don't support
+// the inline keyword in C (only in C++): use __inline instead.
+#if (defined(_MSC_VER) && _MSC_VER < 1900 \
+     && !defined(__cplusplus) && !defined(inline))
+#  define PYCAPI_COMPAT_INLINE(TYPE static __inline TYPE
+#else
+#  define PYCAPI_COMPAT_STATIC_INLINE(TYPE) static inline TYPE
 #endif
+
+#if PY_VERSION_HEX < 0x030900A4 && !defined(Py_SET_SIZE) /* 3.9.0a4 */
+PYCAPI_COMPAT_STATIC_INLINE(void)
+_Py_SET_SIZE(PyVarObject *ob, Py_ssize_t size)
+{
+    ob->ob_size = size;
+}
+#define Py_SET_SIZE(ob, size) _Py_SET_SIZE((PyVarObject*)(ob), size)
+#endif
+
+#if (PY_VERSION_HEX >= 0x30A00B1) /* 3.10.0b1 */
 #define _PyUnicode_AsStringAndSize PyUnicode_AsUTF8AndSize
 /**
  * The function ``_PyObject_LookupAttrId`` function replaces the combo of
@@ -24,6 +39,11 @@ static int _PyObject_HasAttrId(PyObject* obj, void* id)
     Py_XDECREF(attr_val);
     return result;
 }
+#endif
+
+#if (PY_VERSION_HEX < 0x30B00A7) /* 3.11.0a7 */
+#  define PyFloat_Pack8 _PyFloat_Pack8
+#  define PyFloat_Unpack8 _PyFloat_Unpack8
 #endif
 
 /* Bump this when new opcodes are added to the pickle protocol. */
@@ -198,7 +218,7 @@ Pdata_New(void)
 
     if (!(self = PyObject_New(Pdata, &Pdata_Type)))
         return NULL;
-    Py_SIZE(self) = 0;
+    Py_SET_SIZE(self, 0);
     self->allocated = 8;
     self->data = PyMem_MALLOC(self->allocated * sizeof(PyObject *));
     if (self->data)
@@ -224,7 +244,7 @@ Pdata_clear(Pdata *self, Py_ssize_t clearto)
     while (--i >= clearto) {
         Py_CLEAR(self->data[i]);
     }
-    Py_SIZE(self) = clearto;
+    Py_SET_SIZE(self, clearto);
     return 0;
 }
 
@@ -266,7 +286,8 @@ Pdata_pop(Pdata *self)
         PyErr_SetString(UnpicklingError, "bad pickle data");
         return NULL;
     }
-    return self->data[--Py_SIZE(self)];
+    Py_SET_SIZE(self, Py_SIZE(self) - 1);
+    return self->data[Py_SIZE(self)];
 }
 #define PDATA_POP(D, V) do { (V) = Pdata_pop((D)); } while (0)
 
@@ -276,7 +297,8 @@ Pdata_push(Pdata *self, PyObject *obj)
     if (Py_SIZE(self) == self->allocated && Pdata_grow(self) < 0) {
         return -1;
     }
-    self->data[Py_SIZE(self)++] = obj;
+    self->data[Py_SIZE(self)] = obj;
+    Py_SET_SIZE(self, Py_SIZE(self) + 1);
     return 0;
 }
 
@@ -302,7 +324,7 @@ Pdata_poptuple(Pdata *self, Py_ssize_t start)
     for (i = start, j = 0; j < len; i++, j++)
         PyTuple_SET_ITEM(tuple, j, self->data[i]);
 
-    Py_SIZE(self) = start;
+    Py_SET_SIZE(self, start);
     return tuple;
 }
 
@@ -319,7 +341,7 @@ Pdata_poplist(Pdata *self, Py_ssize_t start)
     for (i = start, j = 0; j < len; i++, j++)
         PyList_SET_ITEM(list, j, self->data[i]);
 
-    Py_SIZE(self) = start;
+    Py_SET_SIZE(self, start);
     return list;
 }
 
@@ -1692,7 +1714,7 @@ save_float(PicklerObject *self, PyObject *obj)
     if (self->bin) {
         char pdata[9];
         pdata[0] = BINFLOAT;
-        if (_PyFloat_Pack8(x, (unsigned char *)&pdata[1], 0) < 0)
+        if (PyFloat_Pack8(x, (unsigned char *)&pdata[1], 0) < 0)
             return -1;
         if (_Pickler_Write(self, pdata, 9) < 0)
             return -1;
@@ -4244,7 +4266,7 @@ load_binfloat(UnpicklerObject *self)
     if (_Unpickler_Read(self, &s, 8) < 0)
         return -1;
 
-    x = _PyFloat_Unpack8((unsigned char *)s, 0);
+    x = PyFloat_Unpack8((unsigned char *)s, 0);
     if (x == -1.0 && PyErr_Occurred())
         return -1;
 
@@ -4859,7 +4881,7 @@ load_pop(UnpicklerObject *self)
     } else if (len > 0) {
         len--;
         Py_DECREF(self->stack->data[len]);
-        Py_SIZE(self->stack) = len;
+        Py_SET_SIZE(self->stack, len);
     } else {
         return stack_underflow();
     }
@@ -5164,13 +5186,13 @@ do_append(UnpicklerObject *self, Py_ssize_t x)
             result = _Unpickler_FastCall(self, append_func, value);
             if (result == NULL) {
                 Pdata_clear(self->stack, i + 1);
-                Py_SIZE(self->stack) = x;
+                Py_SET_SIZE(self->stack, x);
                 Py_DECREF(append_func);
                 return -1;
             }
             Py_DECREF(result);
         }
-        Py_SIZE(self->stack) = x;
+        Py_SET_SIZE(self->stack, x);
         Py_DECREF(append_func);
     }
 
