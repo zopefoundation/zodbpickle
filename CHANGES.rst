@@ -2,8 +2,8 @@
  Changelog
 ===========
 
-2.2.1 (unreleased)
-==================
+2.3 (unreleased)
+================
 
 - Add support for Python 3.11 (as of 3.11.0a7).
 
