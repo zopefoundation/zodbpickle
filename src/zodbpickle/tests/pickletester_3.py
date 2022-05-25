@@ -32,6 +32,7 @@ except ImportError:
         return wrapper
 
 _PY343 = sys.version_info[:3] >= (3, 4, 3)
+_PY311b1 = sys.hexversion >= 0x30b00b1  # 3.11.0b1
 
 from zodbpickle.pickle_3 import bytes_types
 from . import _is_pypy
@@ -1107,8 +1108,21 @@ class AbstractPickleTests(unittest.TestCase):
     @no_tracing
     def test_bad_getattr(self):
         x = BadGetattr()
-        for proto in (0, 1, 2):
-            self.assertRaises(RuntimeError, self.dumps, x, proto)
+
+        if _PY311b1:
+            # https://github.com/python/cpython/pull/2821 fixed runtime error
+            # problem for protocol version 2 and above it landed in 3.11.0b1.
+            proto_versions_with_runtime_error = (0, 1)
+            proto_versions_without_runtime_error = (2,)
+        else:
+            proto_versions_with_runtime_error = (0, 1, 2)
+            proto_versions_without_runtime_error = ()
+
+        for proto in proto_versions_with_runtime_error:
+            with self.assertRaises(RuntimeError, msg='proto=%s' % proto):
+                self.dumps(x, proto)
+        for proto in proto_versions_without_runtime_error:
+            self.dumps(x, proto)
 
     def test_reduce_bad_iterator(self):
         # Issue4176: crash when 4th and 5th items of __reduce__()
