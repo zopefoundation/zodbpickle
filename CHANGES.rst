@@ -7,6 +7,9 @@
 
 - Add support for Python 3.11 (as of 3.11.0b3).
 
+- Disable unsafe math optimizations in C code.  See `pull request 73
+  <https://github.com/zopefoundation/zodbpickle/pull/73>`_.
+
 
 2.3 (2022-04-22)
 ================
