@@ -300,10 +300,11 @@ jobs:
       - name: Run tests with C extensions
         if: ${{ !startsWith(matrix.python-version, 'pypy') }}
         run: |
-          python -m coverage run -p -m zope.testrunner --test-path=src --auto-color --auto-progress -m zodbpickle.tests.test_pickle$
+          python -m coverage run -p -m zope.testrunner --test-path=src --auto-color --auto-progress
       - name: Run tests without C extensions
         run:
-          PURE_PYTHON=1 python -m coverage run -p -m zope.testrunner --test-path=src --auto-color --auto-progress -m zodbpickle.tests.test_pickle$
+          # coverage makes PyPy run about 3x slower!
+          PURE_PYTHON=1 python -m coverage run -p -m zope.testrunner --test-path=src --auto-color --auto-progress
       - name: Report Coverage
         run: |
           coverage combine

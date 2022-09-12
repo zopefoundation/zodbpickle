@@ -50,7 +50,7 @@ build_script:
   - python -W ignore setup.py -q bdist_wheel
 
 test_script:
-  - zope-testrunner --test-path=src -m zodbpickle.tests.test_pickle$
+  - zope-testrunner --test-path=src
 artifacts:
   - path: 'dist\*.whl'
     name: wheel
