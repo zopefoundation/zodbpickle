@@ -43,10 +43,10 @@ class TestImportability(unittest.TestCase):
 def test_suite():
     import sys
     if sys.version_info[0] >= 3:
-        from .test_pickle_3 import test_suite
+        from .pickle_3_tests import test_suite
     else:
-        from .test_pickle_2 import test_suite
-    return unittest.TestSuite((
+        from .pickle_2_tests import test_suite
+    return unittest.TestSuite([
         test_suite(),
-        unittest.makeSuite(TestImportability),
-    ))
+        unittest.defaultTestLoader.loadTestsFromName(__name__),
+    ])

@@ -2,7 +2,7 @@
 # https://github.com/zopefoundation/meta/tree/master/config/c-code
 [meta]
 template = "c-code"
-commit-id = "cde9741a5a0d9d04cee25cb617ee1590afebb17d"
+commit-id = "8f6ec60e8e65cc890fbf4635134b1789dd386f12"
 
 [python]
 with-appveyor = true
@@ -14,15 +14,6 @@ with-future-python = true
 
 [tox]
 use-flake8 = false
-testenv-commands = [
-    "# there's test_pickle_2 for Python 2 and test_pickle_3 for Python 3",
-    "# different test files because metaclass syntax differs on Pythons",
-    "# test_pickle picks and returns the appropriate one",
-    "# without this we'd get an import error (actually syntax error) for one",
-    "# of them",
-    "zope-testrunner --test-path=src -m zodbpickle.tests.test_pickle$ {posargs:-vc}",
-    ]
-coverage-command = "coverage run -m zope.testrunner --test-path=src -m zodbpickle.tests.test_pickle$ {posargs:-vc}"
 
 [coverage]
 fail-under = 63
@@ -58,12 +49,4 @@ global-env-vars = [
     "  TWINE_USERNAME: __token__",
     "  TWINE_PASSWORD:",
     "    secure: aoZC/+rvJKg8B5GMGIxd1YzSugYzr1vrR0NzX+NBCGjc64YaTc/K4kIRj4eqD0p11Nhl2aGUgHF6qMUcHIAAUybaKU/3Kyp+BwxU5eGX/NZv9S6AsBGVyiHD4oourkczzeB/HGrICEm9TeTcR3lc70SrpxSpYwnDyLv8CUpk0D/iUgQyFT/BERDsBTJEPI3HV/ngmMQrj9g2H7PkfF0yR5ss8AclYcIdWOKTvTapcGLerlK+mFm5muturTCT2njYMP2cv+NV3+Ih6OxSpQlWjw==",
-    ]
-test-steps = [
-    "- zope-testrunner --test-path=src -m zodbpickle.tests.test_pickle$",
-    ]
-
-[github-actions]
-test-commands = [
-    "python -m coverage run -p -m zope.testrunner --test-path=src --auto-color --auto-progress -m zodbpickle.tests.test_pickle$",
     ]
