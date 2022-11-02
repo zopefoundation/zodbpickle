@@ -5,7 +5,7 @@
 2.5 (unreleased)
 ================
 
-- Nothing changed yet.
+- Add support for final Python 3.11 release.
 
 
 2.4 (2022-09-15)
