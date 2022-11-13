@@ -5,6 +5,8 @@
 2.6 (unreleased)
 ================
 
+- Add support for building arm64 wheels on macOS.
+
 
 2.5 (2022-11-03)
 ================
