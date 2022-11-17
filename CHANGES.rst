@@ -2,7 +2,7 @@
  Changelog
 ===========
 
-2.6 (unreleased)
+2.6 (2022-11-17)
 ================
 
 - Add support for building arm64 wheels on macOS.
