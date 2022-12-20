@@ -27,11 +27,7 @@ def read(fname):
 
 
 README = read('README.rst') + '\n\n' + read('CHANGES.rst')
-
-if sys.version_info[:1] < (3,):
-    EXT = 'src/zodbpickle/_pickle_27.c'
-else:
-    EXT = 'src/zodbpickle/_pickle_33.c'
+EXT = 'src/zodbpickle/_pickle_33.c'
 
 # PyPy and jython won't build the extension.
 py_impl = getattr(platform, 'python_implementation', lambda: None)
@@ -48,7 +44,7 @@ else:
 setup(
     name='zodbpickle',
     version='3.0.dev0',
-    description='Fork of Python 2 and 3 pickle module.',
+    description='Fork of Python 3 pickle module.',
     author='Python and Zope Foundation',
     author_email='zodb-dev@zope.org',
     url='https://github.com/zopefoundation/zodbpickle',
@@ -59,11 +55,7 @@ setup(
         'License :: OSI Approved :: Zope Public License',
         'License :: OSI Approved :: Python Software Foundation License',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',

@@ -31,7 +31,6 @@ except ImportError:
                 sys.settrace(original_trace)
         return wrapper
 
-_PY343 = sys.version_info[:3] >= (3, 4, 3)
 _PY311b1 = sys.hexversion >= 0x30b00b1  # 3.11.0b1
 
 from zodbpickle.pickle_3 import bytes_types
@@ -144,7 +143,7 @@ class initarg(C):
 class metaclass(type):
     pass
 
-class use_metaclass(object, metaclass=metaclass):
+class use_metaclass(metaclass=metaclass):
     pass
 
 class pickling_metaclass(type):
@@ -1127,11 +1126,11 @@ class AbstractPickleTests(unittest.TestCase):
     def test_reduce_bad_iterator(self):
         # Issue4176: crash when 4th and 5th items of __reduce__()
         # are not iterators
-        class C(object):
+        class C:
             def __reduce__(self):
                 # 4th item is not an iterator
                 return list, (), None, [], None
-        class D(object):
+        class D:
             def __reduce__(self):
                 # 5th item is not an iterator
                 return dict, (), None, None, []
@@ -1151,7 +1150,7 @@ class AbstractPickleTests(unittest.TestCase):
         # Test that internal data structures correctly deal with lots of
         # puts/gets.
         keys = ("aaa" + str(i) for i in range(100))
-        large_dict = dict((k, [4, 5, 6]) for k in keys)
+        large_dict = {k: [4, 5, 6] for k in keys}
         obj = [dict(large_dict), dict(large_dict), dict(large_dict)]
 
         for proto in protocols:
@@ -1182,21 +1181,14 @@ class AbstractPickleTests(unittest.TestCase):
     def test_unpickle_from_2x(self):
         # Unpickle non-trivial data from Python 2.x.
         loaded = self.loads(DATA3)
-        self.assertEqual(loaded, set([1, 2]))
+        self.assertEqual(loaded, {1, 2})
         loaded = self.loads(DATA4)
         self.assertEqual(type(loaded), type(range(0)))
         self.assertEqual(list(loaded), list(range(5)))
         loaded = self.loads(DATA5)
         self.assertEqual(type(loaded), SimpleCookie)
         self.assertEqual(list(loaded.keys()), ["key"])
-        if _PY343:
-            # The SimpleCookie object changed the way it gets
-            # constructed in Python 3.4.3; the old behaviour was
-            # broken.
-            # See http://bugs.python.org/issue22775
-            self.assertEqual(loaded["key"].value, "value")
-        else:
-            self.assertEqual(loaded["key"].value, "Set-Cookie: key=value")
+        self.assertEqual(loaded["key"].value, "value")
 
     def test_pickle_to_2x(self):
         # Pickle non-trivial data with protocol 2, expecting that it yields
@@ -1206,7 +1198,7 @@ class AbstractPickleTests(unittest.TestCase):
         dumped = self.dumps(range(5), 2)
         self.assertEqual(dumped, DATA4)
 
-        dumped = self.dumps(set([3]), 2)
+        dumped = self.dumps({3}, 2)
         if not _is_pypy:
             # The integer in the set is pickled differently under PyPy
             # due to the differing identity semantics (?)
@@ -1465,21 +1457,21 @@ class BigmemPickleTests(unittest.TestCase):
 
 # Test classes for reduce_ex
 
-class REX_one(object):
+class REX_one:
     """No __reduce_ex__ here, but inheriting it from object"""
     _reduce_called = 0
     def __reduce__(self):
         self._reduce_called = 1
         return REX_one, ()
 
-class REX_two(object):
+class REX_two:
     """No __reduce__ here, but inheriting it from object"""
     _proto = None
     def __reduce_ex__(self, proto):
         self._proto = proto
         return REX_two, ()
 
-class REX_three(object):
+class REX_three:
     _proto = None
     def __reduce_ex__(self, proto):
         self._proto = proto
@@ -1487,21 +1479,21 @@ class REX_three(object):
     def __reduce__(self):
         raise TestFailed("This __reduce__ shouldn't be called")
 
-class REX_four(object):
+class REX_four:
     """Calling base class method should succeed"""
     _proto = None
     def __reduce_ex__(self, proto):
         self._proto = proto
         return object.__reduce_ex__(self, proto)
 
-class REX_five(object):
+class REX_five:
     """This one used to fail with infinite recursion"""
     _reduce_called = 0
     def __reduce__(self):
         self._reduce_called = 1
         return object.__reduce__(self)
 
-class REX_six(object):
+class REX_six:
     """This class is used to check the 4th argument (list iterator) of the reduce
     protocol.
     """
@@ -1514,7 +1506,7 @@ class REX_six(object):
     def __reduce__(self):
         return type(self), (), None, iter(self.items), None
 
-class REX_seven(object):
+class REX_seven:
     """This class is used to check the 5th argument (dict iterator) of the reduce
     protocol.
     """
@@ -1563,7 +1555,7 @@ myclasses = [MyInt, MyFloat,
 class SlotList(MyList):
     __slots__ = ["foo"]
 
-class SimpleNewObj(object):
+class SimpleNewObj:
     def __init__(self, a, b, c):
         # raise an error, to make sure this isn't called
         raise TypeError("SimpleNewObj.__init__() didn't expect to get called")
@@ -1941,11 +1933,11 @@ class AbstractPicklerUnpicklerObjectTests(unittest.TestCase):
 
 REDUCE_A = 'reduce_A'
 
-class AAA(object):
+class AAA:
     def __reduce__(self):
         return str, (REDUCE_A,)
 
-class BBB(object):
+class BBB:
     pass
 
 class AbstractDispatchTableTests(unittest.TestCase):
@@ -2042,14 +2034,14 @@ if __name__ == "__main__":
     x = create_data()
     for i in range(3):
         p = pickle.dumps(x, i)
-        print("DATA{0} = (".format(i))
+        print(f"DATA{i} = (")
         for j in range(0, len(p), 20):
             b = bytes(p[j:j+20])
-            print("    {0!r}".format(b))
+            print(f"    {b!r}")
         print(")")
         print()
-        print("# Disassembly of DATA{0}".format(i))
-        print("DATA{0}_DIS = \"\"\"\\".format(i))
+        print(f"# Disassembly of DATA{i}")
+        print(f"DATA{i}_DIS = \"\"\"\\")
         dis(p)
         print("\"\"\"")
         print()

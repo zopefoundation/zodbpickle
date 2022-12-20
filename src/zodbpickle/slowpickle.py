@@ -1,5 +1,3 @@
-import sys
-
 '''
 The zodbpickle.pickle module exposes the standard behavior of
 the pickle module.
@@ -18,18 +16,12 @@ all the names that it wants to export.
 So this is a rare case where 'import *' is exactly the right thing to do.
 '''
 
-if sys.version_info[0] >= 3:
-    import zodbpickle.pickle_3 as p
-    # undo the replacement with fast versions
-    p.Pickler, p.Unpickler = p._Pickler, p._Unpickler
-    p.dump, p.dumps, p.load, p.loads = p._dump, p._dumps, p._load, p._loads
-    del p
-    # pick up all names that the module defines
-    from .pickle_3 import *
-    # do not share the globals with a fast version
-    del sys.modules['zodbpickle.pickle_3']
-else:
-    # pick up all names that the module defines
-    from .pickle_2 import *
-
-del sys
+import zodbpickle.pickle_3 as p
+# undo the replacement with fast versions
+p.Pickler, p.Unpickler = p._Pickler, p._Unpickler
+p.dump, p.dumps, p.load, p.loads = p._dump, p._dumps, p._load, p._loads
+del p
+# pick up all names that the module defines
+from .pickle_3 import *
+# do not share the globals with a fast version
+del sys.modules['zodbpickle.pickle_3']

@@ -170,7 +170,7 @@ TAKEN_FROM_ARGUMENT1  = -2   # num bytes is 1-byte unsigned int
 TAKEN_FROM_ARGUMENT4  = -3   # num bytes is 4-byte signed little-endian int
 TAKEN_FROM_ARGUMENT4U = -4   # num bytes is 4-byte unsigned little-endian int
 
-class ArgumentDescriptor(object):
+class ArgumentDescriptor:
     __slots__ = (
         # name of descriptor record, also a module global name; a string
         'name',
@@ -367,7 +367,7 @@ def read_stringnl_noescape_pair(f):
     'Queue Empty'
     """
 
-    return "%s %s" % (read_stringnl_noescape(f), read_stringnl_noescape(f))
+    return "{} {}".format(read_stringnl_noescape(f), read_stringnl_noescape(f))
 
 stringnl_noescape_pair = ArgumentDescriptor(
                              name='stringnl_noescape_pair',
@@ -773,7 +773,7 @@ long4 = ArgumentDescriptor(
 # descriptors we need names to describe the various types of objects that can
 # appear on the stack.
 
-class StackObject(object):
+class StackObject:
     __slots__ = (
         # name of descriptor record, for info only
         'name',
@@ -904,7 +904,7 @@ stackslice = StackObject(
 ##############################################################################
 # Descriptors for pickle opcodes.
 
-class OpcodeInfo(object):
+class OpcodeInfo:
 
     __slots__ = (
         # symbolic name of opcode; a string
@@ -1875,13 +1875,13 @@ def assure_pickle_consistency(verbose=False):
         picklecode = getattr(pickle, name)
         if not isinstance(picklecode, bytes) or len(picklecode) != 1:
             if verbose:
-                print(("skipping %r: value %r doesn't look like a pickle "
-                       "code" % (name, picklecode)))
+                print("skipping %r: value %r doesn't look like a pickle "
+                       "code" % (name, picklecode))
             continue
         picklecode = picklecode.decode("latin-1")
         if picklecode in copy:
             if verbose:
-                print("checking name %r w/ code %r for consistency" % (
+                print("checking name {!r} w/ code {!r} for consistency".format(
                       name, picklecode))
             d = copy[picklecode]
             if d.name != name:
@@ -1899,7 +1899,7 @@ def assure_pickle_consistency(verbose=False):
     if copy:
         msg = ["we appear to have pickle opcodes that pickle.py doesn't have:"]
         for code, d in copy.items():
-            msg.append("    name %r with code %r" % (d.name, code))
+            msg.append("    name {!r} with code {!r}".format(d.name, code))
         raise ValueError("\n".join(msg))
 
 assure_pickle_consistency()
@@ -1949,7 +1949,7 @@ def genops(pickle):
             if code == b"":
                 raise ValueError("pickle exhausted before seeing STOP")
             else:
-                raise ValueError("at position %s, opcode %r unknown" % (
+                raise ValueError("at position {}, opcode {!r} unknown".format(
                                  pos is None and "<unknown>" or pos,
                                  code))
         if opcode.arg is None:
