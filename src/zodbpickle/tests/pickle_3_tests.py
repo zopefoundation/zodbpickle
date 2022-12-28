@@ -29,7 +29,7 @@ class PickleTests(AbstractPickleModuleTests):
     pass
 
 
-class PyPicklerBase(object):
+class PyPicklerBase:
 
     pickler = pickle._Pickler
     unpickler = pickle._Unpickler
@@ -182,7 +182,7 @@ def choose_tests():
 
 def test_suite():
     return unittest.TestSuite([
-        unittest.makeSuite(t) for t in choose_tests()
+        unittest.defaultTestLoader.loadTestsFromTestCase(t) for t in choose_tests()
     ] + [
         doctest.DocTestSuite(pickle),
         doctest.DocTestSuite(pickletools),

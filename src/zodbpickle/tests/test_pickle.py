@@ -5,10 +5,8 @@ import unittest
 
 if _is_pypy:
     function_type = types.FunctionType
-elif sys.version_info[0] >= 3:
-    function_type = types.BuiltinFunctionType
 else:
-    function_type = types.FunctionType
+    function_type = types.BuiltinFunctionType
 del sys
 del _is_pypy
 
@@ -41,11 +39,7 @@ class TestImportability(unittest.TestCase):
 
 
 def test_suite():
-    import sys
-    if sys.version_info[0] >= 3:
-        from .pickle_3_tests import test_suite
-    else:
-        from .pickle_2_tests import test_suite
+    from .pickle_3_tests import test_suite
     return unittest.TestSuite([
         test_suite(),
         unittest.defaultTestLoader.loadTestsFromName(__name__),
