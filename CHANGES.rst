@@ -5,8 +5,10 @@
 3.0 (unreleased)
 ================
 
+- Build Linux binary wheels for Python 3.11.
 
 - Drop support for Python 2.7, 3.5, 3.6.
+
 
 2.6 (2022-11-17)
 ================
