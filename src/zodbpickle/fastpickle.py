@@ -15,7 +15,7 @@ The imported modules define an __all__ variable, which contains
 all the names that it wants to export.
 So this is a rare case where 'import *' is exactly the right thing to do.
 '''
-
+import sys
 from .pickle_3 import *
 # do not share the globals with a slow version
 del sys.modules['zodbpickle.pickle_3']
