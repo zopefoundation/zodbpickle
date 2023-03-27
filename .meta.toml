@@ -2,7 +2,7 @@
 # https://github.com/zopefoundation/meta/tree/master/config/c-code
 [meta]
 template = "c-code"
-commit-id = "1514f236"
+commit-id = "66322213"
 
 [python]
 with-appveyor = true
@@ -13,7 +13,7 @@ with-future-python = true
 with-macos = false
 
 [tox]
-use-flake8 = false
+use-flake8 = true
 
 [coverage]
 fail-under = 63
@@ -28,7 +28,7 @@ additional-config = [
     "per-file-ignores =",
     "    src/zodbpickle/fastpickle.py: F401 F403",
     "    src/zodbpickle/pickle.py: F401 F403",
-    "    src/zodbpickle/pickle_3.py: E221 E225 E262",
+    "    src/zodbpickle/pickle_3.py: E221 E225 E262 F401 F403",
     "    src/zodbpickle/pickletools_3.py: E221",
     "    src/zodbpickle/slowpickle.py: F401 F403",
     ]

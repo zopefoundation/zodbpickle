@@ -14,6 +14,7 @@
 import struct
 import unittest
 
+
 try:
     import zodbpickle._pickle  # noqa: try to load a C module for side effects
 except ImportError:            # pragma: no cover
