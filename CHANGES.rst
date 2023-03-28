@@ -2,8 +2,8 @@
  Changelog
 ===========
 
-3.1 (unreleased)
-================
+3.0.1 (2023-03-28)
+==================
 
 - Fix ``NameError`` in ``.fastpickle`` and ``.slowpickle``.
 
