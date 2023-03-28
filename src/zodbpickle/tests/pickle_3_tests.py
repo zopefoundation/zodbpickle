@@ -1,22 +1,22 @@
-import io
 import collections
-import unittest
 import doctest
-from test import support as test_support
+import io
+import unittest
 
-from .pickletester_3 import AbstractPickleTests
-from .pickletester_3 import AbstractPickleModuleTests
-from .pickletester_3 import AbstractPersistentPicklerTests
-from .pickletester_3 import AbstractPicklerUnpicklerObjectTests
-from .pickletester_3 import AbstractDispatchTableTests
-from .pickletester_3 import BigmemPickleTests
-from .pickletester_3 import AbstractBytestrTests
-from .pickletester_3 import AbstractBytesFallbackTests
-
-from . import _is_pypy
-from . import _is_pure
 from zodbpickle import pickle_3 as pickle
 from zodbpickle import pickletools_3 as pickletools
+
+from . import _is_pure
+from . import _is_pypy
+from .pickletester_3 import AbstractBytesFallbackTests
+from .pickletester_3 import AbstractBytestrTests
+from .pickletester_3 import AbstractDispatchTableTests
+from .pickletester_3 import AbstractPersistentPicklerTests
+from .pickletester_3 import AbstractPickleModuleTests
+from .pickletester_3 import AbstractPicklerUnpicklerObjectTests
+from .pickletester_3 import AbstractPickleTests
+from .pickletester_3 import BigmemPickleTests
+
 
 try:
     from zodbpickle import _pickle
@@ -46,14 +46,18 @@ class PyPicklerBase:
         u = self.unpickler(f, **kwds)
         return u.load()
 
+
 class PyPicklerTests(PyPicklerBase, AbstractPickleTests):
     pass
+
 
 class PyPicklerBytestrTests(PyPicklerBase, AbstractBytestrTests):
     pass
 
+
 class PyPicklerBytesFallbackTests(PyPicklerBase, AbstractBytesFallbackTests):
     pass
+
 
 class InMemoryPickleTests(AbstractPickleTests, BigmemPickleTests):
 
@@ -182,11 +186,9 @@ def choose_tests():
 
 def test_suite():
     return unittest.TestSuite([
-        unittest.defaultTestLoader.loadTestsFromTestCase(t) for t in choose_tests()
+        unittest.defaultTestLoader.loadTestsFromTestCase(t)
+        for t in choose_tests()
     ] + [
         doctest.DocTestSuite(pickle),
         doctest.DocTestSuite(pickletools),
     ])
-
-if __name__ == '__main__':
-    test_support.run_unittest(test_suite())

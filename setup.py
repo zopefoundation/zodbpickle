@@ -14,9 +14,11 @@
 """Setup"""
 import os
 import platform
-import sys
 
-from setuptools import Extension, find_packages, setup
+from setuptools import Extension
+from setuptools import find_packages
+from setuptools import setup
+
 
 here = os.path.abspath(os.path.dirname(__file__))
 

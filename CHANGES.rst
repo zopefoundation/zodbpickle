@@ -5,7 +5,7 @@
 3.1 (unreleased)
 ================
 
-- Nothing changed yet.
+- Fix ``NameError`` in ``.fastpickle`` and ``.slowpickle``.
 
 
 3.0 (2023-03-24)

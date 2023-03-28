@@ -1,7 +1,9 @@
-from . import _is_pypy
 import sys
 import types
 import unittest
+
+from . import _is_pypy
+
 
 if _is_pypy:
     function_type = types.FunctionType
