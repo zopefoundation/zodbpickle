@@ -23,8 +23,28 @@ _Py_SET_SIZE(PyVarObject *ob, Py_ssize_t size)
 #define Py_SET_SIZE(ob, size) _Py_SET_SIZE((PyVarObject*)(ob), size)
 #endif
 
-#if (PY_VERSION_HEX >= 0x30A00B1) /* 3.10.0b1 */
-#define _PyUnicode_AsStringAndSize PyUnicode_AsUTF8AndSize
+#if (PY_VERSION_HEX >= 0x30D00A1) /* 3.13.0a1 */
+/**
+ * In 3.13a1 ``_PyObject_LookupAttrId`` was replaced by
+ * ``PyObject_GetOptionalAttr``.
+ * See https://github.com/python/cpython/commit/579aa89e68a6607398317a50586af781981e89fb
+ * See also the explanation for 3.10 below.
+ */
+static int _PyObject_HasAttrId(PyObject* obj, void* id)
+{
+    int result;
+    PyObject* attr_val;
+    result = PyObject_GetOptionalAttr(obj, id, &attr_val);
+    Py_XDECREF(attr_val);
+    return result;
+}
+/*
+* This declaration was moved to the internal API only accessible for building
+* CPython itself. But the implementation is still in `Objects/longobject.c` and
+* Pythons own `Modules/_pickle.c` still uses it.
+*/
+PyAPI_FUNC(size_t) _PyLong_NumBits(PyObject *v);
+#elif (PY_VERSION_HEX >= 0x30A00B1) /* 3.10.0b1 */
 /**
  * The function ``_PyObject_LookupAttrId`` function replaces the combo of
  * ``_PyObject_HasAttrId`` followed by ``_PyObject_GetAttrId``; our code isn't
@@ -1687,7 +1707,7 @@ save_long(PicklerObject *self, PyObject *obj)
         if (repr == NULL)
             goto error;
 
-        string = _PyUnicode_AsStringAndSize(repr, &size);
+        string = PyUnicode_AsUTF8AndSize(repr, &size);
         if (string == NULL)
             goto error;
 
@@ -2983,7 +3003,7 @@ save_pers(PicklerObject *self, PyObject *obj, PyObject *func)
             /* XXX: Should it check whether the persistent id only contains
                ASCII characters? And what if the pid contains embedded
                newlines? */
-            pid_ascii_bytes = _PyUnicode_AsStringAndSize(pid_str, &size);
+            pid_ascii_bytes = PyUnicode_AsUTF8AndSize(pid_str, &size);
             Py_DECREF(pid_str);
             if (pid_ascii_bytes == NULL)
                 goto error;
