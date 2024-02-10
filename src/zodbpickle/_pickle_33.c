@@ -25,16 +25,19 @@ _Py_SET_SIZE(PyVarObject *ob, Py_ssize_t size)
 
 #if (PY_VERSION_HEX >= 0x30D00A1) /* 3.13.0a1 */
 /**
- * In 3.13a1 ``_PyObject_LookupAttrId`` was replaced by
- * ``PyObject_GetOptionalAttr``.
+ * In 3.13a1 ``_PyObject_LookupAttrId`` was removed.
  * See https://github.com/python/cpython/commit/579aa89e68a6607398317a50586af781981e89fb
  * See also the explanation for 3.10 below.
  */
 static int _PyObject_HasAttrId(PyObject* obj, void* id)
 {
     int result;
+    PyObject *oname = _PyUnicode_FromId(id); /* borrowed */
+    if (!oname) {
+        return -1;
+    }
     PyObject* attr_val;
-    result = PyObject_GetOptionalAttr(obj, id, &attr_val);
+    result = PyObject_GetOptionalAttr(obj, oname, &attr_val);
     Py_XDECREF(attr_val);
     return result;
 }
