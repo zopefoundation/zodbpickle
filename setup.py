@@ -45,7 +45,7 @@ else:
 
 setup(
     name='zodbpickle',
-    version='3.2',
+    version='3.3.dev0',
     description='Fork of Python 3 pickle module.',
     author='Python and Zope Foundation',
     author_email='zodb-dev@zope.dev',
