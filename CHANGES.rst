@@ -5,7 +5,7 @@
 3.3 (unreleased)
 ================
 
-- Remove premature support for Python 3.13.
+- Nothing changed yet.
 
 
 3.2 (2024-02-16)
