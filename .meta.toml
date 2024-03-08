@@ -9,7 +9,7 @@ with-appveyor = true
 with-windows = false
 with-pypy = true
 with-sphinx-doctests = false
-with-future-python = false
+with-future-python = true
 with-macos = false
 
 [tox]
