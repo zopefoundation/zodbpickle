@@ -5,7 +5,7 @@
 3.3 (unreleased)
 ================
 
-- Nothing changed yet.
+- Add preliminary support for Python 3.13 as of 3.13a5.
 
 
 3.2 (2024-02-16)
