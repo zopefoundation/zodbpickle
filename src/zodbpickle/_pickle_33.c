@@ -15,15 +15,37 @@ PyDoc_STRVAR(pickle_module_doc,
 #endif
 
 #if PY_VERSION_HEX < 0x030900A4 && !defined(Py_SET_SIZE) /* 3.9.0a4 */
+
 PYCAPI_COMPAT_STATIC_INLINE(void)
 _Py_SET_SIZE(PyVarObject *ob, Py_ssize_t size)
 {
     ob->ob_size = size;
 }
+
 #define Py_SET_SIZE(ob, size) _Py_SET_SIZE((PyVarObject*)(ob), size)
+
+#endif
+
+#if (PY_VERSION_HEX >= 0x30D00A5) /* 3.13.0a5 */
+
+/**
+ * In 3.13a5 ``_PyLong_AsByteArray`` got a new ``with_exceptions`` argument.
+ * See https://github.com/python/cpython/commit/7861dfd26a41e40c2b4361eb0bb1356b9b4a064b
+ */
+PyAPI_FUNC(int) _PyLong_AsByteArray_compat(PyLongObject* v,
+    unsigned char* bytes, size_t n,
+    int little_endian, int is_signed)
+{
+    return _PyLong_AsByteArray(
+        v, bytes, n, little_endian, is_signed, 1 /* with_exceptions */
+    );
+}
+
+#define _PyLong_AsByteArray(v, bytes, n, little_endian, is_signed) _PyLong_AsByteArray_compat(v, bytes, n, little_endian, is_signed)
 #endif
 
 #if (PY_VERSION_HEX >= 0x30D00A1) /* 3.13.0a1 */
+
 /**
  * In 3.13a1 ``_PyObject_LookupAttrId`` was removed.
  * See https://github.com/python/cpython/commit/579aa89e68a6607398317a50586af781981e89fb
@@ -41,13 +63,16 @@ static int _PyObject_HasAttrId(PyObject* obj, void* id)
     Py_XDECREF(attr_val);
     return result;
 }
+
 /*
 * This declaration was moved to the internal API only accessible for building
 * CPython itself. But the implementation is still in `Objects/longobject.c` and
 * Pythons own `Modules/_pickle.c` still uses it.
 */
 PyAPI_FUNC(size_t) _PyLong_NumBits(PyObject *v);
+
 #elif (PY_VERSION_HEX >= 0x30A00B1) /* 3.10.0b1 */
+
 /**
  * The function ``_PyObject_LookupAttrId`` function replaces the combo of
  * ``_PyObject_HasAttrId`` followed by ``_PyObject_GetAttrId``; our code isn't
@@ -62,6 +87,7 @@ static int _PyObject_HasAttrId(PyObject* obj, void* id)
     Py_XDECREF(attr_val);
     return result;
 }
+
 #endif
 
 #if (PY_VERSION_HEX < 0x30B00A7) /* 3.11.0a7 */
