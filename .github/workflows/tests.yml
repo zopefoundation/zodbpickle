@@ -156,12 +156,12 @@ jobs:
         if: matrix.python-version == '3.13.0-alpha - 3.13.0'
         run: |
           pip install -U pip
-          pip install -U setuptools wheel twine cffi
+          pip install -U setuptools wheel twine
       - name: Install Build Dependencies
         if: matrix.python-version != '3.13.0-alpha - 3.13.0'
         run: |
           pip install -U pip
-          pip install -U setuptools wheel twine cffi
+          pip install -U setuptools wheel twine
 
       - name: Build zodbpickle (macOS x86_64, Python 3.8+)
         if: >
