@@ -32,7 +32,7 @@ _Py_SET_SIZE(PyVarObject *ob, Py_ssize_t size)
  * In 3.13a5 ``_PyLong_AsByteArray`` got a new ``with_exceptions`` argument.
  * See https://github.com/python/cpython/commit/7861dfd26a41e40c2b4361eb0bb1356b9b4a064b
  */
-PyAPI_FUNC(int) _PyLong_AsByteArray_compat(PyLongObject* v,
+static int _PyLong_AsByteArray_compat(PyLongObject* v,
     unsigned char* bytes, size_t n,
     int little_endian, int is_signed)
 {

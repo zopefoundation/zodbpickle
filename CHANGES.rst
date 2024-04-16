@@ -5,6 +5,8 @@
 3.3 (unreleased)
 ================
 
+- Build Windows wheels on GHA.
+
 - Add preliminary support for Python 3.13 as of 3.13a5.
 
 
