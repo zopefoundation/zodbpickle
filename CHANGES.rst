@@ -2,10 +2,10 @@
  Changelog
 ===========
 
-3.4 (unreleased)
+4.0 (unreleased)
 ================
 
-- Nothing changed yet.
+- Drop support for Python 3.7.
 
 
 3.3 (2024-04-16)
