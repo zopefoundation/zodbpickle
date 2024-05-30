@@ -2,7 +2,7 @@
  Changelog
 ===========
 
-4.0 (unreleased)
+4.0 (2024-05-30)
 ================
 
 - Drop support for Python 3.7.
