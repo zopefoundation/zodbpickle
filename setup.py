@@ -81,6 +81,7 @@ setup(
     python_requires='>=3.8',
     extras_require={
         'test': ['zope.testrunner'],
+        'docs': ['Sphinx'],
     },
     install_requires=[
         'setuptools',
