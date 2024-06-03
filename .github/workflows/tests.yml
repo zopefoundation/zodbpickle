@@ -324,7 +324,7 @@ jobs:
         with:
           name: zodbpickle-${{ runner.os }}-${{ matrix.python-version }}.whl
           path: dist/
-      - name: Install zodbpickle 3.13 ${{ matrix.python-version }}
+      - name: Install zodbpickle ${{ matrix.python-version }}
         if: matrix.python-version == '3.13'
         run: |
           pip install -U wheel "setuptools<69"
@@ -378,6 +378,74 @@ jobs:
       uses: AndreMiras/coveralls-python-action@develop
       with:
         parallel-finished: true
+
+  docs:
+    needs: build-package
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python-version: ["3.9"]
+        os: [ubuntu-latest]
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          allow-prereleases: true
+      ###
+      # Caching.
+      # This actually *restores* a cache and schedules a cleanup action
+      # to save the cache. So it must come before the thing we want to use
+      # the cache.
+      ###
+      - name: Get pip cache dir (default)
+        id: pip-cache-default
+        if: ${{ !startsWith(runner.os, 'Windows') }}
+        run: |
+          echo "dir=$(pip cache dir)" >>$GITHUB_OUTPUT
+
+      - name: Get pip cache dir (Windows)
+        id: pip-cache-windows
+        if: ${{ startsWith(runner.os, 'Windows') }}
+        run: |
+          echo "dir=$(pip cache dir)" >> $Env:GITHUB_OUTPUT
+
+      - name: pip cache (default)
+        uses: actions/cache@v4
+        if: ${{ !startsWith(runner.os, 'Windows') }}
+        with:
+          path: ${{ steps.pip-cache-default.outputs.dir }}
+          key: ${{ runner.os }}-pip-${{ matrix.python-version }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: pip cache (Windows)
+        uses: actions/cache@v4
+        if: ${{ startsWith(runner.os, 'Windows') }}
+        with:
+          path: ${{ steps.pip-cache-windows.outputs.dir }}
+          key: ${{ runner.os }}-pip-${{ matrix.python-version }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Download zodbpickle wheel
+        uses: actions/download-artifact@v4
+        with:
+          name: zodbpickle-${{ runner.os }}-${{ matrix.python-version }}.whl
+          path: dist/
+      - name: Install zodbpickle
+        run: |
+          pip install -U wheel
+          pip install -U coverage
+          pip install -U  "`ls dist/zodbpickle-*.whl`[docs]"
+      - name: Build docs
+        env:
+          ZOPE_INTERFACE_STRICT_IRO: 1
+        run: |
+          sphinx-build -b html -d docs/_build/doctrees docs docs/_build/html
 
   lint:
     needs: build-package
