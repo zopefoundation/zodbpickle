@@ -10,9 +10,12 @@
  * - 'Modules/clinic/_pickle.c.h'
  */
 
+#if 0
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
 #endif
+#endif
+#define Py_BUILD_CORE_MODULE
 
 #include "Python.h"
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()

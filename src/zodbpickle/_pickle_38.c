@@ -10,9 +10,12 @@
  * - 'Modules/clinic/_pickle.c.h'
  */
 
+#if 0
 #if !defined(Py_BUILD_CORE_BUILTIN) && !defined(Py_BUILD_CORE_MODULE)
 #  error "Py_BUILD_CORE_BUILTIN or Py_BUILD_CORE_MODULE must be defined"
 #endif
+#endif
+#define Py_BUILD_CORE_MODULE
 
 #include "Python.h"
 #include "structmember.h"
