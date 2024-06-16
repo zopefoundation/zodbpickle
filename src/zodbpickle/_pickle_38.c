@@ -7986,7 +7986,7 @@ static int
 noload_reduce(UnpicklerObject *self)
 {
 
-    if (Py_SIZE(self->stack) < 2) return stack_underflow();
+    if (Py_SIZE(self->stack) < 2) return Pdata_stack_underflow(self->stack);
     Pdata_clear(self->stack, Py_SIZE(self->stack)-2);
     PDATA_APPEND(self->stack, Py_None,-1);
     return 0;
@@ -7995,7 +7995,7 @@ noload_reduce(UnpicklerObject *self)
 static int
 noload_build(UnpicklerObject *self) {
 
-  if (Py_SIZE(self->stack) < 1) return stack_underflow();
+  if (Py_SIZE(self->stack) < 1) return Pdata_stack_underflow(self->stack);
   Pdata_clear(self->stack, Py_SIZE(self->stack)-1);
   return 0;
 }
@@ -8018,7 +8018,7 @@ do_noload_append(UnpicklerObject *self, Py_ssize_t  x)
     Py_ssize_t len;
 
     len=Py_SIZE(self->stack);
-    if (!( len >= x && x > 0 ))  return stack_underflow();
+    if (!( len >= x && x > 0 ))  return Pdata_stack_underflow(self->stack);
     /* nothing to do */
     if (len==x) return 0;
 
@@ -8051,7 +8051,7 @@ do_noload_setitems(UnpicklerObject *self, Py_ssize_t x)
     Py_ssize_t len;
 
     if (!( (len=Py_SIZE(self->stack)) >= x
-           && x > 0 ))  return stack_underflow();
+           && x > 0 ))  return Pdata_stack_underflow(self->stack);
 
     dict=self->stack->data[x-1];
     if (dict == Py_None) {
