@@ -8263,313 +8263,175 @@ noload_setitems(UnpicklerObject *self)
     return do_noload_setitems(self, marker(self));
 }
 
+/* END: No-load functions to support noload, used to find persistent refs. */
+
 static PyObject *
 noload(UnpicklerObject *self)
 {
-    PyObject *err = 0, *val = 0;
-    char *s;
+    PyObject *value = NULL;
+    char *s = NULL;
 
     self->num_marks = 0;
-    Pdata_clear(self->stack, 0);
+    self->stack->mark_set = 0;
+    self->stack->fence = 0;
+    self->proto = 0;
+    if (Py_SIZE(self->stack))
+        Pdata_clear(self->stack, 0);
+
+#undef OP
+#undef OP_ARG
+
+    /* Convenient macros for the dispatch while-switch loop just below. */
+#define OP(opcode, load_func) \
+    case opcode: if (load_func(self) < 0) break; continue;
+
+#define OP_ARG(opcode, load_func, arg) \
+    case opcode: if (load_func(self, (arg)) < 0) break; continue;
 
     while (1) {
-        if (_Unpickler_Read(self, &s, 1) < 0)
-            break;
+        if (_Unpickler_Read(self, &s, 1) < 0) {
+            PickleState *st = _Pickle_GetGlobalState();
+            if (PyErr_ExceptionMatches(st->UnpicklingError)) {
+                PyErr_Format(PyExc_EOFError, "Ran out of input");
+            }
+            return NULL;
+        }
 
-        switch (s[0]) {
-        case NONE:
-            if (load_none(self) < 0)
-                break;
-            continue;
+        switch ((enum opcode)s[0]) {
+        OP(NONE, load_none)
+        OP(BININT, load_binint)
+        OP(BININT1, load_binint1)
+        OP(BININT2, load_binint2)
+        OP(INT, load_int)
+        OP(LONG, load_long)
+        OP_ARG(LONG1, load_counted_long, 1)
+        OP_ARG(LONG4, load_counted_long, 4)
+        OP(FLOAT, load_float)
+        OP(BINFLOAT, load_binfloat)
+        OP_ARG(SHORT_BINBYTES, load_counted_binbytes, 1)
+        OP_ARG(BINBYTES, load_counted_binbytes, 4)
+        OP_ARG(BINBYTES8, load_counted_binbytes, 8)
+        OP(BYTEARRAY8, load_counted_bytearray)
+        OP(NEXT_BUFFER, load_next_buffer)
+        OP(READONLY_BUFFER, load_readonly_buffer)
+        OP_ARG(SHORT_BINSTRING, load_counted_binstring, 1)
+        OP_ARG(BINSTRING, load_counted_binstring, 4)
+        OP(STRING, load_string)
+        OP(UNICODE, load_unicode)
+        OP_ARG(SHORT_BINUNICODE, load_counted_binunicode, 1)
+        OP_ARG(BINUNICODE, load_counted_binunicode, 4)
+        OP_ARG(BINUNICODE8, load_counted_binunicode, 8)
+        OP_ARG(EMPTY_TUPLE, load_counted_tuple, 0)
+        OP_ARG(TUPLE1, load_counted_tuple, 1)
+        OP_ARG(TUPLE2, load_counted_tuple, 2)
+        OP_ARG(TUPLE3, load_counted_tuple, 3)
+        OP(TUPLE, load_tuple)
+        OP(EMPTY_LIST, load_empty_list)
+        OP(LIST, load_list)
+        OP(EMPTY_DICT, load_empty_dict)
+        OP(DICT, load_dict)
+        OP(EMPTY_SET, load_empty_set)
+        OP(ADDITEMS, load_additems)
+        OP(FROZENSET, load_frozenset)
 
-        case BININT:
-            if (load_binint(self) < 0)
-                break;
-            continue;
+        /*
+        OP(OBJ, load_obj)
+        OP(INST, load_inst)
+        OP(NEWOBJ, load_newobj)
+        OP(NEWOBJ_EX, load_newobj_ex)
+        OP(GLOBAL, load_global)
+        OP(STACK_GLOBAL, load_stack_global)
+        OP(APPEND, load_append)
+        OP(APPENDS, load_appends)
+        OP(BUILD, load_build)
+        */
+        OP(OBJ, noload_obj)
+        OP(INST, noload_inst)
+        OP(NEWOBJ, noload_newobj)
+        OP(NEWOBJ_EX, noload_newobj_ex)
+        OP(GLOBAL, noload_global)
+        OP(STACK_GLOBAL, noload_stack_global)
+        OP(APPEND, noload_append)
+        OP(APPENDS, noload_appends)
+        OP(BUILD, noload_build)
 
-        case BININT1:
-            if (load_binint1(self) < 0)
-                break;
-            continue;
+        OP(DUP, load_dup)
+        OP(BINGET, load_binget)
+        OP(LONG_BINGET, load_long_binget)
+        OP(GET, load_get)
+        OP(MARK, load_mark)
+        OP(BINPUT, load_binput)
+        OP(LONG_BINPUT, load_long_binput)
+        OP(PUT, load_put)
+        OP(MEMOIZE, load_memoize)
+        OP(POP, load_pop)
+        OP(POP_MARK, load_pop_mark)
 
-        case BININT2:
-            if (load_binint2(self) < 0)
-                break;
-            continue;
+        /*
+        OP(SETITEM, load_setitem)
+        OP(SETITEMS, load_setitems)
+         */
+        OP(SETITEM, noload_setitem)
+        OP(SETITEMS, noload_setitems)
 
-        case INT:
-            if (load_int(self) < 0)
-                break;
-            continue;
+        OP(PERSID, load_persid)
+        OP(BINPERSID, load_binpersid)
 
-        case LONG:
-            if (load_long(self) < 0)
-                break;
-            continue;
+        /*
+        OP(REDUCE, load_reduce)
+         */
+        OP(REDUCE, noload_reduce)
 
-        case LONG1:
-            if (load_counted_long(self, 1) < 0)
-                break;
-            continue;
+        OP(PROTO, load_proto)
+        OP(FRAME, load_frame)
 
-        case LONG4:
-            if (load_counted_long(self, 4) < 0)
-                break;
-            continue;
+        /*
+        OP_ARG(EXT1, load_extension, 1)
+        OP_ARG(EXT2, load_extension, 2)
+        OP_ARG(EXT4, load_extension, 4)
+         */
+        OP_ARG(EXT1, noload_extension, 1)
+        OP_ARG(EXT2, noload_extension, 2)
+        OP_ARG(EXT4, noload_extension, 4)
 
-        case FLOAT:
-            if (load_float(self) < 0)
-                break;
-            continue;
+        OP_ARG(NEWTRUE, load_bool, Py_True)
+        OP_ARG(NEWFALSE, load_bool, Py_False)
 
-        case BINFLOAT:
-            if (load_binfloat(self) < 0)
-                break;
-            continue;
-
-        case BINSTRING:
-            if (load_binstring(self) < 0)
-                break;
-            continue;
-
-        case SHORT_BINSTRING:
-            if (load_short_binstring(self) < 0)
-                break;
-            continue;
-
-        case STRING:
-            if (load_string(self) < 0)
-                break;
-            continue;
-
-        case UNICODE:
-            if (load_unicode(self) < 0)
-                break;
-            continue;
-
-        case BINUNICODE:
-            if (load_binunicode(self) < 0)
-                break;
-            continue;
-
-        case EMPTY_TUPLE:
-            if (load_counted_tuple(self, 0) < 0)
-                break;
-            continue;
-
-        case TUPLE1:
-            if (load_counted_tuple(self, 1) < 0)
-                break;
-            continue;
-
-        case TUPLE2:
-            if (load_counted_tuple(self, 2) < 0)
-                break;
-            continue;
-
-        case TUPLE3:
-            if (load_counted_tuple(self, 3) < 0)
-                break;
-            continue;
-
-        case TUPLE:
-            if (load_tuple(self) < 0)
-                break;
-            continue;
-
-        case EMPTY_LIST:
-            if (load_empty_list(self) < 0)
-                break;
-            continue;
-
-        case LIST:
-            if (load_list(self) < 0)
-                break;
-            continue;
-
-        case EMPTY_DICT:
-            if (load_empty_dict(self) < 0)
-                break;
-            continue;
-
-        case DICT:
-            if (load_dict(self) < 0)
-                break;
-            continue;
-
-        case OBJ:
-            if (noload_obj(self) < 0)
-                break;
-            continue;
-
-        case INST:
-            if (noload_inst(self) < 0)
-                break;
-            continue;
-
-        case NEWOBJ:
-            if (noload_newobj(self) < 0)
-                break;
-            continue;
-
-        case GLOBAL:
-            if (noload_global(self) < 0)
-                break;
-            continue;
-
-        case APPEND:
-            if (noload_append(self) < 0)
-                break;
-            continue;
-
-        case APPENDS:
-            if (noload_appends(self) < 0)
-                break;
-            continue;
-
-        case BUILD:
-            if (noload_build(self) < 0)
-                break;
-            continue;
-
-        case DUP:
-            if (load_dup(self) < 0)
-                break;
-            continue;
-
-        case BINGET:
-            if (load_binget(self) < 0)
-                break;
-            continue;
-
-        case LONG_BINGET:
-            if (load_long_binget(self) < 0)
-                break;
-            continue;
-
-        case GET:
-            if (load_get(self) < 0)
-                break;
-            continue;
-
-        case EXT1:
-            if (noload_extension(self, 1) < 0)
-                break;
-            continue;
-
-        case EXT2:
-            if (noload_extension(self, 2) < 0)
-                break;
-            continue;
-
-        case EXT4:
-            if (noload_extension(self, 4) < 0)
-                break;
-            continue;
-
-        case MARK:
-            if (load_mark(self) < 0)
-                break;
-            continue;
-
-        case BINPUT:
-            if (load_binput(self) < 0)
-                break;
-            continue;
-
-        case LONG_BINPUT:
-            if (load_long_binput(self) < 0)
-                break;
-            continue;
-
-        case PUT:
-            if (load_put(self) < 0)
-                break;
-            continue;
-
-        case POP:
-            if (load_pop(self) < 0)
-                break;
-            continue;
-
-        case POP_MARK:
-            if (load_pop_mark(self) < 0)
-                break;
-            continue;
-
-        case SETITEM:
-            if (noload_setitem(self) < 0)
-                break;
-            continue;
-
-        case SETITEMS:
-            if (noload_setitems(self) < 0)
-                break;
-            continue;
+#undef OP
+#undef OP_ARG
 
         case STOP:
             break;
 
-        case PERSID:
-            if (load_persid(self) < 0)
-                break;
-            continue;
-
-        case BINPERSID:
-            if (load_binpersid(self) < 0)
-                break;
-            continue;
-
-        case REDUCE:
-            if (noload_reduce(self) < 0)
-                break;
-            continue;
-
-        case PROTO:
-            if (load_proto(self) < 0)
-                break;
-            continue;
-
-        case NEWTRUE:
-            if (load_bool(self, Py_True) < 0)
-                break;
-            continue;
-
-        case NEWFALSE:
-            if (load_bool(self, Py_False) < 0)
-                break;
-            continue;
-
-        case BINBYTES:
-            if (load_binbytes(self) < 0)
-                break;
-            continue;
-
-        case SHORT_BINBYTES:
-            if (load_short_binbytes(self) < 0)
-                break;
-            continue;
-
         default:
-            PyErr_Format(UnpicklingError,
-                         "invalid load key, '%c'.", s[0]);
-            return NULL;
+            {
+                PickleState *st = _Pickle_GetGlobalState();
+                unsigned char c = (unsigned char) *s;
+                if (0x20 <= c && c <= 0x7e && c != '\'' && c != '\\') {
+                    PyErr_Format(st->UnpicklingError,
+                                 "invalid load key, '%c'.", c);
+                }
+                else {
+                    PyErr_Format(st->UnpicklingError,
+                                 "invalid load key, '\\x%02x'.", c);
+                }
+                return NULL;
+            }
         }
 
-        break;
+        break;                  /* and we are done! */
     }
 
-    if ((err = PyErr_Occurred())) {
-        if (err == PyExc_EOFError) {
-            PyErr_SetNone(PyExc_EOFError);
-        }
+    if (PyErr_Occurred()) {
         return NULL;
     }
 
-    PDATA_POP(self->stack, val);
-    return val;
+    if (_Unpickler_SkipConsumed(self) < 0)
+        return NULL;
+
+    PDATA_POP(self->stack, value);
+    return value;
 }
-/* END: No-load functions to support noload, used to find persistent refs. */
 
 /* BEGIN: 'Unpickler.noload' implementation */
 static PyObject *
