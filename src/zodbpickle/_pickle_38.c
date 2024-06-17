@@ -7933,6 +7933,17 @@ _pickle_Unpickler_load_impl(UnpicklerObject *self)
 static int
 noload_obj(UnpicklerObject *self)
 {
+    /* 'load_obj':
+     *
+     * - Pop 'args' from marker.
+     * - Pop 'cls' from marker - 1.
+     * - Instantiate 'obj' from 'cls, args'.
+     * - Push 'obj'.
+     *
+     * 'noload_obj'
+     *
+     * - Clear stack from 'marker+1', leaving 'cls' on top.
+     */
     int i;
 
     if ((i = marker(self)) < 0) return -1;
@@ -7943,6 +7954,21 @@ noload_obj(UnpicklerObject *self)
 static int
 noload_inst(UnpicklerObject *self)
 {
+    /* 'load_inst'
+     *
+     * - Read line from 'self' into 'module_name' (decode as ASCII).
+     * - Read line from 'self' into 'class_name' (decode as ASCII).
+     * - Call 'find_class(module_name, class_name)' to get 'class'.
+     * - Pop 'args' from marker.
+     * - Instantiate 'obj' from 'class' and 'args'
+     * - Push 'obj'.
+     *
+     * 'noload_inst'
+     *
+     * - Clear stack from marker up.
+     * - Consume two lines from the unpickler.
+     * - Push 'Py_None'.
+     */
     int i;
     char *s;
 
@@ -7957,9 +7983,57 @@ noload_inst(UnpicklerObject *self)
 static int
 noload_newobj(UnpicklerObject *self)
 {
+    /* 'load_newobj'
+     *
+     * - Pop 'args'.
+     * - Pop 'clsraw'.
+     * - Cast 'clsraw' -> 'cls'.
+     * - Call 'cls->tp_new(cls, args, NULL)' to get 'obj'
+     * - Push 'obj'.
+     *
+     * 'noload_inst'
+     *
+     * - Pop 'args'.
+     * - Pop 'cls'.
+     * - Push 'Py_None'.
+     */
     PyObject *obj;
 
-    PDATA_POP(self->stack, obj);        /* pop argtuple */
+    PDATA_POP(self->stack, obj);        /* pop args */
+    if (obj == NULL) return -1;
+    Py_DECREF(obj);
+
+    PDATA_POP(self->stack, obj);        /* pop cls */
+    if (obj == NULL) return -1;
+    Py_DECREF(obj);
+
+    PDATA_APPEND(self->stack, Py_None, -1);
+    return 0;
+}
+
+static int
+noload_newobj_ex(UnpicklerObject *self)
+{
+    /* 'load_newobj_ex'
+     *
+     * - Pop 'kwargs'.
+     * - Pop 'args'.
+     * - Pop 'cls'.
+     * - Call 'cls->tp_new(cls, args, kwargs)' to get 'obj'.
+     * - Push 'obj'.
+     *
+     * 'noload_newobj_ex'
+     *
+     * - Pop three items.
+     * - Push 'Py_None'.
+     */
+    PyObject *obj;
+
+    PDATA_POP(self->stack, obj);        /* pop kwargs */
+    if (obj == NULL) return -1;
+    Py_DECREF(obj);
+
+    PDATA_POP(self->stack, obj);        /* pop args */
     if (obj == NULL) return -1;
     Py_DECREF(obj);
 
@@ -7974,6 +8048,19 @@ noload_newobj(UnpicklerObject *self)
 static int
 noload_global(UnpicklerObject *self)
 {
+    /* 'load_global'
+     *
+     * - Read line from self into 'module_name' and decode as UTF8.
+     * - Read line from self into 'global_name' and decode as UTF8.
+     * - Call 'find_class(module_name, global_name)' to get 'global'
+     * - Push 'global' to the stack.
+     *
+     * 'noload_global'
+     *
+     * - Consume two lines from the unpickler.
+     * - Push 'Py_None'.
+     *
+     */
     char *s;
 
     if (_Unpickler_Readline(self, &s) < 0) return -1;
@@ -7983,9 +8070,49 @@ noload_global(UnpicklerObject *self)
 }
 
 static int
+noload_stack_global(UnpicklerObject *self)
+{
+    /* 'load_stack_global'
+     *
+     * - Pop 'global_name' and ensure it is a 'str'.
+     * - Pop 'module_name' and ensure it is a 'str'.
+     * - Call 'find_class(module_name, global_name)' to get 'global'
+     * - Push 'global'.
+     *
+     * 'noload_stack_global'
+     *
+     * - Pop two items.
+     * - Push 'Py_None'.
+     */
+    PyObject *obj;
+
+    PDATA_POP(self->stack, obj);        /* pop 'global_name' */
+    if (obj == NULL) return -1;
+    Py_DECREF(obj);
+
+    PDATA_POP(self->stack, obj);        /* pop 'module_name' */
+    if (obj == NULL) return -1;
+    Py_DECREF(obj);
+
+    PDATA_APPEND(self->stack, Py_None, -1);
+    return 0;
+}
+
+static int
 noload_reduce(UnpicklerObject *self)
 {
-
+    /* 'load_reduce'
+     *
+     * - Pop 'args' from the stack.
+     * - Pop 'callable' from the stack.
+     * - Call 'callable(args)' to get 'obj'
+     * - Push 'obj'.
+     *
+     * 'noload_reduce'
+     *
+     * - Clear two items from stack.
+     * - Push 'Py_None' on the stack.
+     */
     if (Py_SIZE(self->stack) < 2) return Pdata_stack_underflow(self->stack);
     Pdata_clear(self->stack, Py_SIZE(self->stack)-2);
     PDATA_APPEND(self->stack, Py_None,-1);
@@ -7993,16 +8120,43 @@ noload_reduce(UnpicklerObject *self)
 }
 
 static int
-noload_build(UnpicklerObject *self) {
-
-  if (Py_SIZE(self->stack) < 1) return Pdata_stack_underflow(self->stack);
-  Pdata_clear(self->stack, Py_SIZE(self->stack)-1);
-  return 0;
+noload_build(UnpicklerObject *self)
+{
+    /* 'load_build'
+     *
+     * - Pop 'state' from stack.
+     * - Peek 'inst' as TOS.
+     * - Call 'inst''s '__setstate', passing 'state'.
+     * - Leave 'inst' on stack.
+     *
+     * 'noload_build'
+     *
+     * - Clear 'state' from stack.
+     * - Leave 'inst' on stack (untouched).
+     *
+     */
+    if (Py_SIZE(self->stack) < 1) return Pdata_stack_underflow(self->stack);
+    Pdata_clear(self->stack, Py_SIZE(self->stack)-1);
+    return 0;
 }
 
 static int
 noload_extension(UnpicklerObject *self, int nbytes)
 {
+    /* 'load_extension'
+     *
+     * - Read 'nbytes' from 'self' into 'codebytes'.
+     * - Convert 'codebytes' / 'nbytes' into 'code'.
+     * - Look up 'ob' via 'extension_cache[code]'; push and exit if found.
+     * - Look up 'module_name' / 'class_name' via 'inverted_registry[code]'.
+     * - Call 'find_class' to get 'ob', and add to 'extension_cache'.
+     * - Push 'ob'.
+     *
+     * 'noload_extension'
+     *
+     * - Read 'nbytes' from 'self'.
+     * - Push 'Py_None'.
+     */
     char *codebytes;
 
     assert(nbytes == 1 || nbytes == 2 || nbytes == 4);
@@ -8014,6 +8168,25 @@ noload_extension(UnpicklerObject *self, int nbytes)
 static int
 do_noload_append(UnpicklerObject *self, Py_ssize_t  x)
 {
+    /* 'do_append' (sic)
+     *
+     * - If x is size of stack, exit.
+     * - Set 'listob' from 'stack[x-1]'
+     * - If 'listobj' is an actual list, pop 'slice' from 'stack[x]',
+     *   call 'listobj.__setslice__(-1, -1, slice)', and exit.
+     * - If 'listobj.extend' is a method, pop 'slice' from 'stack[x]',
+     *   call 'listobj.extend(slice)', and exit.
+     * - If 'listobj.append' is a method, pop 'slice' from 'stack[x]',
+     *   loop over 'slice' calling 'listobj.append' with each item, and exit.
+     * - 'listob' is always left on top of stack.
+     *
+     * 'do_noload_append'
+     *
+     * - If x is size of stack, exit.
+     * - if 'stack[x-1]' is 'Py_None' (pushed by an earlier 'noload_' opcode)
+     *   clear the stack from 'x' upward and exit.
+     * - Call 'do_append'.
+     */
     PyObject *list = 0;
     Py_ssize_t len;
 
@@ -8047,6 +8220,22 @@ noload_appends(UnpicklerObject *self)
 static int
 do_noload_setitems(UnpicklerObject *self, Py_ssize_t x)
 {
+    /* 'do_setitems' (sic)
+     *
+     * - If x is size of stack, exit.
+     * - Set 'dict' to 'stack[x-1]'
+     * - Check that stack from 'x' to end is an even length.
+     * - For each pair, '(k,v)' from 'x' to TOS, call 'dict.__setitem__(k, v)'.
+     * - Clear stack from 'x' upward, leaving 'dict' on top.
+     * - 'dict' is always left on top of stack.
+     *
+     * 'do_noload_setitems'
+     *
+     * - If x is size of stack, exit.
+     * - if 'stack[x-1]' is 'Py_None' (pushed by an earlier 'noload_' opcode)
+     *   clear the stack from 'x' upward and exit.
+     * - Call 'do_setitems'.
+     */
     PyObject *dict = 0;
     Py_ssize_t len;
 
