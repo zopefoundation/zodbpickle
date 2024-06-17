@@ -1069,7 +1069,7 @@ _pickle_Unpickler_load(UnpicklerObject *self, PyTypeObject *cls, PyObject *const
 /*
  *  BEGIN: Forward-declare restored 'Unpickler.noload' (FBO ZODB).
  */
-PyDoc_STRVAR(_pickle_Unpickler_noload_doc,
+PyDoc_STRVAR(_pickle_Unpickler_noload__doc__,
 "noload() -- not load a pickle, but go through most of the motions\n"
 "\n"
 "This function can be used to read past a pickle without instantiating\n"
@@ -1078,7 +1078,7 @@ PyDoc_STRVAR(_pickle_Unpickler_noload_doc,
 "any modules.\n");
 
 #define _PICKLE_UNPICKLER_NOLOAD_METHODDEF    \
-    {"noload", _PyCFunction_CAST(_pickle_Unpickler_noload), METH_NOARGS, _pickle_Unpickler_load__doc__},
+    {"noload", _PyCFunction_CAST(_pickle_Unpickler_noload), METH_NOARGS, _pickle_Unpickler_noload__doc__},
 
 static PyObject *
 _pickle_Unpickler_noload(UnpicklerObject *self, PyObject *unused);
