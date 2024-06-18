@@ -20,7 +20,6 @@
 #include "Python.h"
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
-#include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "structmember.h"         // PyMemberDef
 
@@ -28,6 +27,107 @@
 
 PyDoc_STRVAR(pickle_module_doc,
 "Optimized C implementation for the Python pickle module.");
+
+/*
+ *  Static strings (in stdlib, declared via '_Py_static_string' etc.)
+ */
+#define _ZP_DECLARE_STATIC_STRING(name) static PyObject* zps_##name
+
+_ZP_DECLARE_STATIC_STRING(getattr);
+_ZP_DECLARE_STATIC_STRING(file);
+_ZP_DECLARE_STATIC_STRING(protocol);
+_ZP_DECLARE_STATIC_STRING(fix_imports);
+_ZP_DECLARE_STATIC_STRING(buffer_callback);
+_ZP_DECLARE_STATIC_STRING(encoding);
+_ZP_DECLARE_STATIC_STRING(errors);
+_ZP_DECLARE_STATIC_STRING(buffers);
+_ZP_DECLARE_STATIC_STRING(write);
+_ZP_DECLARE_STATIC_STRING(peek);
+_ZP_DECLARE_STATIC_STRING(readinto);
+_ZP_DECLARE_STATIC_STRING(read);
+_ZP_DECLARE_STATIC_STRING(readline);
+_ZP_DECLARE_STATIC_STRING(__module__);
+_ZP_DECLARE_STATIC_STRING(modules);
+_ZP_DECLARE_STATIC_STRING(__main__);
+_ZP_DECLARE_STATIC_STRING(latin1);
+_ZP_DECLARE_STATIC_STRING(items);
+_ZP_DECLARE_STATIC_STRING(__qualname__);
+_ZP_DECLARE_STATIC_STRING(__name__);
+_ZP_DECLARE_STATIC_STRING(__class__);
+_ZP_DECLARE_STATIC_STRING(__newobj_ex__);
+_ZP_DECLARE_STATIC_STRING(__newobj__);
+_ZP_DECLARE_STATIC_STRING(__new__);
+_ZP_DECLARE_STATIC_STRING(__reduce_ex__);
+_ZP_DECLARE_STATIC_STRING(__reduce__);
+_ZP_DECLARE_STATIC_STRING(reducer_override);
+_ZP_DECLARE_STATIC_STRING(persistent_id);
+_ZP_DECLARE_STATIC_STRING(dispatch_table);
+_ZP_DECLARE_STATIC_STRING(find_class);
+_ZP_DECLARE_STATIC_STRING(__getinitargs__);
+_ZP_DECLARE_STATIC_STRING(extend);
+_ZP_DECLARE_STATIC_STRING(append);
+_ZP_DECLARE_STATIC_STRING(add);
+_ZP_DECLARE_STATIC_STRING(__setstate__);
+_ZP_DECLARE_STATIC_STRING(__dict__);
+_ZP_DECLARE_STATIC_STRING(persistent_load);
+
+// Not initialized with its #name
+_ZP_DECLARE_STATIC_STRING(dot);
+
+#undef _ZP_DECLARE_STATIC_STRING
+
+static int
+_init_static_strings(void)
+{
+#define _ZP_INIT_STATIC_STRING(name) do {\
+    (zps_##name = PyUnicode_InternFromString(#name)); \
+    if (PyErr_Occurred()) return -1; } while(0)
+
+    _ZP_INIT_STATIC_STRING(getattr);
+    _ZP_INIT_STATIC_STRING(file);
+    _ZP_INIT_STATIC_STRING(protocol);
+    _ZP_INIT_STATIC_STRING(fix_imports);
+    _ZP_INIT_STATIC_STRING(buffer_callback);
+    _ZP_INIT_STATIC_STRING(encoding);
+    _ZP_INIT_STATIC_STRING(errors);
+    _ZP_INIT_STATIC_STRING(buffers);
+    _ZP_INIT_STATIC_STRING(write);
+    _ZP_INIT_STATIC_STRING(peek);
+    _ZP_INIT_STATIC_STRING(readinto);
+    _ZP_INIT_STATIC_STRING(read);
+    _ZP_INIT_STATIC_STRING(readline);
+    _ZP_INIT_STATIC_STRING(__module__);
+    _ZP_INIT_STATIC_STRING(modules);
+    _ZP_INIT_STATIC_STRING(__main__);
+    _ZP_INIT_STATIC_STRING(latin1);
+    _ZP_INIT_STATIC_STRING(items);
+    _ZP_INIT_STATIC_STRING(__qualname__);
+    _ZP_INIT_STATIC_STRING(__name__);
+    _ZP_INIT_STATIC_STRING(__class__);
+    _ZP_INIT_STATIC_STRING(__newobj_ex__);
+    _ZP_INIT_STATIC_STRING(__newobj__);
+    _ZP_INIT_STATIC_STRING(__new__);
+    _ZP_INIT_STATIC_STRING(__reduce_ex__);
+    _ZP_INIT_STATIC_STRING(__reduce__);
+    _ZP_INIT_STATIC_STRING(reducer_override);
+    _ZP_INIT_STATIC_STRING(persistent_id);
+    _ZP_INIT_STATIC_STRING(dispatch_table);
+    _ZP_INIT_STATIC_STRING(find_class);
+    _ZP_INIT_STATIC_STRING(__getinitargs__);
+    _ZP_INIT_STATIC_STRING(extend);
+    _ZP_INIT_STATIC_STRING(append);
+    _ZP_INIT_STATIC_STRING(add);
+    _ZP_INIT_STATIC_STRING(__setstate__);
+    _ZP_INIT_STATIC_STRING(__dict__);
+    _ZP_INIT_STATIC_STRING(persistent_load);
+
+    zps_dot = PyUnicode_InternFromString(".");
+
+#undef _ZP_INIT_STATIC_STRING
+    return 0;
+}
+
+#define _ZPS(name) zps_##name
 
 /*[clinic input]
 module _pickle
@@ -270,7 +370,7 @@ _Pickle_InitState(PickleState *st)
     PyObject *copyreg = NULL;
     PyObject *compat_pickle = NULL;
 
-    st->getattr = _PyEval_GetBuiltin(&_Py_ID(getattr));
+    st->getattr = _PyEval_GetBuiltin(_ZPS(getattr));
     if (st->getattr == NULL)
         goto error;
 
@@ -930,7 +1030,7 @@ _pickle_Pickler___init__(PyObject *self, PyObject *args, PyObject *kwargs)
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(file), &_Py_ID(protocol), &_Py_ID(fix_imports), &_Py_ID(buffer_callback), },
+        .ob_item = { _ZPS(file), _ZPS(protocol), _ZPS(fix_imports), _ZPS(buffer_callback), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -1212,7 +1312,7 @@ _pickle_Unpickler___init__(PyObject *self, PyObject *args, PyObject *kwargs)
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(file), &_Py_ID(fix_imports), &_Py_ID(encoding), &_Py_ID(errors), &_Py_ID(buffers), },
+        .ob_item = { _ZPS(file), _ZPS(fix_imports), _ZPS(encoding), _ZPS(errors), _ZPS(buffers), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -1406,7 +1506,7 @@ _pickle_dump(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(obj), &_Py_ID(file), &_Py_ID(protocol), &_Py_ID(fix_imports), &_Py_ID(buffer_callback), },
+        .ob_item = { _ZPS(obj), _ZPS(file), _ZPS(protocol), _ZPS(fix_imports), _ZPS(buffer_callback), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -1510,7 +1610,7 @@ _pickle_dumps(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(obj), &_Py_ID(protocol), &_Py_ID(fix_imports), &_Py_ID(buffer_callback), },
+        .ob_item = { _ZPS(obj), _ZPS(protocol), _ZPS(fix_imports), _ZPS(buffer_callback), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -1618,7 +1718,7 @@ _pickle_load(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(file), &_Py_ID(fix_imports), &_Py_ID(encoding), &_Py_ID(errors), &_Py_ID(buffers), },
+        .ob_item = { _ZPS(file), _ZPS(fix_imports), _ZPS(encoding), _ZPS(errors), _ZPS(buffers), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -1744,7 +1844,7 @@ _pickle_loads(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(fix_imports), &_Py_ID(encoding), &_Py_ID(errors), &_Py_ID(buffers), },
+        .ob_item = { _ZPS(fix_imports), _ZPS(encoding), _ZPS(errors), _ZPS(buffers), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -2303,7 +2403,7 @@ static int
 _Pickler_SetOutputStream(PicklerObject *self, PyObject *file)
 {
     assert(file != NULL);
-    if (_PyObject_LookupAttr(file, &_Py_ID(write), &self->write) < 0) {
+    if (_PyObject_LookupAttr(file, _ZPS(write), &self->write) < 0) {
         return -1;
     }
     if (self->write == NULL) {
@@ -2773,16 +2873,16 @@ static int
 _Unpickler_SetInputStream(UnpicklerObject *self, PyObject *file)
 {
     /* Optional file methods */
-    if (_PyObject_LookupAttr(file, &_Py_ID(peek), &self->peek) < 0) {
+    if (_PyObject_LookupAttr(file, _ZPS(peek), &self->peek) < 0) {
         goto error;
     }
-    if (_PyObject_LookupAttr(file, &_Py_ID(readinto), &self->readinto) < 0) {
+    if (_PyObject_LookupAttr(file, _ZPS(readinto), &self->readinto) < 0) {
         goto error;
     }
-    if (_PyObject_LookupAttr(file, &_Py_ID(read), &self->read) < 0) {
+    if (_PyObject_LookupAttr(file, _ZPS(read), &self->read) < 0) {
         goto error;
     }
-    if (_PyObject_LookupAttr(file, &_Py_ID(readline), &self->readline) < 0) {
+    if (_PyObject_LookupAttr(file, _ZPS(readline), &self->readline) < 0) {
         goto error;
     }
     if (!self->readline || !self->read) {
@@ -2945,8 +3045,7 @@ get_dotted_path(PyObject *obj, PyObject *name)
 {
     PyObject *dotted_path;
     Py_ssize_t i, n;
-    _Py_DECLARE_STR(dot, ".");
-    dotted_path = PyUnicode_Split(name, &_Py_STR(dot), -1);
+    dotted_path = PyUnicode_Split(name, zps_dot, -1);
     if (dotted_path == NULL)
         return NULL;
     n = PyList_GET_SIZE(dotted_path);
@@ -3047,7 +3146,7 @@ whichmodule(PyObject *global, PyObject *dotted_path)
     Py_ssize_t i;
     PyObject *modules;
 
-    if (_PyObject_LookupAttr(global, &_Py_ID(__module__), &module_name) < 0) {
+    if (_PyObject_LookupAttr(global, _ZPS(__module__), &module_name) < 0) {
         return NULL;
     }
     if (module_name) {
@@ -3062,7 +3161,7 @@ whichmodule(PyObject *global, PyObject *dotted_path)
 
     /* Fallback on walking sys.modules */
     PyThreadState *tstate = _PyThreadState_GET();
-    modules = _PySys_GetAttr(tstate, &_Py_ID(modules));
+    modules = _PySys_GetAttr(tstate, _ZPS(modules));
     if (modules == NULL) {
         PyErr_SetString(PyExc_RuntimeError, "unable to get sys.modules");
         return NULL;
@@ -3106,7 +3205,7 @@ whichmodule(PyObject *global, PyObject *dotted_path)
     }
 
     /* If no module is found, use __main__. */
-    module_name = &_Py_ID(__main__);
+    module_name = _ZPS(__main__);
     return Py_NewRef(module_name);
 }
 
@@ -3559,7 +3658,7 @@ save_bytes(PickleState *st, PicklerObject *self, PyObject *obj)
                 return -1;
             reduce_value = Py_BuildValue("(O(OO))",
                                          st->codecs_encode, unicode_str,
-                                         &_Py_ID(latin1));
+                                         _ZPS(latin1));
             Py_DECREF(unicode_str);
         }
 
@@ -4483,7 +4582,7 @@ save_dict(PickleState *state, PicklerObject *self, PyObject *obj)
             status = batch_dict_exact(state, self, obj);
             _Py_LeaveRecursiveCall();
         } else {
-            items = PyObject_CallMethodNoArgs(obj, &_Py_ID(items));
+            items = PyObject_CallMethodNoArgs(obj, _ZPS(items));
             if (items == NULL)
                 goto error;
             iter = PyObject_GetIter(items);
@@ -4741,10 +4840,10 @@ save_global(PickleState *st, PicklerObject *self, PyObject *obj,
         global_name = Py_NewRef(name);
     }
     else {
-        if (_PyObject_LookupAttr(obj, &_Py_ID(__qualname__), &global_name) < 0)
+        if (_PyObject_LookupAttr(obj, _ZPS(__qualname__), &global_name) < 0)
             goto error;
         if (global_name == NULL) {
-            global_name = PyObject_GetAttr(obj, &_Py_ID(__name__));
+            global_name = PyObject_GetAttr(obj, _ZPS(__name__));
             if (global_name == NULL)
                 goto error;
         }
@@ -5064,7 +5163,7 @@ get_class(PyObject *obj)
 {
     PyObject *cls;
 
-    if (_PyObject_LookupAttr(obj, &_Py_ID(__class__), &cls) == 0) {
+    if (_PyObject_LookupAttr(obj, _ZPS(__class__), &cls) == 0) {
         cls = Py_NewRef(Py_TYPE(obj));
     }
     return cls;
@@ -5147,13 +5246,13 @@ save_reduce(PickleState *st, PicklerObject *self, PyObject *args,
     if (self->proto >= 2) {
         PyObject *name;
 
-        if (_PyObject_LookupAttr(callable, &_Py_ID(__name__), &name) < 0) {
+        if (_PyObject_LookupAttr(callable, _ZPS(__name__), &name) < 0) {
             return -1;
         }
         if (name != NULL && PyUnicode_Check(name)) {
-            use_newobj_ex = _PyUnicode_Equal(name, &_Py_ID(__newobj_ex__));
+            use_newobj_ex = _PyUnicode_Equal(name, _ZPS(__newobj_ex__));
             if (!use_newobj_ex) {
-                use_newobj = _PyUnicode_Equal(name, &_Py_ID(__newobj__));
+                use_newobj = _PyUnicode_Equal(name, _ZPS(__newobj__));
             }
         }
         Py_XDECREF(name);
@@ -5210,7 +5309,7 @@ save_reduce(PickleState *st, PicklerObject *self, PyObject *args,
             if (newargs == NULL)
                 return -1;
 
-            cls_new = PyObject_GetAttr(cls, &_Py_ID(__new__));
+            cls_new = PyObject_GetAttr(cls, _ZPS(__new__));
             if (cls_new == NULL) {
                 Py_DECREF(newargs);
                 return -1;
@@ -5550,7 +5649,7 @@ save(PickleState *st, PicklerObject *self, PyObject *obj, int pers_save)
            don't actually have to check for a __reduce__ method. */
 
         /* Check for a __reduce_ex__ method. */
-        if (_PyObject_LookupAttr(obj, &_Py_ID(__reduce_ex__), &reduce_func) < 0) {
+        if (_PyObject_LookupAttr(obj, _ZPS(__reduce_ex__), &reduce_func) < 0) {
             goto error;
         }
         if (reduce_func != NULL) {
@@ -5562,7 +5661,7 @@ save(PickleState *st, PicklerObject *self, PyObject *obj, int pers_save)
         }
         else {
             /* Check for a __reduce__ method. */
-            if (_PyObject_LookupAttr(obj, &_Py_ID(__reduce__), &reduce_func) < 0) {
+            if (_PyObject_LookupAttr(obj, _ZPS(__reduce__), &reduce_func) < 0) {
                 goto error;
             }
             if (reduce_func != NULL) {
@@ -5614,7 +5713,7 @@ dump(PickleState *state, PicklerObject *self, PyObject *obj)
     int status = -1;
     PyObject *tmp;
 
-    if (_PyObject_LookupAttr((PyObject *)self, &_Py_ID(reducer_override),
+    if (_PyObject_LookupAttr((PyObject *)self, _ZPS(reducer_override),
                              &tmp) < 0) {
       goto error;
     }
@@ -5884,7 +5983,7 @@ _pickle_Pickler___init___impl(PicklerObject *self, PyObject *file,
     self->fast_nesting = 0;
     self->fast_memo = NULL;
 
-    if (init_method_ref((PyObject *)self, &_Py_ID(persistent_id),
+    if (init_method_ref((PyObject *)self, _ZPS(persistent_id),
                         &self->pers_func, &self->pers_func_self) < 0)
     {
         return -1;
@@ -5892,7 +5991,7 @@ _pickle_Pickler___init___impl(PicklerObject *self, PyObject *file,
     if (self->dispatch_table != NULL) {
         return 0;
     }
-    if (_PyObject_LookupAttr((PyObject *)self, &_Py_ID(dispatch_table),
+    if (_PyObject_LookupAttr((PyObject *)self, _ZPS(dispatch_table),
                              &self->dispatch_table) < 0) {
         return -1;
     }
@@ -6215,7 +6314,7 @@ static PyType_Spec pickler_type_spec = {
 static PyObject *
 find_class(UnpicklerObject *self, PyObject *module_name, PyObject *global_name)
 {
-    return PyObject_CallMethodObjArgs((PyObject *)self, &_Py_ID(find_class),
+    return PyObject_CallMethodObjArgs((PyObject *)self, _ZPS(find_class),
                                       module_name, global_name, NULL);
 }
 
@@ -6893,11 +6992,11 @@ instantiate(PyObject *cls, PyObject *args)
     assert(PyTuple_Check(args));
     if (!PyTuple_GET_SIZE(args) && PyType_Check(cls)) {
         PyObject *func;
-        if (_PyObject_LookupAttr(cls, &_Py_ID(__getinitargs__), &func) < 0) {
+        if (_PyObject_LookupAttr(cls, _ZPS(__getinitargs__), &func) < 0) {
             return NULL;
         }
         if (func == NULL) {
-            return PyObject_CallMethodOneArg(cls, &_Py_ID(__new__), cls);
+            return PyObject_CallMethodOneArg(cls, _ZPS(__new__), cls);
         }
         Py_DECREF(func);
     }
@@ -7547,7 +7646,7 @@ do_append(PickleState *state, UnpicklerObject *self, Py_ssize_t x)
     else {
         PyObject *extend_func;
 
-        if (_PyObject_LookupAttr(list, &_Py_ID(extend), &extend_func) < 0) {
+        if (_PyObject_LookupAttr(list, _ZPS(extend), &extend_func) < 0) {
             return -1;
         }
         if (extend_func != NULL) {
@@ -7568,7 +7667,7 @@ do_append(PickleState *state, UnpicklerObject *self, Py_ssize_t x)
             /* Even if the PEP 307 requires extend() and append() methods,
                fall back on append() if the object has no extend() method
                for backward compatibility. */
-            append_func = PyObject_GetAttr(list, &_Py_ID(append));
+            append_func = PyObject_GetAttr(list, _ZPS(append));
             if (append_func == NULL)
                 return -1;
             for (i = x; i < len; i++) {
@@ -7691,7 +7790,7 @@ load_additems(PickleState *state, UnpicklerObject *self)
     else {
         PyObject *add_func;
 
-        add_func = PyObject_GetAttr(set, &_Py_ID(add));
+        add_func = PyObject_GetAttr(set, _ZPS(add));
         if (add_func == NULL)
             return -1;
         for (i = mark; i < len; i++) {
@@ -7733,7 +7832,7 @@ load_build(PickleState *st, UnpicklerObject *self)
 
     inst = self->stack->data[Py_SIZE(self->stack) - 1];
 
-    if (_PyObject_LookupAttr(inst, &_Py_ID(__setstate__), &setstate) < 0) {
+    if (_PyObject_LookupAttr(inst, _ZPS(__setstate__), &setstate) < 0) {
         Py_DECREF(state);
         return -1;
     }
@@ -7774,7 +7873,7 @@ load_build(PickleState *st, UnpicklerObject *self)
             PyErr_SetString(st->UnpicklingError, "state is not a dictionary");
             goto error;
         }
-        dict = PyObject_GetAttr(inst, &_Py_ID(__dict__));
+        dict = PyObject_GetAttr(inst, _ZPS(__dict__));
         if (dict == NULL)
             goto error;
 
@@ -8795,7 +8894,7 @@ _pickle_Unpickler___init___impl(UnpicklerObject *self, PyObject *file,
 
     self->fix_imports = fix_imports;
 
-    if (init_method_ref((PyObject *)self, &_Py_ID(persistent_load),
+    if (init_method_ref((PyObject *)self, _ZPS(persistent_load),
                         &self->pers_func, &self->pers_func_self) < 0)
     {
         return -1;
@@ -9524,5 +9623,8 @@ static struct PyModuleDef _picklemodule = {
 PyMODINIT_FUNC
 PyInit__pickle(void)
 {
+    if (_init_static_strings() < 0)
+        return NULL;
+
     return PyModuleDef_Init(&_picklemodule);
 }
