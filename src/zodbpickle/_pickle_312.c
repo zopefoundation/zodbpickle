@@ -1175,10 +1175,20 @@ PyDoc_STRVAR(_pickle_Unpickler_noload__doc__,
 "any modules.\n");
 
 #define _PICKLE_UNPICKLER_NOLOAD_METHODDEF    \
-    {"noload", _PyCFunction_CAST(_pickle_Unpickler_noload), METH_NOARGS, _pickle_Unpickler_noload__doc__},
+    {"noload", _PyCFunction_CAST(_pickle_Unpickler_noload), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _pickle_Unpickler_noload__doc__},
 
 static PyObject *
-_pickle_Unpickler_noload(UnpicklerObject *self, PyObject *unused);
+_pickle_Unpickler_noload_impl(UnpicklerObject *self, PyTypeObject *cls);
+
+static PyObject *
+_pickle_Unpickler_noload(UnpicklerObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
+        PyErr_SetString(PyExc_TypeError, "load() takes no arguments");
+        return NULL;
+    }
+    return _pickle_Unpickler_noload_impl(self, cls);
+}
 /*
  *  END: Forward-declare restored 'Unpickler.noload' (FBO ZODB).
  */
@@ -8181,39 +8191,79 @@ _pickle_Unpickler_load_impl(UnpicklerObject *self, PyTypeObject *cls)
 
 /* BEGIN: No-load functions to support noload, used to find persistent refs. */
 static int
-noload_obj(UnpicklerObject *self)
+noload_obj(PickleState *state, UnpicklerObject *self)
 {
+    /* 'load_obj':
+     *
+     * - Pop 'args' from marker.
+     * - Pop 'cls' from marker - 1.
+     * - Instantiate 'obj' from 'cls, args'.
+     * - Push 'obj'.
+     *
+     * 'noload_obj'
+     *
+     * - Clear stack from 'marker+1', leaving 'cls' on top.
+     */
     int i;
 
-    if ((i = marker(self)) < 0) return -1;
+    if ((i = marker(state, self)) < 0) return -1;
     return Pdata_clear(self->stack, i+1);
 }
 
 
 static int
-noload_inst(UnpicklerObject *self)
+noload_inst(PickleState *state, UnpicklerObject *self)
 {
+    /* 'load_inst'
+     *
+     * - Read line from 'self' into 'module_name' (decode as ASCII).
+     * - Read line from 'self' into 'class_name' (decode as ASCII).
+     * - Call 'find_class(module_name, class_name)' to get 'class'.
+     * - Pop 'args' from marker.
+     * - Instantiate 'obj' from 'class' and 'args'
+     * - Push 'obj'.
+     *
+     * 'noload_inst'
+     *
+     * - Clear stack from marker up.
+     * - Consume two lines from the unpickler.
+     * - Push 'Py_None'.
+     */
     int i;
     char *s;
 
-    if ((i = marker(self)) < 0) return -1;
+    if ((i = marker(state, self)) < 0) return -1;
     Pdata_clear(self->stack, i);
-    if (_Unpickler_Readline(self, &s) < 0) return -1;
-    if (_Unpickler_Readline(self, &s) < 0) return -1;
+    if (_Unpickler_Readline(state, self, &s) < 0) return -1;
+    if (_Unpickler_Readline(state, self, &s) < 0) return -1;
     PDATA_APPEND(self->stack, Py_None, -1);
     return 0;
 }
 
 static int
-noload_newobj(UnpicklerObject *self)
+noload_newobj(PickleState *state, UnpicklerObject *self)
 {
+    /* 'load_newobj'
+     *
+     * - Pop 'args'.
+     * - Pop 'clsraw'.
+     * - Cast 'clsraw' -> 'cls'.
+     * - Call 'cls->tp_new(cls, args, NULL)' to get 'obj'
+     * - Push 'obj'.
+     *
+     * 'noload_inst'
+     *
+     * - Pop 'args'.
+     * - Pop 'cls'.
+     * - Push 'Py_None'.
+     */
     PyObject *obj;
 
-    PDATA_POP(self->stack, obj);        /* pop argtuple */
+    PDATA_POP(state, self->stack, obj);        /* pop argtuple */
     if (obj == NULL) return -1;
     Py_DECREF(obj);
 
-    PDATA_POP(self->stack, obj);        /* pop cls */
+    PDATA_POP(state, self->stack, obj);        /* pop cls */
     if (obj == NULL) return -1;
     Py_DECREF(obj);
 
@@ -8222,53 +8272,190 @@ noload_newobj(UnpicklerObject *self)
 }
 
 static int
-noload_global(UnpicklerObject *self)
+noload_newobj_ex(PickleState *state, UnpicklerObject *self)
 {
+    /* 'load_newobj_ex'
+     *
+     * - Pop 'kwargs'.
+     * - Pop 'args'.
+     * - Pop 'cls'.
+     * - Call 'cls->tp_new(cls, args, kwargs)' to get 'obj'.
+     * - Push 'obj'.
+     *
+     * 'noload_newobj_ex'
+     *
+     * - Pop three items.
+     * - Push 'Py_None'.
+     */
+    PyObject *obj;
+
+    PDATA_POP(state, self->stack, obj);        /* pop kwargs */
+    if (obj == NULL) return -1;
+    Py_DECREF(obj);
+
+    PDATA_POP(state, self->stack, obj);        /* pop args */
+    if (obj == NULL) return -1;
+    Py_DECREF(obj);
+
+    PDATA_POP(state, self->stack, obj);        /* pop cls */
+    if (obj == NULL) return -1;
+    Py_DECREF(obj);
+
+    PDATA_APPEND(self->stack, Py_None, -1);
+    return 0;
+}
+
+static int
+noload_global(PickleState *state, UnpicklerObject *self)
+{
+    /* 'load_global'
+     *
+     * - Read line from self into 'module_name' and decode as UTF8.
+     * - Read line from self into 'global_name' and decode as UTF8.
+     * - Call 'find_class(module_name, global_name)' to get 'global'
+     * - Push 'global' to the stack.
+     *
+     * 'noload_global'
+     *
+     * - Consume two lines from the unpickler.
+     * - Push 'Py_None'.
+     *
+     */
     char *s;
 
-    if (_Unpickler_Readline(self, &s) < 0) return -1;
-    if (_Unpickler_Readline(self, &s) < 0) return -1;
+    if (_Unpickler_Readline(state, self, &s) < 0) return -1;
+    if (_Unpickler_Readline(state, self, &s) < 0) return -1;
     PDATA_APPEND(self->stack, Py_None,-1);
     return 0;
 }
 
 static int
-noload_reduce(UnpicklerObject *self)
+noload_stack_global(PickleState *state, UnpicklerObject *self)
 {
+    /* 'load_stack_global'
+     *
+     * - Pop 'global_name' and ensure it is a 'str'.
+     * - Pop 'module_name' and ensure it is a 'str'.
+     * - Call 'find_class(module_name, global_name)' to get 'global'
+     * - Push 'global'.
+     *
+     * 'noload_stack_global'
+     *
+     * - Pop two items.
+     * - Push 'Py_None'.
+     */
+    PyObject *obj;
 
-    if (Py_SIZE(self->stack) < 2) return stack_underflow();
+    PDATA_POP(state, self->stack, obj);        /* pop 'global_name' */
+    if (obj == NULL) return -1;
+    Py_DECREF(obj);
+
+    PDATA_POP(state, self->stack, obj);        /* pop 'module_name' */
+    if (obj == NULL) return -1;
+    Py_DECREF(obj);
+
+    PDATA_APPEND(self->stack, Py_None, -1);
+    return 0;
+}
+
+static int
+noload_reduce(PickleState *state, UnpicklerObject *self)
+{
+    /* 'load_reduce'
+     *
+     * - Pop 'args' from the stack.
+     * - Pop 'callable' from the stack.
+     * - Call 'callable(args)' to get 'obj'
+     * - Push 'obj'.
+     *
+     * 'noload_reduce'
+     *
+     * - Clear two items from stack.
+     * - Push 'Py_None' on the stack.
+     */
+
+    if (Py_SIZE(self->stack) < 2)
+        return Pdata_stack_underflow(state, self->stack);
     Pdata_clear(self->stack, Py_SIZE(self->stack)-2);
     PDATA_APPEND(self->stack, Py_None,-1);
     return 0;
 }
 
 static int
-noload_build(UnpicklerObject *self) {
-
-  if (Py_SIZE(self->stack) < 1) return stack_underflow();
-  Pdata_clear(self->stack, Py_SIZE(self->stack)-1);
-  return 0;
+noload_build(PickleState *state, UnpicklerObject *self)
+{
+    /* 'load_build'
+     *
+     * - Pop 'state' from stack.
+     * - Peek 'inst' as TOS.
+     * - Call 'inst''s '__setstate', passing 'state'.
+     * - Leave 'inst' on stack.
+     *
+     * 'noload_build'
+     *
+     * - Clear 'state' from stack.
+     * - Leave 'inst' on stack (untouched).
+     *
+     */
+    if (Py_SIZE(self->stack) < 1)
+        return Pdata_stack_underflow(state, self->stack);
+    Pdata_clear(self->stack, Py_SIZE(self->stack)-1);
+    return 0;
 }
 
 static int
-noload_extension(UnpicklerObject *self, int nbytes)
+noload_extension(PickleState *state, UnpicklerObject *self, int nbytes)
 {
+    /* 'load_extension'
+     *
+     * - Read 'nbytes' from 'self' into 'codebytes'.
+     * - Convert 'codebytes' / 'nbytes' into 'code'.
+     * - Look up 'ob' via 'extension_cache[code]'; push and exit if found.
+     * - Look up 'module_name' / 'class_name' via 'inverted_registry[code]'.
+     * - Call 'find_class' to get 'ob', and add to 'extension_cache'.
+     * - Push 'ob'.
+     *
+     * 'noload_extension'
+     *
+     * - Read 'nbytes' from 'self'.
+     * - Push 'Py_None'.
+     */
     char *codebytes;
 
     assert(nbytes == 1 || nbytes == 2 || nbytes == 4);
-    if (_Unpickler_Read(self, &codebytes, nbytes) < 0) return -1;
+    if (_Unpickler_Read(self, state, &codebytes, nbytes) < 0) return -1;
     PDATA_APPEND(self->stack, Py_None, -1);
     return 0;
 }
 
 static int
-do_noload_append(UnpicklerObject *self, Py_ssize_t  x)
+do_noload_append(PickleState *state, UnpicklerObject *self, Py_ssize_t  x)
 {
+    /* 'do_append' (sic)
+     *
+     * - If x is size of stack, exit.
+     * - Set 'listob' from 'stack[x-1]'
+     * - If 'listobj' is an actual list, pop 'slice' from 'stack[x]',
+     *   call 'listobj.__setslice__(-1, -1, slice)', and exit.
+     * - If 'listobj.extend' is a method, pop 'slice' from 'stack[x]',
+     *   call 'listobj.extend(slice)', and exit.
+     * - If 'listobj.append' is a method, pop 'slice' from 'stack[x]',
+     *   loop over 'slice' calling 'listobj.append' with each item, and exit.
+     * - 'listob' is always left on top of stack.
+     *
+     * 'do_noload_append'
+     *
+     * - If x is size of stack, exit.
+     * - if 'stack[x-1]' is 'Py_None' (pushed by an earlier 'noload_' opcode)
+     *   clear the stack from 'x' upward and exit.
+     * - Call 'do_append'.
+     */
     PyObject *list = 0;
     Py_ssize_t len;
 
     len=Py_SIZE(self->stack);
-    if (!( len >= x && x > 0 ))  return stack_underflow();
+    if (!( len >= x && x > 0 ))
+        return Pdata_stack_underflow(state, self->stack);
     /* nothing to do */
     if (len==x) return 0;
 
@@ -8277,366 +8464,254 @@ do_noload_append(UnpicklerObject *self, Py_ssize_t  x)
         return Pdata_clear(self->stack, x);
     }
     else {
-        return do_append(self, x);
+        return do_append(state, self, x);
     }
 
 }
 
 static int
-noload_append(UnpicklerObject *self)
+noload_append(PickleState *state, UnpicklerObject *self)
 {
-    return do_noload_append(self, Py_SIZE(self->stack) - 1);
+    return do_noload_append(state, self, Py_SIZE(self->stack) - 1);
 }
 
 static int
-noload_appends(UnpicklerObject *self)
+noload_appends(PickleState *state, UnpicklerObject *self)
 {
-    return do_noload_append(self, marker(self));
+    return do_noload_append(state, self, marker(state, self));
 }
 
 static int
-do_noload_setitems(UnpicklerObject *self, Py_ssize_t x)
+do_noload_setitems(PickleState *state, UnpicklerObject *self, Py_ssize_t x)
 {
+    /* 'do_setitems' (sic)
+     *
+     * - If x is size of stack, exit.
+     * - Set 'dict' to 'stack[x-1]'
+     * - Check that stack from 'x' to end is an even length.
+     * - For each pair, '(k,v)' from 'x' to TOS, call 'dict.__setitem__(k, v)'.
+     * - Clear stack from 'x' upward, leaving 'dict' on top.
+     * - 'dict' is always left on top of stack.
+     *
+     * 'do_noload_setitems'
+     *
+     * - If x is size of stack, exit.
+     * - if 'stack[x-1]' is 'Py_None' (pushed by an earlier 'noload_' opcode)
+     *   clear the stack from 'x' upward and exit.
+     * - Call 'do_setitems'.
+     */
     PyObject *dict = 0;
     Py_ssize_t len;
 
-    if (!( (len=Py_SIZE(self->stack)) >= x
-           && x > 0 ))  return stack_underflow();
+    if (!( (len=Py_SIZE(self->stack)) >= x && x > 0 ))
+        return Pdata_stack_underflow(state, self->stack);
 
     dict=self->stack->data[x-1];
     if (dict == Py_None) {
         return Pdata_clear(self->stack, x);
     }
     else {
-        return do_setitems(self, x);
+        return do_setitems(state, self, x);
     }
 }
 
 static int
-noload_setitem(UnpicklerObject *self)
+noload_setitem(PickleState *state, UnpicklerObject *self)
 {
-    return do_noload_setitems(self, Py_SIZE(self->stack) - 2);
+    return do_noload_setitems(state, self, Py_SIZE(self->stack) - 2);
 }
 
 static int
-noload_setitems(UnpicklerObject *self)
+noload_setitems(PickleState *state, UnpicklerObject *self)
 {
-    return do_noload_setitems(self, marker(self));
+    return do_noload_setitems(state, self, marker(state, self));
 }
 
 static PyObject *
-noload(UnpicklerObject *self)
+noload(PickleState *st, UnpicklerObject *self)
 {
-    PyObject *err = 0, *val = 0;
-    char *s;
+    PyObject *value = NULL;
+    char *s = NULL;
 
     self->num_marks = 0;
-    Pdata_clear(self->stack, 0);
+    self->stack->mark_set = 0;
+    self->stack->fence = 0;
+    self->proto = 0;
+    if (Py_SIZE(self->stack))
+        Pdata_clear(self->stack, 0);
+
+    /* Convenient macros for the dispatch while-switch loop just below. */
+#undef OP
+#undef OP_ARG
+
+#define OP(opcode, load_func) \
+    case opcode: if (load_func(st, self) < 0) break; continue;
+
+#define OP_ARG(opcode, load_func, arg) \
+    case opcode: if (load_func(st, self, (arg)) < 0) break; continue;
 
     while (1) {
-        if (_Unpickler_Read(self, &s, 1) < 0)
-            break;
+        if (_Unpickler_Read(self, st, &s, 1) < 0) {
+            if (PyErr_ExceptionMatches(st->UnpicklingError)) {
+                PyErr_Format(PyExc_EOFError, "Ran out of input");
+            }
+            return NULL;
+        }
 
-        switch (s[0]) {
-        case NONE:
-            if (load_none(self) < 0)
-                break;
-            continue;
+        switch ((enum opcode)s[0]) {
+        OP(NONE, load_none)
+        OP(BININT, load_binint)
+        OP(BININT1, load_binint1)
+        OP(BININT2, load_binint2)
+        OP(INT, load_int)
+        OP(LONG, load_long)
+        OP_ARG(LONG1, load_counted_long, 1)
+        OP_ARG(LONG4, load_counted_long, 4)
+        OP(FLOAT, load_float)
+        OP(BINFLOAT, load_binfloat)
+        OP_ARG(SHORT_BINBYTES, load_counted_binbytes, 1)
+        OP_ARG(BINBYTES, load_counted_binbytes, 4)
+        OP_ARG(BINBYTES8, load_counted_binbytes, 8)
+        OP(BYTEARRAY8, load_counted_bytearray)
+        OP(NEXT_BUFFER, load_next_buffer)
+        OP(READONLY_BUFFER, load_readonly_buffer)
+        OP_ARG(SHORT_BINSTRING, load_counted_binstring, 1)
+        OP_ARG(BINSTRING, load_counted_binstring, 4)
+        OP(STRING, load_string)
+        OP(UNICODE, load_unicode)
+        OP_ARG(SHORT_BINUNICODE, load_counted_binunicode, 1)
+        OP_ARG(BINUNICODE, load_counted_binunicode, 4)
+        OP_ARG(BINUNICODE8, load_counted_binunicode, 8)
+        OP_ARG(EMPTY_TUPLE, load_counted_tuple, 0)
+        OP_ARG(TUPLE1, load_counted_tuple, 1)
+        OP_ARG(TUPLE2, load_counted_tuple, 2)
+        OP_ARG(TUPLE3, load_counted_tuple, 3)
+        OP(TUPLE, load_tuple)
+        OP(EMPTY_LIST, load_empty_list)
+        OP(LIST, load_list)
+        OP(EMPTY_DICT, load_empty_dict)
+        OP(DICT, load_dict)
+        OP(EMPTY_SET, load_empty_set)
+        OP(ADDITEMS, load_additems)
+        OP(FROZENSET, load_frozenset)
 
-        case BININT:
-            if (load_binint(self) < 0)
-                break;
-            continue;
+        /*
+        OP(OBJ, load_obj)
+        OP(INST, load_inst)
+        OP_ARG(NEWOBJ, load_newobj, 0)
+        OP_ARG(NEWOBJ_EX, load_newobj, 1)
+        OP(GLOBAL, load_global)
+        OP(STACK_GLOBAL, load_stack_global)
+        OP(APPEND, load_append)
+        OP(APPENDS, load_appends)
+        OP(BUILD, load_build)
+        */
+        OP(OBJ, noload_obj)
+        OP(INST, noload_inst)
+        OP(NEWOBJ, noload_newobj)
+        OP(NEWOBJ_EX, noload_newobj_ex)
+        OP(GLOBAL, noload_global)
+        OP(STACK_GLOBAL, noload_stack_global)
+        OP(APPEND, noload_append)
+        OP(APPENDS, noload_appends)
+        OP(BUILD, noload_build)
 
-        case BININT1:
-            if (load_binint1(self) < 0)
-                break;
-            continue;
+        OP(DUP, load_dup)
+        OP(BINGET, load_binget)
+        OP(LONG_BINGET, load_long_binget)
+        OP(GET, load_get)
+        OP(MARK, load_mark)
+        OP(BINPUT, load_binput)
+        OP(LONG_BINPUT, load_long_binput)
+        OP(PUT, load_put)
+        OP(MEMOIZE, load_memoize)
+        OP(POP, load_pop)
+        OP(POP_MARK, load_pop_mark)
 
-        case BININT2:
-            if (load_binint2(self) < 0)
-                break;
-            continue;
+        /*
+        OP(SETITEM, load_setitem)
+        OP(SETITEMS, load_setitems)
+         */
+        OP(SETITEM, noload_setitem)
+        OP(SETITEMS, noload_setitems)
 
-        case INT:
-            if (load_int(self) < 0)
-                break;
-            continue;
+        OP(PERSID, load_persid)
+        OP(BINPERSID, load_binpersid)
 
-        case LONG:
-            if (load_long(self) < 0)
-                break;
-            continue;
+        /*
+        OP(REDUCE, load_reduce)
+         */
+        OP(REDUCE, noload_reduce)
 
-        case LONG1:
-            if (load_counted_long(self, 1) < 0)
-                break;
-            continue;
+        OP(PROTO, load_proto)
+        OP(FRAME, load_frame)
 
-        case LONG4:
-            if (load_counted_long(self, 4) < 0)
-                break;
-            continue;
+        /*
+        OP_ARG(EXT1, load_extension, 1)
+        OP_ARG(EXT2, load_extension, 2)
+        OP_ARG(EXT4, load_extension, 4)
+         */
+        OP_ARG(EXT1, noload_extension, 1)
+        OP_ARG(EXT2, noload_extension, 2)
+        OP_ARG(EXT4, noload_extension, 4)
 
-        case FLOAT:
-            if (load_float(self) < 0)
-                break;
-            continue;
-
-        case BINFLOAT:
-            if (load_binfloat(self) < 0)
-                break;
-            continue;
-
-        case BINSTRING:
-            if (load_binstring(self) < 0)
-                break;
-            continue;
-
-        case SHORT_BINSTRING:
-            if (load_short_binstring(self) < 0)
-                break;
-            continue;
-
-        case STRING:
-            if (load_string(self) < 0)
-                break;
-            continue;
-
-        case UNICODE:
-            if (load_unicode(self) < 0)
-                break;
-            continue;
-
-        case BINUNICODE:
-            if (load_binunicode(self) < 0)
-                break;
-            continue;
-
-        case EMPTY_TUPLE:
-            if (load_counted_tuple(self, 0) < 0)
-                break;
-            continue;
-
-        case TUPLE1:
-            if (load_counted_tuple(self, 1) < 0)
-                break;
-            continue;
-
-        case TUPLE2:
-            if (load_counted_tuple(self, 2) < 0)
-                break;
-            continue;
-
-        case TUPLE3:
-            if (load_counted_tuple(self, 3) < 0)
-                break;
-            continue;
-
-        case TUPLE:
-            if (load_tuple(self) < 0)
-                break;
-            continue;
-
-        case EMPTY_LIST:
-            if (load_empty_list(self) < 0)
-                break;
-            continue;
-
-        case LIST:
-            if (load_list(self) < 0)
-                break;
-            continue;
-
-        case EMPTY_DICT:
-            if (load_empty_dict(self) < 0)
-                break;
-            continue;
-
-        case DICT:
-            if (load_dict(self) < 0)
-                break;
-            continue;
-
-        case OBJ:
-            if (noload_obj(self) < 0)
-                break;
-            continue;
-
-        case INST:
-            if (noload_inst(self) < 0)
-                break;
-            continue;
-
-        case NEWOBJ:
-            if (noload_newobj(self) < 0)
-                break;
-            continue;
-
-        case GLOBAL:
-            if (noload_global(self) < 0)
-                break;
-            continue;
-
-        case APPEND:
-            if (noload_append(self) < 0)
-                break;
-            continue;
-
-        case APPENDS:
-            if (noload_appends(self) < 0)
-                break;
-            continue;
-
-        case BUILD:
-            if (noload_build(self) < 0)
-                break;
-            continue;
-
-        case DUP:
-            if (load_dup(self) < 0)
-                break;
-            continue;
-
-        case BINGET:
-            if (load_binget(self) < 0)
-                break;
-            continue;
-
-        case LONG_BINGET:
-            if (load_long_binget(self) < 0)
-                break;
-            continue;
-
-        case GET:
-            if (load_get(self) < 0)
-                break;
-            continue;
-
-        case EXT1:
-            if (noload_extension(self, 1) < 0)
-                break;
-            continue;
-
-        case EXT2:
-            if (noload_extension(self, 2) < 0)
-                break;
-            continue;
-
-        case EXT4:
-            if (noload_extension(self, 4) < 0)
-                break;
-            continue;
-
-        case MARK:
-            if (load_mark(self) < 0)
-                break;
-            continue;
-
-        case BINPUT:
-            if (load_binput(self) < 0)
-                break;
-            continue;
-
-        case LONG_BINPUT:
-            if (load_long_binput(self) < 0)
-                break;
-            continue;
-
-        case PUT:
-            if (load_put(self) < 0)
-                break;
-            continue;
-
-        case POP:
-            if (load_pop(self) < 0)
-                break;
-            continue;
-
-        case POP_MARK:
-            if (load_pop_mark(self) < 0)
-                break;
-            continue;
-
-        case SETITEM:
-            if (noload_setitem(self) < 0)
-                break;
-            continue;
-
-        case SETITEMS:
-            if (noload_setitems(self) < 0)
-                break;
-            continue;
+        OP_ARG(NEWTRUE, load_bool, Py_True)
+        OP_ARG(NEWFALSE, load_bool, Py_False)
 
         case STOP:
             break;
 
-        case PERSID:
-            if (load_persid(self) < 0)
-                break;
-            continue;
-
-        case BINPERSID:
-            if (load_binpersid(self) < 0)
-                break;
-            continue;
-
-        case REDUCE:
-            if (noload_reduce(self) < 0)
-                break;
-            continue;
-
-        case PROTO:
-            if (load_proto(self) < 0)
-                break;
-            continue;
-
-        case NEWTRUE:
-            if (load_bool(self, Py_True) < 0)
-                break;
-            continue;
-
-        case NEWFALSE:
-            if (load_bool(self, Py_False) < 0)
-                break;
-            continue;
-
-        case BINBYTES:
-            if (load_binbytes(self) < 0)
-                break;
-            continue;
-
-        case SHORT_BINBYTES:
-            if (load_short_binbytes(self) < 0)
-                break;
-            continue;
-
         default:
-            PyErr_Format(UnpicklingError,
-                         "invalid load key, '%c'.", s[0]);
-            return NULL;
+            {
+                unsigned char c = (unsigned char) *s;
+                if (0x20 <= c && c <= 0x7e && c != '\'' && c != '\\') {
+                    PyErr_Format(st->UnpicklingError,
+                                 "invalid load key, '%c'.", c);
+                }
+                else {
+                    PyErr_Format(st->UnpicklingError,
+                                 "invalid load key, '\\x%02x'.", c);
+                }
+                return NULL;
+            }
         }
 
-        break;
+        break;                  /* and we are done! */
     }
 
-    if ((err = PyErr_Occurred())) {
-        if (err == PyExc_EOFError) {
-            PyErr_SetNone(PyExc_EOFError);
-        }
+    if (PyErr_Occurred()) {
         return NULL;
     }
 
-    PDATA_POP(self->stack, val);
-    return val;
+    if (_Unpickler_SkipConsumed(self) < 0)
+        return NULL;
+
+    PDATA_POP(st, self->stack, value);
+    return value;
+
 }
 /* END: No-load functions to support noload, used to find persistent refs. */
 
 /* BEGIN: 'Unpickler.noload' implementation */
 static PyObject *
-_pickle_Unpickler_noload(UnpicklerObject *self, PyObject *unused)
+_pickle_Unpickler_noload_impl(UnpicklerObject *self, PyTypeObject *cls)
 {
-    return noload(self);
+    UnpicklerObject *unpickler = (UnpicklerObject*)self;
+
+    PickleState *state = _Pickle_GetStateByClass(cls);
+
+    /* Check whether the Unpickler was initialized correctly. This prevents
+       segfaulting if a subclass overridden __init__ with a function that does
+       not call Unpickler.__init__(). Here, we simply ensure that self->read
+       is not NULL. */
+    if (unpickler->read == NULL) {
+        PyErr_Format(state->UnpicklingError,
+                     "Unpickler.__init__() was not called by %s.__init__()",
+                     Py_TYPE(unpickler)->tp_name);
+        return NULL;
+    }
+
+    return noload(state, self);
 }
 /* BEGIN: 'Unpickler.noload' implementation */
 
