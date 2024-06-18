@@ -19,7 +19,6 @@
 
 #include "Python.h"
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
-#include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "structmember.h"         // PyMemberDef
 
@@ -317,7 +316,7 @@ static struct PyModuleDef _picklemodule;
 static inline PickleState *
 _Pickle_GetState(PyObject *module)
 {
-    void *state = _PyModule_GetState(module);
+    void *state = PyModule_GetState(module);
     assert(state != NULL);
     return (PickleState *)state;
 }
@@ -325,7 +324,7 @@ _Pickle_GetState(PyObject *module)
 static inline PickleState *
 _Pickle_GetStateByClass(PyTypeObject *cls)
 {
-    void *state = _PyType_GetModuleState(cls);
+    void *state = PyType_GetModuleState(cls);
     assert(state != NULL);
     return (PickleState *)state;
 }
