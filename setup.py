@@ -14,6 +14,7 @@
 """Setup"""
 import os
 import platform
+import sys
 
 from setuptools import Extension
 from setuptools import find_packages
@@ -29,7 +30,9 @@ def read(fname):
 
 
 README = read('README.rst') + '\n\n' + read('CHANGES.rst')
-EXT = 'src/zodbpickle/_pickle_33.c'
+
+EXT_38 = 'src/zodbpickle/_pickle_38.c'
+EXT_312 = 'src/zodbpickle/_pickle_312.c'
 
 # PyPy and jython won't build the extension.
 py_impl = getattr(platform, 'python_implementation', lambda: None)
@@ -38,9 +41,14 @@ is_jython = py_impl() == 'Jython'
 is_pure = int(os.environ.get('PURE_PYTHON', '0'))
 if is_pypy or is_jython:
     ext_modules = []
+elif sys.version_info >= (3, 12):
+    ext_modules = [
+        Extension(name='zodbpickle._pickle', sources=[EXT_312]),
+    ]
 else:
-    ext_modules = [Extension(name='zodbpickle._pickle',
-                             sources=[EXT])]
+    ext_modules = [
+        Extension(name='zodbpickle._pickle', sources=[EXT_38]),
+    ]
 
 
 setup(
