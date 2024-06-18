@@ -18,7 +18,6 @@
 #define Py_BUILD_CORE_MODULE
 
 #include "Python.h"
-#include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "structmember.h"         // PyMemberDef
 
@@ -4301,21 +4300,21 @@ save_list(PickleState *state, PicklerObject *self, PyObject *obj)
     if (len != 0) {
         /* Materialize the list elements. */
         if (PyList_CheckExact(obj) && self->proto > 0) {
-            if (_Py_EnterRecursiveCall(" while pickling an object"))
+            if (Py_EnterRecursiveCall(" while pickling an object"))
                 goto error;
             status = batch_list_exact(state, self, obj);
-            _Py_LeaveRecursiveCall();
+            Py_LeaveRecursiveCall();
         } else {
             PyObject *iter = PyObject_GetIter(obj);
             if (iter == NULL)
                 goto error;
 
-            if (_Py_EnterRecursiveCall(" while pickling an object")) {
+            if (Py_EnterRecursiveCall(" while pickling an object")) {
                 Py_DECREF(iter);
                 goto error;
             }
             status = batch_list(state, self, iter);
-            _Py_LeaveRecursiveCall();
+            Py_LeaveRecursiveCall();
             Py_DECREF(iter);
         }
     }
@@ -4576,10 +4575,10 @@ save_dict(PickleState *state, PicklerObject *self, PyObject *obj)
         if (PyDict_CheckExact(obj) && self->proto > 0) {
             /* We can take certain shortcuts if we know this is a dict and
                not a dict subclass. */
-            if (_Py_EnterRecursiveCall(" while pickling an object"))
+            if (Py_EnterRecursiveCall(" while pickling an object"))
                 goto error;
             status = batch_dict_exact(state, self, obj);
-            _Py_LeaveRecursiveCall();
+            Py_LeaveRecursiveCall();
         } else {
             items = PyObject_CallMethodNoArgs(obj, _ZPS(items));
             if (items == NULL)
@@ -4588,12 +4587,12 @@ save_dict(PickleState *state, PicklerObject *self, PyObject *obj)
             Py_DECREF(items);
             if (iter == NULL)
                 goto error;
-            if (_Py_EnterRecursiveCall(" while pickling an object")) {
+            if (Py_EnterRecursiveCall(" while pickling an object")) {
                 Py_DECREF(iter);
                 goto error;
             }
             status = batch_dict(state, self, iter);
-            _Py_LeaveRecursiveCall();
+            Py_LeaveRecursiveCall();
             Py_DECREF(iter);
         }
     }
@@ -5543,9 +5542,9 @@ save(PickleState *st, PicklerObject *self, PyObject *obj, int pers_save)
         return save_unicode(st, self, obj);
     }
 
-    /* We're only calling _Py_EnterRecursiveCall here so that atomic
+    /* We're only calling Py_EnterRecursiveCall here so that atomic
        types above are pickled faster. */
-    if (_Py_EnterRecursiveCall(" while pickling an object")) {
+    if (Py_EnterRecursiveCall(" while pickling an object")) {
         return -1;
     }
 
@@ -5698,7 +5697,7 @@ save(PickleState *st, PicklerObject *self, PyObject *obj, int pers_save)
     }
   done:
 
-    _Py_LeaveRecursiveCall();
+    Py_LeaveRecursiveCall();
     Py_XDECREF(reduce_func);
     Py_XDECREF(reduce_value);
 
