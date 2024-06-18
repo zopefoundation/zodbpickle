@@ -18,7 +18,6 @@
 #define Py_BUILD_CORE_MODULE
 
 #include "Python.h"
-#include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "structmember.h"         // PyMemberDef
 
 #include <stdlib.h>               // strtol()
@@ -3158,7 +3157,7 @@ whichmodule(PyObject *global, PyObject *dotted_path)
     assert(module_name == NULL);
 
     /* Fallback on walking sys.modules */
-    PyThreadState *tstate = _PyThreadState_GET();
+    PyThreadState *tstate = PyThreadState_GET();
     modules = _PySys_GetAttr(tstate, _ZPS(modules));
     if (modules == NULL) {
         PyErr_SetString(PyExc_RuntimeError, "unable to get sys.modules");
