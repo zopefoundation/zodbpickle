@@ -4,7 +4,7 @@
  * and as an extension module (Py_BUILD_CORE_MODULE define) on other
  * platforms.
  *
- * FORKED FROM Python 3.18.19 stdlib:
+ * FORKED FROM Python 3.8.19 stdlib:
  *
  * - 'Modules/_pickle.c'
  * - 'Modules/clinic/_pickle.c.h'
