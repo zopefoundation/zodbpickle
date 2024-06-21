@@ -9,7 +9,6 @@ if _is_pypy:
     function_type = types.FunctionType
 else:
     function_type = types.BuiltinFunctionType
-del sys
 del _is_pypy
 
 
@@ -41,7 +40,12 @@ class TestImportability(unittest.TestCase):
 
 
 def test_suite():
-    from .pickle_3_tests import test_suite
+
+    if sys.hexversion >= 0x030c0000:
+        from .pickle_312_tests import test_suite
+    else:
+        from .pickle_38_tests import test_suite
+
     return unittest.TestSuite([
         test_suite(),
         unittest.defaultTestLoader.loadTestsFromName(__name__),
