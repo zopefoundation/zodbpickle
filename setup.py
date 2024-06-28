@@ -36,7 +36,7 @@ py_impl = getattr(platform, 'python_implementation', lambda: None)
 is_pypy = py_impl() == 'PyPy'
 is_jython = py_impl() == 'Jython'
 is_pure = int(os.environ.get('PURE_PYTHON', '0'))
-if is_pypy or is_jython:
+if is_pure or is_pypy or is_jython:
     ext_modules = []
 else:
     ext_modules = [Extension(name='zodbpickle._pickle',

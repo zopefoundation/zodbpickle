@@ -17,6 +17,7 @@ So this is a rare case where 'import *' is exactly the right thing to do.
 
 
 import sys
+import warnings
 
 from .pickle_3 import *
 
@@ -26,4 +27,7 @@ del sys.modules['zodbpickle.pickle_3']
 
 # isort: off
 # also make sure that we really have the fast version
-from ._pickle import *  # noqa: E402 module level import not at top of file
+if is_pure:  # noqa: F405
+    warnings.warn("fastpickle imported under 'PURE_PYTHON' environment")
+else:
+    from ._pickle import *  # noqa: E402 module level import not at top of file

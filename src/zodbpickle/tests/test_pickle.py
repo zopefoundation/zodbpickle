@@ -2,15 +2,17 @@ import sys
 import types
 import unittest
 
+from . import _is_pure
 from . import _is_pypy
 
 
-if _is_pypy:
+if _is_pure or _is_pypy:
     function_type = types.FunctionType
 else:
     function_type = types.BuiltinFunctionType
 del sys
 del _is_pypy
+del _is_pure
 
 
 class TestImportability(unittest.TestCase):

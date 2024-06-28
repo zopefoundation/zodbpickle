@@ -26,6 +26,7 @@ Misc variables:
 import codecs
 import io
 import marshal
+import os
 import re
 import struct
 import sys
@@ -41,6 +42,8 @@ import _compat_pickle
 
 __all__ = ["PickleError", "PicklingError", "UnpicklingError", "Pickler",
            "Unpickler", "dump", "dumps", "load", "loads"]
+
+is_pure = int(os.environ.get('PURE_PYTHON', '0'))
 
 # Shortcut for use in isinstance testing
 bytes_types = (bytes, bytearray)
@@ -1506,11 +1509,15 @@ def _loads(s, *, fix_imports=True, encoding="ASCII", errors="strict"):
 
 
 # Use the faster _pickle if possible
-try:
-    from zodbpickle._pickle import *
-except ImportError:
+if is_pure:
     Pickler, Unpickler = _Pickler, _Unpickler
     dump, dumps, load, loads = _dump, _dumps, _load, _loads
+else:
+    try:
+        from zodbpickle._pickle import *
+    except ImportError:
+        Pickler, Unpickler = _Pickler, _Unpickler
+        dump, dumps, load, loads = _dump, _dumps, _load, _loads
 
 # Doctest
 
