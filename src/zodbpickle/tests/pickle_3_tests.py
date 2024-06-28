@@ -18,10 +18,14 @@ from .pickletester_3 import AbstractPickleTests
 from .pickletester_3 import BigmemPickleTests
 
 
-try:
-    from zodbpickle import _pickle
-    has_c_implementation = not _is_pypy and not _is_pure
-except ImportError:
+if not _is_pypy and not _is_pure:
+    try:
+        from zodbpickle import _pickle
+    except ImportError:
+        has_c_implementation = False
+    else:
+        has_c_implementation = True
+else:
     has_c_implementation = False
 
 
