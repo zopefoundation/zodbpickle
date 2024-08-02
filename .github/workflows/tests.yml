@@ -384,7 +384,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: ["3.9"]
+        python-version: ["3.11"]
         os: [ubuntu-latest]
 
     steps:
@@ -452,7 +452,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: ["3.9"]
+        python-version: ["3.11"]
         os: [ubuntu-latest]
 
     steps:
@@ -520,7 +520,7 @@ jobs:
     # We use a regular Python matrix entry to share as much code as possible.
     strategy:
       matrix:
-        python-version: ["3.9"]
+        python-version: ["3.11"]
         image: [manylinux2014_x86_64, manylinux2014_i686, manylinux2014_aarch64]
 
     steps:
@@ -601,6 +601,8 @@ jobs:
           name: manylinux_${{ matrix.image }}_wheels.zip
       - name: Restore pip cache permissions
         run: sudo chown -R $(whoami) ${{ steps.pip-cache-default.outputs.dir }}
+      - name: Prevent publishing wheels for unreleased Python versions
+        run: VER=$(echo '3.13' | tr -d .) && ls -al wheelhouse && sudo rm -f wheelhouse/*-cp${VER}*.whl && ls -al wheelhouse
       - name: Publish package to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         if: >
