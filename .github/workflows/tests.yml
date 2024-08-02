@@ -602,7 +602,7 @@ jobs:
       - name: Restore pip cache permissions
         run: sudo chown -R $(whoami) ${{ steps.pip-cache-default.outputs.dir }}
       - name: Prevent publishing wheels for unreleased Python versions
-        run: VER=$(echo '3.13' | tr -d .) && rm -f wheelhouse/*-cp${VER}*.whl
+        run: VER=$(echo '3.13' | tr -d .) && rm -f /io/wheelhouse/*-cp${VER}*.whl
       - name: Publish package to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         if: >
