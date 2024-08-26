@@ -170,8 +170,8 @@ UP_TO_NEWLINE = -1
 
 # Represents the number of bytes consumed by a two-argument opcode where
 # the first argument gives the number of bytes in the second argument.
-TAKEN_FROM_ARGUMENT1  = -2   # num bytes is 1-byte unsigned int
-TAKEN_FROM_ARGUMENT4  = -3   # num bytes is 4-byte signed little-endian int
+TAKEN_FROM_ARGUMENT1 = -2   # num bytes is 1-byte unsigned int
+TAKEN_FROM_ARGUMENT4 = -3   # num bytes is 4-byte signed little-endian int
 TAKEN_FROM_ARGUMENT4U = -4   # num bytes is 4-byte unsigned little-endian int
 
 
@@ -379,7 +379,7 @@ def read_stringnl_noescape_pair(f):
     'Queue Empty'
     """
 
-    return "{} {}".format(read_stringnl_noescape(f), read_stringnl_noescape(f))
+    return f"{read_stringnl_noescape(f)} {read_stringnl_noescape(f)}"
 
 
 stringnl_noescape_pair = ArgumentDescriptor(
@@ -1930,7 +1930,7 @@ def assure_pickle_consistency(verbose=False):
     if copy:
         msg = ["we appear to have pickle opcodes that pickle.py doesn't have:"]
         for code, d in copy.items():
-            msg.append("    name {!r} with code {!r}".format(d.name, code))
+            msg.append(f"    name {d.name!r} with code {code!r}")
         raise ValueError("\n".join(msg))
 
 

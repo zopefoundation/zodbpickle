@@ -2,10 +2,9 @@
 # https://github.com/zopefoundation/meta/tree/master/config/c-code
 [meta]
 template = "c-code"
-commit-id = "c412f00f"
+commit-id = "9e2b2911"
 
 [python]
-with-appveyor = true
 with-windows = true
 with-pypy = true
 with-sphinx-doctests = false
@@ -40,14 +39,4 @@ additional-rules = [
     "include *.sh",
     "recursive-include patches *.diff",
     "recursive-include src *.c",
-    ]
-
-[appveyor]
-global-env-vars = [
-    "# Currently the builds use @mgedmin's Appveyor account.  The PyPI token belongs",
-    "# to zope.wheelbuilder, which is managed by @mgedmin and @dataflake.",
-    "global:",
-    "  TWINE_USERNAME: __token__",
-    "  TWINE_PASSWORD:",
-    "    secure: aoZC/+rvJKg8B5GMGIxd1YzSugYzr1vrR0NzX+NBCGjc64YaTc/K4kIRj4eqD0p11Nhl2aGUgHF6qMUcHIAAUybaKU/3Kyp+BwxU5eGX/NZv9S6AsBGVyiHD4oourkczzeB/HGrICEm9TeTcR3lc70SrpxSpYwnDyLv8CUpk0D/iUgQyFT/BERDsBTJEPI3HV/ngmMQrj9g2H7PkfF0yR5ss8AclYcIdWOKTvTapcGLerlK+mFm5muturTCT2njYMP2cv+NV3+Ih6OxSpQlWjw==",
     ]
