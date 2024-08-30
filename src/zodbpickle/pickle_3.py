@@ -116,6 +116,7 @@ except ImportError:
 # here is in kind-of alphabetical order of 1-character pickle code.
 # pickletools groups them by purpose.
 
+# autopep8: off
 MARK           = b'('   # push special markobject on stack
 STOP           = b'.'   # every pickle ends with STOP
 POP            = b'0'   # discard topmost stack item
@@ -182,6 +183,7 @@ _tuplesize2code = [EMPTY_TUPLE, TUPLE1, TUPLE2, TUPLE3]
 
 BINBYTES       = b'B'   # push bytes; counted binary string argument
 SHORT_BINBYTES = b'C'   #  "     "   ;    "      "       "      " < 256 bytes
+# autopep8: on
 
 __all__.extend([x for x in dir() if re.match("[A-Z][A-Z0-9_]+$", x)])
 
