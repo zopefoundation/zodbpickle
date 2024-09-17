@@ -5,6 +5,8 @@
 4.1 (unreleased)
 ================
 
+- Add final support for Python 3.13.
+
 
 4.0 (2024-05-30)
 ================
