@@ -5,6 +5,7 @@
 4.2 (unreleased)
 ================
 
+- Fix ``NameError`` which occurred when importing ``zodbpickle.fastpickle``.
 
 4.1 (2024-09-17)
 ================
