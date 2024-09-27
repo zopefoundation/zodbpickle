@@ -41,7 +41,7 @@ import _compat_pickle
 
 
 __all__ = ["PickleError", "PicklingError", "UnpicklingError", "Pickler",
-           "Unpickler", "dump", "dumps", "load", "loads"]
+           "Unpickler", "dump", "dumps", "load", "loads", "is_pure"]
 
 is_pure = int(os.environ.get('PURE_PYTHON', '0'))
 
