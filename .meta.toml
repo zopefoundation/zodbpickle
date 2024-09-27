@@ -2,7 +2,7 @@
 # https://github.com/zopefoundation/meta/tree/master/config/c-code
 [meta]
 template = "c-code"
-commit-id = "32ea0a11"
+commit-id = "85622de1"
 
 [python]
 with-windows = true
@@ -37,6 +37,8 @@ additional-config = [
 additional-rules = [
     "include *.yaml",
     "include *.sh",
+    "recursive-include docs *.bat",
     "recursive-include patches *.diff",
+    "recursive-include patches *.patch",
     "recursive-include src *.c",
     ]
