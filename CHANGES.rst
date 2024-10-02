@@ -2,8 +2,8 @@
  Changelog
 ===========
 
-4.2 (unreleased)
-================
+4.1.1 (2024-10-02)
+==================
 
 - Fix ``NameError`` which occurred when importing ``zodbpickle.fastpickle``.
 
