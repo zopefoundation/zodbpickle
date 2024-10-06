@@ -5,7 +5,7 @@
 4.1.2 (unreleased)
 ==================
 
-- Nothing changed yet.
+- Remove unused ``setuptools`` install requirement.
 
 
 4.1.1 (2024-10-02)

@@ -83,9 +83,6 @@ setup(
         'test': ['zope.testrunner'],
         'docs': ['Sphinx'],
     },
-    install_requires=[
-        'setuptools',
-    ],
     include_package_data=True,
     zip_safe=False,
 )
