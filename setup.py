@@ -45,12 +45,12 @@ else:
 
 setup(
     name='zodbpickle',
-    version='4.1.2.dev0',
+    version='4.2.dev0',
     description='Fork of Python 3 pickle module.',
     author='Python and Zope Foundation',
     author_email='zodb-dev@zope.dev',
     url='https://github.com/zopefoundation/zodbpickle',
-    license='PSFL 2 and ZPL 2.1',
+    license='PSFL 2 and ZPL-2.1',
     long_description=README,
     classifiers=[
         'Development Status :: 5 - Production/Stable',
@@ -58,7 +58,6 @@ setup(
         'License :: OSI Approved :: Python Software Foundation License',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
@@ -78,7 +77,7 @@ setup(
     packages=find_packages('src'),
     package_dir={'': 'src'},
     ext_modules=ext_modules,
-    python_requires='>=3.8',
+    python_requires='>=3.9',
     extras_require={
         'test': ['zope.testrunner'],
         'docs': ['Sphinx'],

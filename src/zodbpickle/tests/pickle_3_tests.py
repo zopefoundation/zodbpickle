@@ -21,7 +21,7 @@ from .pickletester_3 import BigmemPickleTests
 if not _is_pypy and not _is_pure:
     try:
         from zodbpickle import _pickle
-    except ImportError:
+    except ModuleNotFoundError:
         has_c_implementation = False
     else:
         has_c_implementation = True

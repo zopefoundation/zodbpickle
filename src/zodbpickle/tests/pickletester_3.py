@@ -23,7 +23,7 @@ from . import _is_pypy
 
 try:
     from test.support import no_tracing
-except ImportError:
+except ModuleNotFoundError:
     from functools import wraps
 
     def no_tracing(func):

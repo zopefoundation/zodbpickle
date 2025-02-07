@@ -2,8 +2,12 @@
  Changelog
 ===========
 
-4.1.2 (unreleased)
-==================
+4.2 (unreleased)
+================
+
+- Drop support for Python 3.8.
+
+- Add preliminary support for Python 3.14 as of 3.14a4.
 
 - Remove unused ``setuptools`` install requirement.
 
