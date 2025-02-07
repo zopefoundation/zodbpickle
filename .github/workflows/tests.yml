@@ -30,7 +30,7 @@
 # native support. It works, but is slow.
 #
 # Another major downside: You can't just re-run the job for one part
-# of the matrix. So if there's a transient test failure that hit, say, 3.8,
+# of the matrix. So if there's a transient test failure that hit, say, 3.11,
 # to get a clean run every version of Python runs again. That's bad.
 # https://github.community/t/ability-to-rerun-just-a-single-job-in-a-workflow/17234/65
 
@@ -97,12 +97,12 @@ jobs:
       matrix:
         python-version:
           - "pypy-3.10"
-          - "3.8"
           - "3.9"
           - "3.10"
           - "3.11"
           - "3.12"
           - "3.13"
+          - "3.14"
         os: [ubuntu-latest, macos-latest, windows-latest]
         exclude:
           - os: macos-latest
@@ -111,6 +111,8 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
@@ -152,10 +154,16 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
 
-      - name: Install Build Dependencies
+      - name: Install Build Dependencies (3.14)
+        if: matrix.python-version == '3.14'
         run: |
           pip install -U pip
-          pip install -U "setuptools <74" wheel twine
+          pip install -U "setuptools <= 75.6.0" wheel twine
+      - name: Install Build Dependencies
+        if: matrix.python-version != '3.14'
+        run: |
+          pip install -U pip
+          pip install -U "setuptools <= 75.6.0" wheel twine
 
       - name: Build zodbpickle (macOS x86_64)
         if: >
@@ -193,7 +201,15 @@ jobs:
           python setup.py build_ext -i
           python setup.py bdist_wheel
 
+      - name: Install zodbpickle and dependencies (3.14)
+        if: matrix.python-version == '3.14'
+        run: |
+          # Install to collect dependencies into the (pip) cache.
+          # Use "--pre" here because dependencies with support for this future
+          # Python release may only be available as pre-releases
+          pip install --pre .[test]
       - name: Install zodbpickle and dependencies
+        if: matrix.python-version != '3.14'
         run: |
           # Install to collect dependencies into the (pip) cache.
           pip install .[test]
@@ -236,6 +252,7 @@ jobs:
           && startsWith(github.ref, 'refs/tags')
           && !startsWith(runner.os, 'Linux')
           && !startsWith(matrix.python-version, 'pypy')
+          && !startsWith(matrix.python-version, '3.14')
         env:
           TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
         run: |
@@ -249,12 +266,12 @@ jobs:
       matrix:
         python-version:
           - "pypy-3.10"
-          - "3.8"
           - "3.9"
           - "3.10"
           - "3.11"
           - "3.12"
           - "3.13"
+          - "3.14"
         os: [ubuntu-latest, macos-latest, windows-latest]
         exclude:
           - os: macos-latest
@@ -263,6 +280,8 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
@@ -309,9 +328,24 @@ jobs:
         with:
           name: zodbpickle-${{ runner.os }}-${{ matrix.python-version }}.whl
           path: dist/
-      - name: Install zodbpickle
+      - name: Install zodbpickle ${{ matrix.python-version }}
+        if: matrix.python-version == '3.14'
         run: |
-          pip install -U wheel "setuptools <74"
+          pip install -U wheel "setuptools <= 75.6.0"
+          # coverage might have a wheel on PyPI for a future python version which is
+          # not ABI compatible with the current one, so build it from sdist:
+          pip install -U --no-binary :all: coverage[toml]
+          # Unzip into src/ so that testrunner can find the .so files
+          # when we ask it to load tests from that directory. This
+          # might also save some build time?
+          unzip -n dist/zodbpickle-*whl -d src
+          # Use "--pre" here because dependencies with support for this future
+          # Python release may only be available as pre-releases
+          pip install --pre -e .[test]
+      - name: Install zodbpickle
+        if: matrix.python-version != '3.14'
+        run: |
+          pip install -U wheel "setuptools <= 75.6.0"
           pip install -U coverage[toml]
           pip install -U 'cffi; platform_python_implementation == "CPython"'
           # Unzip into src/ so that testrunner can find the .so files
@@ -360,6 +394,8 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
@@ -429,6 +465,8 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
@@ -504,6 +542,8 @@ jobs:
           name: manylinux_${{ matrix.image }}_wheels.zip
       - name: Restore pip cache permissions
         run: sudo chown -R $(whoami) ${{ steps.pip-cache-default.outputs.dir }}
+      - name: Prevent publishing wheels for unreleased Python versions
+        run: VER=$(echo '3.14' | tr -d .) && ls -al wheelhouse && sudo rm -f wheelhouse/*-cp${VER}*.whl && ls -al wheelhouse
       - name: Publish package to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         if: >
