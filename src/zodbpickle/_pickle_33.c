@@ -64,13 +64,6 @@ static int _PyObject_HasAttrId(PyObject* obj, void* id)
     return result;
 }
 
-/*
-* This declaration was moved to the internal API only accessible for building
-* CPython itself. But the implementation is still in `Objects/longobject.c` and
-* Pythons own `Modules/_pickle.c` still uses it.
-*/
-PyAPI_FUNC(size_t) _PyLong_NumBits(PyObject *v);
-
 #elif (PY_VERSION_HEX >= 0x30A00B1) /* 3.10.0b1 */
 
 /**
@@ -89,6 +82,18 @@ static int _PyObject_HasAttrId(PyObject* obj, void* id)
 }
 
 #endif
+
+/*
+* This declaration was moved to the internal API only accessible for building
+* CPython itself. But the implementation is still in `Objects/longobject.c` and
+* Pythons own `Modules/_pickle.c` still uses it.
+*/
+#if (PY_VERSION_HEX >= 0x30E00A4) /* >= 3.14.0a4 */
+PyAPI_FUNC(int64_t) _PyLong_NumBits(PyObject *v);
+#elif (PY_VERSION_HEX >= 0x30D00A1) /* >= 3.13.0a1 */
+PyAPI_FUNC(size_t) _PyLong_NumBits(PyObject *v);
+#endif
+
 
 #if (PY_VERSION_HEX < 0x30B00A7) /* 3.11.0a7 */
 #  define PyFloat_Pack8 _PyFloat_Pack8
