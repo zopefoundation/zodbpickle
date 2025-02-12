@@ -17,7 +17,7 @@ import unittest
 
 try:
     import zodbpickle._pickle  # noqa: try to load a C module for side effects
-except ImportError:            # pragma: no cover
+except ModuleNotFoundError:    # pragma: no cover
     pass
 
 
