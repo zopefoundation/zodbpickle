@@ -702,9 +702,14 @@ class _Pickler:
             module = whichmodule(obj, name)
 
         try:
-            __import__(module, level=0)
-            mod = sys.modules[module]
-            klass = getattr(mod, name)
+            if module == 'builtins' and name == 'NoneType':
+                klass = type(None)
+            elif module == 'builtins' and name == 'ellipsis':
+                klass = type(...)
+            else:
+                __import__(module, level=0)
+                mod = sys.modules[module]
+                klass = getattr(mod, name)
         except (ImportError, KeyError, AttributeError):
             raise PicklingError(
                 "Can't pickle %r: it's not found as %s.%s" %
@@ -1195,10 +1200,16 @@ class _Unpickler:
                 module, name = _compat_pickle.NAME_MAPPING[(module, name)]
             if module in _compat_pickle.IMPORT_MAPPING:
                 module = _compat_pickle.IMPORT_MAPPING[module]
-        __import__(module, level=0)
-        mod = sys.modules[module]
-        klass = getattr(mod, name)
-        return klass
+
+        if module == 'builtins' and name == 'NoneType':
+            return type(None)
+        elif module == 'builtins' and name == 'ellipsis':
+            return type(...)
+        else:
+            __import__(module, level=0)
+            mod = sys.modules[module]
+            klass = getattr(mod, name)
+            return klass
 
     def load_reduce(self):
         stack = self.stack
