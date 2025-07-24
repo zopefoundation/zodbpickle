@@ -1,10 +1,11 @@
-
+import pickle
 import unittest
 from pathlib import Path
-from zodbpickle import slowpickle as zodb_slowpickle
-from zodbpickle import fastpickle as zodb_fastpickle
-import pickle
 from tempfile import TemporaryDirectory
+
+from zodbpickle import fastpickle as zodb_fastpickle
+from zodbpickle import slowpickle as zodb_slowpickle
+
 
 class TestErrorPickle(unittest.TestCase):
 
@@ -26,8 +27,8 @@ class TestErrorPickle(unittest.TestCase):
             with (tmp_path / 'ex1.pickle').open('wb') as file:
                 zodb_fastpickle.dump(type(None), file, protocol=3)
             # Raises Exception:
-            # _pickle.PicklingError: Can't pickle <class 'NoneType'>: attribute lookup builtins.NoneType failed
-
+            # _pickle.PicklingError: Can't pickle <class 'NoneType'>: attribute
+            # lookup builtins.NoneType failed
 
             with (tmp_path / 'ex1.pickle').open('rb') as file:
                 ex1b = zodb_fastpickle.load(file)
@@ -41,8 +42,8 @@ class TestErrorPickle(unittest.TestCase):
             with (tmp_path / 'ex1.pickle').open('wb') as file:
                 zodb_fastpickle.dump(type(...), file, protocol=3)
             # Raises Exception:
-            # _pickle.PicklingError: Can't pickle <class 'ellipsis'>: attribute lookup builtins.ellipsis failed
-
+            # _pickle.PicklingError: Can't pickle <class 'ellipsis'>: attribute
+            # lookup builtins.ellipsis failed
 
             with (tmp_path / 'ex1.pickle').open('rb') as file:
                 ex1b = zodb_fastpickle.load(file)
@@ -59,7 +60,8 @@ class TestErrorPickle(unittest.TestCase):
             # >           raise PicklingError(
             #               "Can't pickle %r: it's not found as %s.%s" %
             #               (obj, module, name))
-            # E           _pickle.PicklingError: Can't pickle <class 'NoneType'>: it's not found as builtins.NoneType
+            # E           _pickle.PicklingError: Can't pickle <class
+            # 'NoneType'>: it's not found as builtins.NoneType
 
             with (tmp_path / 'ex1.pickle').open('rb') as file:
                 ex1b = zodb_slowpickle.load(file)
@@ -73,7 +75,8 @@ class TestErrorPickle(unittest.TestCase):
             with (tmp_path / 'ex1.pickle').open('wb') as file:
                 zodb_slowpickle.dump(type(...), file, protocol=3)
             # Above Raises the following Exception normally, but not with the changes in this Pull Request:
-            # _pickle.PicklingError: Can't pickle <class 'ellipsis'>: it's not found as builtins.ellipsis
+            # _pickle.PicklingError: Can't pickle <class 'ellipsis'>: it's not
+            # found as builtins.ellipsis
 
             with (tmp_path / 'ex1.pickle').open('rb') as file:
                 ex1b = zodb_slowpickle.load(file)
