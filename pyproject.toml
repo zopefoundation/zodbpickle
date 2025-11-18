@@ -9,6 +9,54 @@ requires = [
 ]
 build-backend = "setuptools.build_meta"
 
+[project]
+name = "zodbpickle"
+version = "4.3.dev0"
+description = "Fork of Python 3 pickle module"
+keywords = ["zodb", "pickle"]
+readme = "README.rst"
+requires-python = ">=3.10"
+license = "ZPL-2.1"
+authors = [
+  { name = "Python and Zope Foundation and contributors", email = "zope-dev@zope.dev" },
+]
+maintainers = [
+  { name = "Plone Foundation and contributors", email = "zope-dev@zope.dev" },
+]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Framework :: ZODB",
+  "Intended Audience :: Developers",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
+  "Topic :: Database",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = []
+
+[project.optional-dependencies]
+docs = [
+  "Sphinx",
+  "furo",
+]
+test = [
+  "zope.testrunner >= 6.4",
+]
+
+[project.urls]
+Issues = "https://github.com/zopefoundation/zodbpickle/issues"
+Source = "https://github.com/zopefoundation/zodbpickle"
+Changelog = "https://github.com/zopefoundation/zodbpickle/blob/master/CHANGES.rst"
+
 [tool.coverage.run]
 branch = true
 source = ["zodbpickle"]
