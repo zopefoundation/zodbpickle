@@ -5,7 +5,8 @@
 4.3 (unreleased)
 ================
 
-- Nothing changed yet.
+- Added support for pickling the types of built-in singletons. Fixes `issue #103
+  <https://github.com/zopefoundation/zodbpickle/issues/103>`_.
 
 
 4.2 (2025-02-12)
