@@ -4,6 +4,9 @@ Change log
 4.3 (unreleased)
 ----------------
 
+- Added support for pickling the types of built-in singletons.
+  Fixes `#103 <https://github.com/zopefoundation/zodbpickle/issues/103>`_.
+
 - Move all supported package metadata into ``pyproject.toml``.
 
 - Drop support for Python 3.9.
