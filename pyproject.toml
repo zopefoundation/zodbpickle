@@ -11,7 +11,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "zodbpickle"
-version = "4.3.dev0"
+version = "4.3"
 description = "Fork of Python 3 pickle module"
 keywords = ["zodb", "pickle"]
 readme = "README.rst"

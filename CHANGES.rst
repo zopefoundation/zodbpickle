@@ -1,7 +1,7 @@
 Change log
 ==========
 
-4.3 (unreleased)
+4.3 (2025-11-20)
 ----------------
 
 - Added support for pickling the types of built-in singletons.
