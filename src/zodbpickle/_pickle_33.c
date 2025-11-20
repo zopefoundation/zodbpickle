@@ -229,8 +229,6 @@ static PyObject *import_mapping_3to2 = NULL;
 /* XXX: Are these really nescessary? */
 /* As the name says, an empty tuple. */
 static PyObject *empty_tuple = NULL;
-/* For looking up name pairs in copyreg._extension_registry. */
-static PyObject *two_tuple = NULL;
 
 static int
 stack_underflow(void)
@@ -2793,14 +2791,18 @@ save_global(PicklerObject *self, PyObject *obj, PyObject *name)
         /* See whether this is in the extension registry, and if
          * so generate an EXT opcode.
          */
+        PyObject *extension_key;
         PyObject *code_obj;      /* extension code as Python object */
         long code;               /* extension code as C value */
         char pdata[5];
         Py_ssize_t n;
 
-        PyTuple_SET_ITEM(two_tuple, 0, module_name);
-        PyTuple_SET_ITEM(two_tuple, 1, global_name);
-        code_obj = PyDict_GetItem(extension_registry, two_tuple);
+        extension_key = PyTuple_Pack(2, module_name, global_name);
+        if (extension_key == NULL) {
+            goto error;
+        }
+        code_obj = PyDict_GetItem(extension_registry, extension_key);
+        Py_DECREF(extension_key);
         /* The object is not registered in the extension registry.
            This is the most likely code path. */
         if (code_obj == NULL)
@@ -7099,14 +7101,6 @@ initmodule(void)
     empty_tuple = PyTuple_New(0);
     if (empty_tuple == NULL)
         goto error;
-    two_tuple = PyTuple_New(2);
-    if (two_tuple == NULL)
-        goto error;
-    /* We use this temp container with no regard to refcounts, or to
-     * keeping containees alive.  Exempt from GC, because we don't
-     * want anything looking at two_tuple() by magic.
-     */
-    PyObject_GC_UnTrack(two_tuple);
 
     return 0;
 
@@ -7122,7 +7116,6 @@ initmodule(void)
     Py_CLEAR(name_mapping_3to2);
     Py_CLEAR(import_mapping_3to2);
     Py_CLEAR(empty_tuple);
-    Py_CLEAR(two_tuple);
     return -1;
 }
 
