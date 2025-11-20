@@ -1,15 +1,18 @@
-===========
- Changelog
-===========
+Change log
+==========
 
 4.3 (unreleased)
-================
+----------------
 
-- Nothing changed yet.
+- Move all supported package metadata into ``pyproject.toml``.
+
+- Drop support for Python 3.9.
+
+- Add support for Python 3.14.
 
 
 4.2 (2025-02-12)
-================
+----------------
 
 - Drop support for Python 3.8.
 
@@ -19,24 +22,25 @@
 
 
 4.1.1 (2024-10-02)
-==================
+------------------
 
 - Fix ``NameError`` which occurred when importing ``zodbpickle.fastpickle``.
 
+
 4.1 (2024-09-17)
-================
+----------------
 
 - Add final support for Python 3.13.
 
 
 4.0 (2024-05-30)
-================
+----------------
 
 - Drop support for Python 3.7.
 
 
 3.3 (2024-04-16)
-================
+----------------
 
 - Build Windows wheels on GHA.
 
@@ -44,25 +48,25 @@
 
 
 3.2 (2024-02-16)
-================
+----------------
 
 - Add preliminary support for Python 3.13 as of 3.13a3.
 
 
 3.1 (2023-10-05)
-================
+----------------
 
 - Add support for Python 3.12.
 
 
 3.0.1 (2023-03-28)
-==================
+------------------
 
 - Fix ``NameError`` in ``.fastpickle`` and ``.slowpickle``.
 
 
 3.0 (2023-03-24)
-================
+----------------
 
 - Build Linux binary wheels for Python 3.11.
 
@@ -74,19 +78,19 @@
 
 
 2.6 (2022-11-17)
-================
+----------------
 
 - Add support for building arm64 wheels on macOS.
 
 
 2.5 (2022-11-03)
-================
+----------------
 
 - Add support for the final Python 3.11 release.
 
 
 2.4 (2022-09-15)
-================
+----------------
 
 - Add support for Python 3.11 (as of 3.11.0b3).
 
@@ -95,25 +99,25 @@
 
 
 2.3 (2022-04-22)
-================
+----------------
 
 - Add support for Python 3.11 (as of 3.11.0a7).
 
 
 2.2.0 (2021-09-29)
-==================
+------------------
 
 - Add support for Python 3.10.
 
 
 2.1.0 (2021-09-24)
-==================
+------------------
 
 - Add support for Python 3.9.
 
 
 2.0.0 (2019-11-13)
-==================
+------------------
 
 - CPython 2: Make ``zodbpickle.binary`` objects smaller and untracked
   by the garbage collector. Now they behave more like the native bytes
@@ -121,8 +125,9 @@
   arbitrary attributes or be weakly referenced. See `issue 53
   <https://github.com/zopefoundation/zodbpickle/issues/53>`_.
 
+
 1.1 (2019-11-09)
-================
+----------------
 
 - Add support for Python 3.8.
 
@@ -130,33 +135,33 @@
 
 
 1.0.4 (2019-06-12)
-==================
+------------------
 
 - Fix pickle corruption under certain conditions. See `pull request 47
   <https://github.com/zopefoundation/zodbpickle/pull/47>`_.
 
 
 1.0.3 (2018-12-18)
-==================
+------------------
 
 - Fix a bug: zodbpickle.slowpickle assigned `_Pickler` to `Unpickler`.
 
 
 1.0.2 (2018-08-10)
-==================
+------------------
 
 - Add support for Python 3.7.
 
 
 1.0.1 (2018-05-16)
-==================
+------------------
 
 - Fix a memory leak in pickle protocol 3 under Python 2. See `issue 36
   <https://github.com/zopefoundation/zodbpickle/issues/36>`_.
 
 
 1.0 (2018-02-09)
-================
+----------------
 
 - Add a warning to the readme not to use untrusted pickles.
 
@@ -164,7 +169,7 @@
 
 
 0.7.0 (2017-09-22)
-==================
+------------------
 
 - Drop support for Python 2.6 and 3.2.
 
@@ -172,8 +177,9 @@
 
 - Add support for Python 3.5 and 3.6.
 
+
 0.6.0 (2015-04-02)
-==================
+------------------
 
 - Restore the ``noload`` behaviour from Python 2.6 and provide the
   ``noload`` method on the non-C-accelerated unpicklers under PyPy and
@@ -181,8 +187,9 @@
 
 - Add support for PyPy, PyPy3, and Python 3.4.
 
+
 0.5.2 (2013-08-17)
-==================
+------------------
 
 - Import accelerator from *our* extension module under Py3k.
   See https://github.com/zopefoundation/zodbpickle/issues/6,
@@ -190,8 +197,9 @@
 
 - Fix unpickler's ``load_short_binstring`` across supported platforms.
 
+
 0.5.1 (2013-07-06)
-==================
+------------------
 
 - Update all code and tests to Python 2.6.8, 2.7.5, 3.2.5, 3.3.2 .
 
@@ -201,38 +209,44 @@
 
 - Fix a minor bug on OS X
 
+
 0.5.0 (2013-06-14)
-==================
+------------------
 
 - Removed support for the ``bytes_as_strings`` arguments to pickling APIs:
   the pickles created when that argument was true might not be unpickled
   without passing ``encoding='bytes'``, which ZODB couldn't reliably enforce.
   On Py3k, ZODB will be using ``protocol=3`` pickles anyway.
 
+
 0.4.4 (2013-06-07)
-==================
+------------------
 
 - Add protocol 3 opcodes to the C version of the ``noload()`` dispatcher.
 
+
 0.4.3 (2013-06-07)
-==================
+------------------
 
 - Packaging error:  remove spurious ``-ASIDE`` file from sdist.
 
+
 0.4.2 (2013-06-07)
-==================
+------------------
 
 - Fix NameError in pure-Python version of ``Unpickler.noload_appends``.
 
 - Fix NameError in pure-Python version of ``Unpickler.noload_setitems``.
 
+
 0.4.1 (2013-04-29)
-==================
+------------------
 
 - Fix typo in Python2 version of ``zodbpickle.pickle`` module.
 
+
 0.4 (2013-04-28)
-================
+----------------
 
 - Support the common pickle module interface for Python 2.6, 2.7, 3.2, and 3.3.
 
@@ -247,8 +261,9 @@
   binary data using opcodes which will cause it to be unpickled as ``bytes``
   on Py3k.  Under Py3k, the ``binary`` type is just an alias for ``bytes``.
 
+
 0.3 (2013-03-18)
-================
+----------------
 
 - Added ``noload`` code to Python 3.2 version of ``Unpickler``.  As with
   the Python 3.3 version, this code remains untested.
@@ -256,8 +271,9 @@
 - Added ``bytes_as_strings`` option to the Python 3.2 version of
   ``Pickler``, ``dump``, and ``dumps``.
 
+
 0.2 (2013-03-05)
-================
+----------------
 
 - Added ``bytes_as_strings`` option to ``Pickler``, ``dump``, and ``dumps``.
 
@@ -278,7 +294,7 @@
 
 
 0.1.0 (2013-02-27)
-==================
+------------------
 
 - Initial release of Python 3.3's pickle with the patches of Python
   `issue 6784`__ applied.
