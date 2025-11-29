@@ -14,7 +14,7 @@ name = "zodbpickle"
 version = "4.4.dev0"
 description = "Fork of Python 3 pickle module"
 keywords = ["zodb", "pickle"]
-readme = "README.rst"
+dynamic = ["readme"]
 requires-python = ">=3.10"
 license = "ZPL-2.1"
 authors = [
@@ -87,3 +87,6 @@ source = [
     ".tox/*/lib/python*/site-packages/",
     ".tox/pypy*/site-packages/",
 ]
+
+[tool.setuptools.dynamic]
+readme = {file = ["README.rst", "CHANGES.rst"]}
