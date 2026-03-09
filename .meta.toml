@@ -2,7 +2,7 @@
 # https://github.com/zopefoundation/meta/tree/master/src/zope/meta/c-code
 [meta]
 template = "c-code"
-commit-id = "f62d8bab"
+commit-id = "da74ecd0"
 
 [python]
 with-windows = true
@@ -11,12 +11,11 @@ with-sphinx-doctests = false
 with-future-python = true
 with-macos = false
 with-docs = true
+with-free-threaded-python = true
 
 [tox]
 use-flake8 = true
-additional-envlist = [
-    "py314t,py314t-pure",
-]
+additional-envlist = []
 
 [coverage]
 fail-under = 63
