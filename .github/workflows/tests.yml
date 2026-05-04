@@ -95,10 +95,14 @@ jobs:
           - "3.13"
           - "3.14"
           - "3.15"
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest, windows-11-arm]
         exclude:
           - os: macos-latest
             python-version: "pypy-3.11"
+          - os: windows-11-arm
+            python-version: "pypy-3.11"
+          - os: windows-11-arm
+            python-version: "3.10"
         include:
           - python-version: "3.14t"
             os: ubuntu-latest
@@ -132,33 +136,30 @@ jobs:
           echo "dir=$(pip cache dir)" >> $Env:GITHUB_OUTPUT
 
       - name: pip cache (default)
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         if: ${{ !startsWith(runner.os, 'Windows') }}
         with:
           path: ${{ steps.pip-cache-default.outputs.dir }}
-          key: ${{ runner.os }}-pip-${{ matrix.python-version }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
+          key: ${{ runner.os }}-${{ runner.arch }}-pip-${{ matrix.python-version }}
 
       - name: pip cache (Windows)
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         if: ${{ startsWith(runner.os, 'Windows') }}
         with:
           path: ${{ steps.pip-cache-windows.outputs.dir }}
-          key: ${{ runner.os }}-pip-${{ matrix.python-version }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
+          key: ${{ runner.os }}-${{ runner.arch }}-pip-${{ matrix.python-version }}
+
 
       - name: Install Build Dependencies (3.15)
         if: matrix.python-version == '3.15'
         run: |
           pip install -U pip
-          pip install -U "setuptools >= 78.1.1,< 81" wheel twine
+          pip install -U "setuptools >= 78.1.1,< 82" wheel twine
       - name: Install Build Dependencies
         if: matrix.python-version != '3.15'
         run: |
           pip install -U pip
-          pip install -U "setuptools >= 78.1.1,< 81" wheel twine
+          pip install -U "setuptools >= 78.1.1,< 82" wheel twine
 
       - name: Build zodbpickle (macOS x86_64)
         if: >
@@ -196,6 +197,13 @@ jobs:
           python setup.py build_ext -i
           python setup.py bdist_wheel
 
+      - name: Create zodbpickle sdist
+        if: >
+          startsWith(runner.os, 'Linux')
+          && matrix.python-version == '3.14'
+        run: |
+          python setup.py sdist
+
       - name: Install zodbpickle and dependencies (3.15)
         if: matrix.python-version == '3.15'
         run: |
@@ -207,7 +215,7 @@ jobs:
         if: matrix.python-version != '3.15'
         run: |
           # Install to collect dependencies into the (pip) cache.
-          pip install -U pip "setuptools >= 78.1.1,< 81"
+          pip install -U pip "setuptools >= 78.1.1,< 82"
           pip install .[test]
 
       - name: Check zodbpickle build
@@ -217,7 +225,7 @@ jobs:
       - name: Upload zodbpickle wheel (macOS x86_64)
         if: >
           startsWith(runner.os, 'Mac')
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           # The x86_64 wheel is uploaded with a different name just so it can be
           # manually downloaded when desired. The wheel itself *cannot* be tested
@@ -228,17 +236,32 @@ jobs:
         if: >
           startsWith(runner.os, 'Mac')
           && !startsWith(matrix.python-version, 'pypy')
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: zodbpickle-${{ runner.os }}-${{ matrix.python-version }}.whl
           path: dist/*arm64.whl
-      - name: Upload zodbpickle wheel (all other platforms)
-        if: >
-          !startsWith(runner.os, 'Mac')
-        uses: actions/upload-artifact@v4
+      - name: Upload zodbpickle wheel (Windows)
+        if: startsWith(runner.os, 'Windows')
+        uses: actions/upload-artifact@v7
+        with:
+          name: zodbpickle-${{ runner.os }}-${{ matrix.python-version }}-${{ runner.arch }}.whl
+          path: dist/*whl
+
+      - name: Upload zodbpickle wheel (Linux)
+        if: startsWith(runner.os, 'Linux')
+        uses: actions/upload-artifact@v7
         with:
           name: zodbpickle-${{ runner.os }}-${{ matrix.python-version }}.whl
           path: dist/*whl
+
+      - name: Upload zodbpickle sdist
+        if: >
+          startsWith(runner.os, 'Linux')
+          && matrix.python-version == '3.14'
+        uses: actions/upload-artifact@v7
+        with:
+          name: zodbpickle.tar.gz
+          path: dist/*gz
 
   test:
     needs: build-package
@@ -254,10 +277,14 @@ jobs:
           - "3.13"
           - "3.14"
           - "3.15"
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest, windows-11-arm]
         exclude:
           - os: macos-latest
             python-version: "pypy-3.11"
+          - os: windows-11-arm
+            python-version: "pypy-3.11"
+          - os: windows-11-arm
+            python-version: "3.10"
         include:
           - python-version: "3.14t"
             os: ubuntu-latest
@@ -291,32 +318,36 @@ jobs:
           echo "dir=$(pip cache dir)" >> $Env:GITHUB_OUTPUT
 
       - name: pip cache (default)
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         if: ${{ !startsWith(runner.os, 'Windows') }}
         with:
           path: ${{ steps.pip-cache-default.outputs.dir }}
-          key: ${{ runner.os }}-pip-${{ matrix.python-version }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
+          key: ${{ runner.os }}-${{ runner.arch }}-pip-${{ matrix.python-version }}
 
       - name: pip cache (Windows)
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         if: ${{ startsWith(runner.os, 'Windows') }}
         with:
           path: ${{ steps.pip-cache-windows.outputs.dir }}
-          key: ${{ runner.os }}-pip-${{ matrix.python-version }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
+          key: ${{ runner.os }}-${{ runner.arch }}-pip-${{ matrix.python-version }}
 
-      - name: Download zodbpickle wheel
-        uses: actions/download-artifact@v4
+      - name: Download zodbpickle wheel (Linux/macOS)
+        if: "!startsWith(runner.os, 'Windows')"
+        uses: actions/download-artifact@v8
         with:
           name: zodbpickle-${{ runner.os }}-${{ matrix.python-version }}.whl
+          path: dist/
+
+      - name: Download zodbpickle wheel (Windows)
+        if: startsWith(runner.os, 'Windows')
+        uses: actions/download-artifact@v8
+        with:
+          name: zodbpickle-${{ runner.os }}-${{ matrix.python-version }}-${{ runner.arch }}.whl
           path: dist/
       - name: Install zodbpickle ${{ matrix.python-version }}
         if: matrix.python-version == '3.15'
         run: |
-          pip install -U wheel "setuptools >= 78.1.1,< 81"
+          pip install -U wheel "setuptools >= 78.1.1,< 82"
           # coverage might have a wheel on PyPI for a future python version which is
           # not ABI compatible with the current one, so build it from sdist:
           pip install -U --no-binary :all: coverage[toml]
@@ -331,7 +362,7 @@ jobs:
       - name: Install zodbpickle
         if: matrix.python-version != '3.15'
         run: |
-          pip install -U wheel "setuptools >= 78.1.1,< 81"
+          pip install -U wheel "setuptools >= 78.1.1,< 82"
           pip install -U coverage[toml]
           pip install -U 'cffi; platform_python_implementation == "CPython"'
           # Unzip into src/ so that testrunner can find the .so files
@@ -407,25 +438,21 @@ jobs:
           echo "dir=$(pip cache dir)" >> $Env:GITHUB_OUTPUT
 
       - name: pip cache (default)
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         if: ${{ !startsWith(runner.os, 'Windows') }}
         with:
           path: ${{ steps.pip-cache-default.outputs.dir }}
-          key: ${{ runner.os }}-pip-${{ matrix.python-version }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
+          key: ${{ runner.os }}-${{ runner.arch }}-pip-${{ matrix.python-version }}
 
       - name: pip cache (Windows)
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         if: ${{ startsWith(runner.os, 'Windows') }}
         with:
           path: ${{ steps.pip-cache-windows.outputs.dir }}
-          key: ${{ runner.os }}-pip-${{ matrix.python-version }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
+          key: ${{ runner.os }}-${{ runner.arch }}-pip-${{ matrix.python-version }}
 
       - name: Download zodbpickle wheel
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: zodbpickle-${{ runner.os }}-${{ matrix.python-version }}.whl
           path: dist/
@@ -477,25 +504,21 @@ jobs:
           echo "dir=$(pip cache dir)" >> $Env:GITHUB_OUTPUT
 
       - name: pip cache (default)
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         if: ${{ !startsWith(runner.os, 'Windows') }}
         with:
           path: ${{ steps.pip-cache-default.outputs.dir }}
-          key: ${{ runner.os }}-pip-${{ matrix.python-version }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
+          key: ${{ runner.os }}-${{ runner.arch }}-pip-${{ matrix.python-version }}
 
       - name: pip cache (Windows)
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         if: ${{ startsWith(runner.os, 'Windows') }}
         with:
           path: ${{ steps.pip-cache-windows.outputs.dir }}
-          key: ${{ runner.os }}-pip-${{ matrix.python-version }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
+          key: ${{ runner.os }}-${{ runner.arch }}-pip-${{ matrix.python-version }}
 
       - name: Download zodbpickle wheel
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: zodbpickle-${{ runner.os }}-${{ matrix.python-version }}.whl
           path: dist/
@@ -555,22 +578,19 @@ jobs:
           echo "dir=$(pip cache dir)" >> $Env:GITHUB_OUTPUT
 
       - name: pip cache (default)
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         if: ${{ !startsWith(runner.os, 'Windows') }}
         with:
           path: ${{ steps.pip-cache-default.outputs.dir }}
           key: ${{ runner.os }}-pip_manylinux-${{ matrix.image }}-${{ matrix.python-version }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
 
       - name: pip cache (Windows)
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         if: ${{ startsWith(runner.os, 'Windows') }}
         with:
           path: ${{ steps.pip-cache-windows.outputs.dir }}
           key: ${{ runner.os }}-pip_manylinux-${{ matrix.image }}-${{ matrix.python-version }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
+
 
       - name: Update pip
         run: pip install -U pip
@@ -593,7 +613,7 @@ jobs:
           bash .manylinux.sh
 
       - name: Upload zodbpickle wheels
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           path: wheelhouse/*whl
           name: manylinux_${{ matrix.image }}_wheels.zip
@@ -620,7 +640,7 @@ jobs:
 
     steps:
       - name: Download all wheel artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: dist/
           pattern: '*'

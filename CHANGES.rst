@@ -4,6 +4,10 @@ Change log
 4.4 (unreleased)
 ----------------
 
+- Add support for automatically building and publishing Windows/ARM64 wheels.
+
+- Add support for automatically building and publishing source distributions.
+
 - Fix compilation on free-threaded Python 3.14t: use ``Py_REFCNT()`` macro
   instead of direct ``ob_refcnt`` struct access, and ``Py_TYPE()`` instead of
   direct ``ob_type`` struct access.
