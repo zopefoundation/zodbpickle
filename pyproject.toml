@@ -9,7 +9,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "zodbpickle"
-version = "4.5"
+version = "4.6.dev0"
 description = "Fork of Python 3 pickle module"
 keywords = ["zodb", "pickle"]
 dynamic = ["readme"]
