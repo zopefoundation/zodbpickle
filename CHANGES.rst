@@ -4,7 +4,7 @@ Change log
 4.5 (unreleased)
 ----------------
 
-- Nothing changed yet.
+- Add support for Python 3.15.
 
 
 4.4 (2026-05-04)
