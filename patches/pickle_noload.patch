@@ -3,7 +3,7 @@
 @@ -5476,6 +5641,475 @@
      return load(self);
  }
- 
+
 +/* No-load functions to support noload, which is used to
 +   find persistent references. */
 +
