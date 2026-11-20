@@ -4,7 +4,7 @@ diff -r 39ddcc5c7fb9 Lib/test/pickletester.py
 @@ -1189,6 +1189,59 @@
          dumped = b'\x80\x03X\x01\x00\x00\x00ar\xff\xff\xff\xff.'
          self.assertRaises(ValueError, self.loads, dumped)
- 
+
 +class AbstractBytestrTests(unittest.TestCase):
 +    def unpickleEqual(self, data, unpickled):
 +        loaded = self.loads(data, encoding="bytes")
@@ -58,9 +58,9 @@ diff -r 39ddcc5c7fb9 Lib/test/pickletester.py
 +        self.unpickleEqual(
 +                b'T,\x01\x00\x00xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxq\x00.',
 +                b'x'*300)
- 
+
  class BigmemPickleTests(unittest.TestCase):
- 
+
 diff -r 39ddcc5c7fb9 Lib/test/test_pickle.py
 --- a/Lib/test/test_pickle.py	Sat Feb 25 19:26:39 2012 +0200
 +++ b/Lib/test/test_pickle.py	Sat Mar 17 17:03:45 2012 +0100
@@ -69,20 +69,20 @@ diff -r 39ddcc5c7fb9 Lib/test/test_pickle.py
  from test.pickletester import AbstractPicklerUnpicklerObjectTests
  from test.pickletester import BigmemPickleTests
 +from test.pickletester import AbstractBytestrTests
- 
+
  try:
      import _pickle
 @@ -19,15 +20,13 @@
  class PickleTests(AbstractPickleModuleTests):
      pass
- 
+
 -
 -class PyPicklerTests(AbstractPickleTests):
 -
 +class PyPicklerBase:
      pickler = pickle._Pickler
      unpickler = pickle._Unpickler
- 
+
 -    def dumps(self, arg, proto=None):
 +    def dumps(self, arg, proto=None, **kwds):
          f = io.BytesIO()
@@ -94,19 +94,19 @@ diff -r 39ddcc5c7fb9 Lib/test/test_pickle.py
 @@ -37,6 +36,11 @@
          u = self.unpickler(f, **kwds)
          return u.load()
- 
+
 +class PyPicklerTests(PyPicklerBase, AbstractPickleTests):
 +    pass
 +
 +class PyPicklerBytestrTests(PyPicklerBase, AbstractBytestrTests):
 +    pass
- 
+
  class InMemoryPickleTests(AbstractPickleTests, BigmemPickleTests):
- 
+
 @@ -85,6 +89,10 @@
          pickler = _pickle.Pickler
          unpickler = _pickle.Unpickler
- 
+
 +    class CPicklerBytestrTests(PyPicklerBytestrTests):
 +        pickler = _pickle.Pickler
 +        unpickler = _pickle.Unpickler
@@ -115,8 +115,8 @@ diff -r 39ddcc5c7fb9 Lib/test/test_pickle.py
          pickler = _pickle.Pickler
          unpickler = _pickle.Unpickler
 @@ -103,9 +111,9 @@
- 
- 
+
+
  def test_main():
 -    tests = [PickleTests, PyPicklerTests, PyPersPicklerTests]
 +    tests = [PickleTests, PyPicklerTests, PyPersPicklerTests, PyPicklerBytestrTests]
