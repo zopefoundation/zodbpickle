@@ -35,6 +35,10 @@ additional-config = [
     "    src/zodbpickle/slowpickle.py: F401 F403",
     ]
 
+[pre-commit]
+# Trailing whitespace is significant in diff context lines.
+whitespace-exclude = "^patches/"
+
 [manifest]
 additional-rules = [
     "include *.yaml",
