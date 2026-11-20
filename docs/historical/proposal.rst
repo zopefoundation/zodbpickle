@@ -45,8 +45,8 @@ New, Py3k-only Application
 
 - Running with the latest-and-greatest ZODB **must** be possible.
 
-- Ideally, the code for the app will make no concessions to backward-
-  compatibility.
+- Ideally, the code for the app will make no concessions to
+  backward-compatibility.
 
 - Best strategy is likely ignore_compat_.
 
