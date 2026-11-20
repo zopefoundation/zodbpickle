@@ -2,7 +2,7 @@
 # https://github.com/zopefoundation/meta/tree/master/src/zope/meta/c-code
 [meta]
 template = "c-code"
-commit-id = "9333ca19"
+commit-id = "eceed68f"
 
 [python]
 with-windows = true
@@ -34,6 +34,10 @@ additional-config = [
     "    src/zodbpickle/pickletools_3.py: E221",
     "    src/zodbpickle/slowpickle.py: F401 F403",
     ]
+
+[pre-commit]
+# Trailing whitespace is significant in diff context lines.
+whitespace-exclude = "^patches/"
 
 [manifest]
 additional-rules = [

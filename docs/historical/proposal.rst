@@ -45,8 +45,8 @@ New, Py3k-only Application
 
 - Running with the latest-and-greatest ZODB **must** be possible.
 
-- Ideally, the code for the app will make no concessions to backward-
-  compatibility.
+- Ideally, the code for the app will make no concessions to
+  backward-compatibility.
 
 - Best strategy is likely ignore_compat_.
 
@@ -69,7 +69,7 @@ Python2 Application Migrating to Py3k
   active records in the database prior to testing.
 
 - For databases which are already "binary clean" (binary data exists only
-  in blobs; the application creates no new non-blob binary attributes), 
+  in blobs; the application creates no new non-blob binary attributes),
   the best strategy is likely ignore_compat_.
 
 - For databases which are not already "binary clean" (there may be non-blob
@@ -96,7 +96,7 @@ Python2 Application Straddling Python2 / Py3k (1)
   active records in the database prior to testing.
 
 - For databases which are already "binary clean" (binary data exists only
-  in blobs; the application creates no new non-blob binary attributes), 
+  in blobs; the application creates no new non-blob binary attributes),
   the best strategy is likely ignore_compat_.
 
 - For databases which are not already "binary clean" (there may be non-blob
