@@ -1,7 +1,7 @@
 Change log
 ==========
 
-4.6 (unreleased)
+4.6 (2026-11-21)
 ----------------
 
 - Add support for Python 3.15.
